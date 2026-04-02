@@ -156,41 +156,9 @@ function HeroPhoneContent() {
   );
 }
 
-/** Mac screen content rendered inside Magic UI Safari */
-function HeroMacContent() {
-  return (
-    <div className="w-full h-full bg-slate-950 p-4 flex flex-col gap-3">
-      {/* Chat messages */}
-      <div className="flex flex-col gap-2">
-        <div className="self-end max-w-[70%] px-3 py-1.5 rounded-xl rounded-br-sm bg-rose-500/80 text-white text-[10px]">
-          Open my Downloads folder
-        </div>
-        <div className="self-start max-w-[80%] px-3 py-1.5 rounded-xl rounded-bl-sm bg-white/8 border border-white/10 text-slate-300 text-[10px]">
-          Sure! Opening Finder → Downloads now...
-        </div>
-      </div>
-      {/* Mini terminal */}
-      <div className="mt-auto rounded-lg bg-black/60 border border-white/10 px-3 py-2 font-mono text-[9px]">
-        <span className="text-slate-500">$ </span>
-        <span className="text-emerald-400">open ~/Downloads</span>
-        <div className="mt-1 text-slate-500">▸ Finder window opened</div>
-      </div>
-      {/* Status */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[9px] text-slate-500">Ava connected</span>
-        </div>
-        <span className="text-[9px] text-slate-600">macOS Sequoia</span>
-      </div>
-    </div>
-  );
-}
-
 function Hero() {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-24 pb-10 px-6">
-      {/* Animated grid background replaces the old static DotGrid */}
       <AnimatedGridPattern
         numSquares={30}
         maxOpacity={0.06}
@@ -285,73 +253,124 @@ function Hero() {
           Free to start · No credit card required
         </motion.p>
 
-        {/* ── Dual Mockup: Safari (Mac) + iPhone 15 Pro ── */}
+        {/* ── Centered iPhone + floating pills ── */}
         <motion.div
-          initial={{ opacity: 0, y: 70, scale: 0.88 }}
+          initial={{ opacity: 0, y: 60, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ delay: 0.45, duration: 1, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-16 relative flex items-end justify-center"
+          transition={{ delay: 0.5, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+          className="mt-16 relative flex items-center justify-center w-full max-w-4xl mx-auto"
+          style={{ minHeight: 560 }}
         >
-          {/* Shared glow */}
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-rose-500/10 via-transparent to-transparent blur-2xl pointer-events-none" />
+          {/* Deep rose glow under phone */}
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-rose-500/20 blur-[80px] rounded-full pointer-events-none" />
 
-          {/* Safari (Mac) — behind, left, gentle float */}
-          <motion.div
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-            className="relative -mr-14 mb-6 z-0 hidden md:block"
-            style={{ filter: "drop-shadow(0 40px 60px rgba(0,0,0,0.7))" }}
-          >
-            <Safari url="app.call-ava.com" width={380}>
-              <HeroMacContent />
-            </Safari>
-          </motion.div>
+          {/* ── Left pills (Remote Control) ── */}
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-4 items-start">
+            {/* Pill 1 */}
+            <motion.div
+              animate={{ y: [-5, 6, -5] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+              className="flex items-center gap-3 pl-3 pr-5 py-3 rounded-2xl backdrop-blur-md bg-white/5 border border-white/10 shadow-xl"
+            >
+              <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/20 flex items-center justify-center shrink-0">
+                <Monitor size={16} className="text-violet-400" />
+              </div>
+              <div className="text-left">
+                <p className="text-white text-xs font-semibold whitespace-nowrap">Remote Mac Control</p>
+                <p className="text-slate-500 text-[10px] whitespace-nowrap">Click, type & scroll remotely</p>
+              </div>
+            </motion.div>
 
-          {/* iPhone 15 Pro — front, right, faster float */}
+            {/* Pill 2 */}
+            <motion.div
+              animate={{ y: [4, -5, 4] }}
+              transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+              className="flex items-center gap-3 pl-3 pr-5 py-3 rounded-2xl backdrop-blur-md bg-white/5 border border-white/10 shadow-xl"
+            >
+              <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center shrink-0">
+                <Zap size={16} className="text-amber-400" />
+              </div>
+              <div className="text-left">
+                <p className="text-white text-xs font-semibold whitespace-nowrap">Instant Execution</p>
+                <p className="text-slate-500 text-[10px] whitespace-nowrap">Commands run in &lt;100ms</p>
+              </div>
+            </motion.div>
+
+            {/* Pill 3 */}
+            <motion.div
+              animate={{ y: [-3, 7, -3] }}
+              transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 1.6 }}
+              className="flex items-center gap-3 pl-3 pr-5 py-3 rounded-2xl backdrop-blur-md bg-white/5 border border-white/10 shadow-xl"
+            >
+              <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                <Eye size={16} className="text-emerald-400" />
+              </div>
+              <div className="text-left">
+                <p className="text-white text-xs font-semibold whitespace-nowrap">Live Screen Analysis</p>
+                <p className="text-slate-500 text-[10px] whitespace-nowrap">Reads what&apos;s on your Mac</p>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* ── Centered iPhone, levitating ── */}
           <motion.div
-            animate={{ y: [0, -18, 0] }}
-            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            animate={{ y: [0, -16, 0] }}
+            transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
             className="relative z-10"
-            style={{ filter: "drop-shadow(0 40px 80px rgba(244,63,94,0.25))" }}
+            style={{ filter: "drop-shadow(0 50px 80px rgba(244,63,94,0.3))" }}
           >
-            {/* Rose glow behind phone */}
-            <div className="absolute inset-0 -m-8 bg-rose-500/20 blur-3xl rounded-full pointer-events-none" />
-            <Iphone15Pro width={200}>
+            <Iphone15Pro width={260}>
               <HeroPhoneContent />
             </Iphone15Pro>
           </motion.div>
 
-          {/* Floating labels */}
-          <motion.div
-            animate={{ y: [-5, 5, -5] }}
-            transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -left-40 top-20 hidden lg:flex items-center gap-2 px-3.5 py-2.5 rounded-2xl backdrop-blur-xl bg-white/[0.04] border border-white/10 shadow-xl text-xs text-white/80 whitespace-nowrap"
-          >
-            <div className="w-6 h-6 rounded-lg bg-violet-500/20 flex items-center justify-center">
-              <Monitor size={12} className="text-violet-400" />
-            </div>
-            Remote Mac Control
-          </motion.div>
-          <motion.div
-            animate={{ y: [4, -6, 4] }}
-            transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 0.7 }}
-            className="absolute -right-36 top-16 hidden lg:flex items-center gap-2 px-3.5 py-2.5 rounded-2xl backdrop-blur-xl bg-rose-500/10 border border-rose-500/20 shadow-xl text-xs text-rose-300 whitespace-nowrap"
-          >
-            <div className="w-6 h-6 rounded-lg bg-rose-500/20 flex items-center justify-center">
-              <Mic2 size={12} className="text-rose-400" />
-            </div>
-            Ultra-realistic Voice
-          </motion.div>
-          <motion.div
-            animate={{ y: [-3, 7, -3] }}
-            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
-            className="absolute -right-40 bottom-24 hidden lg:flex items-center gap-2 px-3.5 py-2.5 rounded-2xl backdrop-blur-xl bg-white/[0.04] border border-white/10 shadow-xl text-xs text-white/80 whitespace-nowrap"
-          >
-            <div className="w-6 h-6 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-              <Brain size={12} className="text-emerald-400" />
-            </div>
-            Persistent Memory
-          </motion.div>
+          {/* ── Right pills (Voice & Human) ── */}
+          <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-4 items-end">
+            {/* Pill 1 */}
+            <motion.div
+              animate={{ y: [-6, 5, -6] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+              className="flex items-center gap-3 pr-3 pl-5 py-3 rounded-2xl backdrop-blur-md bg-rose-500/8 border border-rose-500/20 shadow-xl"
+            >
+              <div className="text-right">
+                <p className="text-white text-xs font-semibold whitespace-nowrap">Ultra-realistic Voice</p>
+                <p className="text-slate-500 text-[10px] whitespace-nowrap">Powered by Gemini Live</p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center shrink-0">
+                <Mic2 size={16} className="text-rose-400" />
+              </div>
+            </motion.div>
+
+            {/* Pill 2 */}
+            <motion.div
+              animate={{ y: [5, -4, 5] }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.1 }}
+              className="flex items-center gap-3 pr-3 pl-5 py-3 rounded-2xl backdrop-blur-md bg-white/5 border border-white/10 shadow-xl"
+            >
+              <div className="text-right">
+                <p className="text-white text-xs font-semibold whitespace-nowrap">Your AI Best Friend</p>
+                <p className="text-slate-500 text-[10px] whitespace-nowrap">Always there, always listens</p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-pink-500/15 border border-pink-500/20 flex items-center justify-center shrink-0">
+                <span className="text-base leading-none">👯</span>
+              </div>
+            </motion.div>
+
+            {/* Pill 3 */}
+            <motion.div
+              animate={{ y: [-4, 6, -4] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+              className="flex items-center gap-3 pr-3 pl-5 py-3 rounded-2xl backdrop-blur-md bg-white/5 border border-white/10 shadow-xl"
+            >
+              <div className="text-right">
+                <p className="text-white text-xs font-semibold whitespace-nowrap">Learn new languages</p>
+                <p className="text-slate-500 text-[10px] whitespace-nowrap">Practice with a patient tutor</p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center shrink-0">
+                <span className="text-base leading-none">🌍</span>
+              </div>
+            </motion.div>
+          </div>
         </motion.div>
       </div>
     </section>
