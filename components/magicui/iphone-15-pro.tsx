@@ -76,9 +76,16 @@ export default function Iphone15Pro({
         xmlns="http://www.w3.org/2000/svg"
         style={{ position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none" }}
       >
-        {/* Outer body */}
+        {/*
+          SCREEN HOLE = M21.25 75...807V75Z
+          We punch this hole into every path that covers the screen area
+          using fillRule="evenodd" so the content div shows through.
+        */}
+
+        {/* Outer body — evenodd with screen hole */}
         <path
-          d="M2 73C2 32.6832 34.6832 0 75 0H357C397.317 0 430 32.6832 430 73V809C430 849.317 397.317 882 357 882H75C34.6832 882 2 849.317 2 809V73Z"
+          fillRule="evenodd"
+          d="M2 73C2 32.6832 34.6832 0 75 0H357C397.317 0 430 32.6832 430 73V809C430 849.317 397.317 882 357 882H75C34.6832 882 2 849.317 2 809V73Z M21.25 75C21.25 44.2101 46.2101 19.25 77 19.25H355C385.79 19.25 410.75 44.2101 410.75 75V807C410.75 837.79 385.79 862.75 355 862.75H77C46.2101 862.75 21.25 837.79 21.25 807V75Z"
           fill="#3a3a3a"
         />
         {/* Side buttons */}
@@ -98,9 +105,10 @@ export default function Iphone15Pro({
           d="M430 279H432C432.552 279 433 279.448 433 280V384C433 384.552 432.552 385 432 385H430V279Z"
           fill="#3a3a3a"
         />
-        {/* Inner bezel border */}
+        {/* Inner bezel — evenodd with screen hole */}
         <path
-          d="M6 74C6 35.3401 37.3401 4 76 4H356C394.66 4 426 35.3401 426 74V808C426 846.66 394.66 878 356 878H76C37.3401 878 6 846.66 6 808V74Z"
+          fillRule="evenodd"
+          d="M6 74C6 35.3401 37.3401 4 76 4H356C394.66 4 426 35.3401 426 74V808C426 846.66 394.66 878 356 878H76C37.3401 878 6 846.66 6 808V74Z M21.25 75C21.25 44.2101 46.2101 19.25 77 19.25H355C385.79 19.25 410.75 44.2101 410.75 75V807C410.75 837.79 385.79 862.75 355 862.75H77C46.2101 862.75 21.25 837.79 21.25 807V75Z"
           fill="#1c1c1e"
         />
         {/* Top pill */}
