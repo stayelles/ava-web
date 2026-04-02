@@ -9,6 +9,11 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import Iphone15Pro from "@/components/magicui/iphone-15-pro";
+import { Safari } from "@/components/magicui/safari";
+import { AnimatedGridPattern } from "@/components/magicui/animated-grid-pattern";
+import { BorderBeam } from "@/components/magicui/border-beam";
+import { AnimatedBeam } from "@/components/magicui/animated-beam";
 
 // ─── Shared utilities ──────────────────────────────────────────────────────────
 
@@ -86,147 +91,112 @@ function Navbar() {
   );
 }
 
-// ─── MacBook Mockup (hero) ────────────────────────────────────────────────────
-
-function MacBookMockup() {
-  return (
-    <div className="relative" style={{ width: 380 }}>
-      {/* Screen */}
-      <div className="w-full rounded-xl overflow-hidden border border-slate-700 shadow-2xl shadow-black/60 bg-slate-950">
-        {/* Title bar */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-slate-900/90 border-b border-slate-800">
-          <div className="w-3 h-3 rounded-full bg-red-500 shadow-sm shadow-red-500/50" />
-          <div className="w-3 h-3 rounded-full bg-yellow-400 shadow-sm shadow-yellow-400/50" />
-          <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm shadow-green-500/50" />
-          <span className="ml-3 text-[11px] text-slate-500 font-medium">Ava Desktop</span>
-          <div className="ml-auto flex gap-2">
-            <div className="px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-400 text-[9px] font-medium">LIVE</div>
-          </div>
-        </div>
-        {/* Desktop UI */}
-        <div className="p-4 h-52 flex flex-col gap-3 bg-gradient-to-b from-slate-950 to-slate-900">
-          {/* Chat messages */}
-          <div className="flex flex-col gap-2">
-            <div className="self-end max-w-[70%] px-3 py-1.5 rounded-xl rounded-br-sm bg-rose-500/80 text-white text-[10px]">
-              Open my Downloads folder
-            </div>
-            <div className="self-start max-w-[80%] px-3 py-1.5 rounded-xl rounded-bl-sm bg-white/8 border border-white/10 text-slate-300 text-[10px]">
-              Sure! Opening Finder → Downloads now...
-            </div>
-          </div>
-          {/* Mini terminal */}
-          <div className="mt-auto rounded-lg bg-black/60 border border-white/10 px-3 py-2 font-mono text-[9px]">
-            <span className="text-slate-500">$ </span>
-            <span className="text-emerald-400">open ~/Downloads</span>
-            <div className="mt-1 text-slate-500">▸ Finder window opened</div>
-          </div>
-          {/* Status bar */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[9px] text-slate-500">Ava connected</span>
-            </div>
-            <span className="text-[9px] text-slate-600">macOS Sequoia</span>
-          </div>
-        </div>
-      </div>
-      {/* Laptop hinge + base */}
-      <div className="relative mt-0">
-        <div className="h-[3px] bg-gradient-to-r from-slate-800 via-slate-600 to-slate-800 rounded-sm" />
-        <div
-          className="h-[14px] bg-gradient-to-b from-slate-700 to-slate-800 rounded-b-xl"
-          style={{ clipPath: "polygon(2% 0%, 98% 0%, 95% 100%, 5% 100%)" }}
-        />
-        {/* Trackpad */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-16 h-4 rounded-md border border-slate-600/50 bg-slate-700/30" />
-      </div>
-    </div>
-  );
-}
-
-// ─── iPhone Mockup (hero) ─────────────────────────────────────────────────────
-
-function IPhoneMockup() {
-  return (
-    <div className="relative" style={{ width: 240, height: 490 }}>
-      {/* Glow */}
-      <div className="absolute inset-x-8 inset-y-16 bg-rose-500/25 blur-3xl rounded-full pointer-events-none" />
-      {/* Body */}
-      <div className="relative w-full h-full rounded-[40px] bg-gradient-to-b from-slate-800 to-slate-900 border-[2.5px] border-slate-700 shadow-2xl shadow-black/60 overflow-hidden">
-        {/* Buttons */}
-        <div className="absolute -left-[4px] top-24 w-[2.5px] h-7 bg-slate-600 rounded-l-full" />
-        <div className="absolute -left-[4px] top-36 w-[2.5px] h-9 bg-slate-600 rounded-l-full" />
-        <div className="absolute -right-[4px] top-36 w-[2.5px] h-12 bg-slate-600 rounded-r-full" />
-        {/* Screen */}
-        <div className="absolute inset-[2.5px] rounded-[38px] bg-slate-950 overflow-hidden">
-          {/* Dynamic Island */}
-          <div className="absolute top-3.5 left-1/2 -translate-x-1/2 z-10 w-24 h-7 bg-black rounded-full flex items-center justify-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
-            <div className="w-2.5 h-2.5 rounded-full bg-slate-800 border border-slate-700" />
-          </div>
-          {/* Status bar */}
-          <div className="flex items-center justify-between px-6 pt-[52px] pb-1">
-            <span className="text-[9px] text-white/70 font-medium">9:41</span>
-            <div className="flex items-center gap-0.5">
-              {[3, 5, 7, 9].map((h, i) => (
-                <div key={i} className="w-0.5 bg-white/60 rounded-sm" style={{ height: h }} />
-              ))}
-              <div className="w-3 h-1.5 border border-white/60 rounded-sm relative ml-1">
-                <div className="absolute inset-y-0.5 left-0.5 right-1 bg-white/60 rounded-sm" />
-              </div>
-            </div>
-          </div>
-          {/* App UI */}
-          <div className="flex flex-col items-center px-4 pt-3 gap-3">
-            {/* Avatar */}
-            <div className="relative">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-400 via-rose-500 to-rose-700 flex items-center justify-center shadow-xl shadow-rose-500/40">
-                <span className="text-2xl">🌸</span>
-              </div>
-              <motion.div
-                className="absolute inset-0 rounded-full border-2 border-rose-400/50"
-                animate={{ scale: [1, 1.35, 1], opacity: [0.7, 0, 0.7] }}
-                transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-              />
-            </div>
-            <p className="text-white font-semibold text-xs">Ava is with you...</p>
-            {/* Waveform */}
-            <div className="flex items-center gap-[2.5px] h-6">
-              {[2, 5, 8, 12, 8, 15, 10, 6, 14, 8, 5, 10, 7, 3].map((h, i) => (
-                <motion.div
-                  key={i}
-                  className="w-0.5 rounded-full bg-rose-400"
-                  style={{ height: h }}
-                  animate={{ height: [h, h * 2, h] }}
-                  transition={{ duration: 0.85, repeat: Infinity, delay: i * 0.06, ease: "easeInOut" }}
-                />
-              ))}
-            </div>
-            {/* Chat bubble */}
-            <div className="w-full rounded-2xl bg-white/[0.04] border border-white/8 px-3 py-2.5">
-              <p className="text-slate-300 text-[10px] leading-relaxed">
-                &ldquo;Done! I&apos;ve opened Slack and sent your message. 📨&rdquo;
-              </p>
-            </div>
-            {/* Tabs */}
-            <div className="absolute bottom-5 left-0 right-0 flex items-center justify-around px-5">
-              {["🌸", "💬", "🎁", "💳", "⚙️"].map((icon, i) => (
-                <div key={i} className={cn("text-base", i !== 0 && "opacity-25")}>{icon}</div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Hero ─────────────────────────────────────────────────────────────────────
+
+/** Phone screen content rendered inside Magic UI Iphone15Pro */
+function HeroPhoneContent() {
+  return (
+    <div
+      className="w-full h-full bg-slate-950 flex flex-col items-center overflow-hidden"
+      style={{ paddingTop: "18%" }}
+    >
+      {/* Status bar */}
+      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-[12%] pt-[5%]">
+        <span className="text-white/70 font-medium" style={{ fontSize: "clamp(6px,2.2cqw,10px)" }}>9:41</span>
+        <div className="flex items-center gap-0.5">
+          {[2, 4, 6, 8].map((h, i) => (
+            <div key={i} className="w-0.5 bg-white/60 rounded-sm" style={{ height: h * 0.5 }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Avatar */}
+      <div className="relative mt-2">
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-400 via-rose-500 to-rose-700 flex items-center justify-center shadow-xl shadow-rose-500/40">
+          <span className="text-2xl">🌸</span>
+        </div>
+        <motion.div
+          className="absolute inset-0 rounded-full border-2 border-rose-400/50"
+          animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
+          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </div>
+      <p className="text-white font-semibold mt-2" style={{ fontSize: "clamp(7px,2.8cqw,11px)" }}>Ava is with you...</p>
+
+      {/* Waveform */}
+      <div className="flex items-center gap-[2px] mt-2" style={{ height: 16 }}>
+        {[2, 5, 8, 12, 8, 15, 10, 6, 14, 8, 5, 10, 7, 3].map((h, i) => (
+          <motion.div
+            key={i}
+            className="w-0.5 rounded-full bg-rose-400"
+            style={{ height: h * 0.7 }}
+            animate={{ height: [h * 0.7, h * 1.5, h * 0.7] }}
+            transition={{ duration: 0.85, repeat: Infinity, delay: i * 0.06, ease: "easeInOut" }}
+          />
+        ))}
+      </div>
+
+      {/* Chat bubble */}
+      <div
+        className="mx-3 mt-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3 py-2"
+        style={{ fontSize: "clamp(6px,2.2cqw,9px)" }}
+      >
+        <p className="text-slate-300 leading-relaxed">
+          &ldquo;Done! I&apos;ve opened Slack and sent your message. 📨&rdquo;
+        </p>
+      </div>
+
+      {/* Tab bar */}
+      <div className="absolute bottom-[4%] left-0 right-0 flex items-center justify-around px-4">
+        {["🌸", "💬", "🎁", "💳", "⚙️"].map((icon, i) => (
+          <div key={i} className={cn("text-sm", i !== 0 && "opacity-25")}>{icon}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Mac screen content rendered inside Magic UI Safari */
+function HeroMacContent() {
+  return (
+    <div className="w-full h-full bg-slate-950 p-4 flex flex-col gap-3">
+      {/* Chat messages */}
+      <div className="flex flex-col gap-2">
+        <div className="self-end max-w-[70%] px-3 py-1.5 rounded-xl rounded-br-sm bg-rose-500/80 text-white text-[10px]">
+          Open my Downloads folder
+        </div>
+        <div className="self-start max-w-[80%] px-3 py-1.5 rounded-xl rounded-bl-sm bg-white/8 border border-white/10 text-slate-300 text-[10px]">
+          Sure! Opening Finder → Downloads now...
+        </div>
+      </div>
+      {/* Mini terminal */}
+      <div className="mt-auto rounded-lg bg-black/60 border border-white/10 px-3 py-2 font-mono text-[9px]">
+        <span className="text-slate-500">$ </span>
+        <span className="text-emerald-400">open ~/Downloads</span>
+        <div className="mt-1 text-slate-500">▸ Finder window opened</div>
+      </div>
+      {/* Status */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-[9px] text-slate-500">Ava connected</span>
+        </div>
+        <span className="text-[9px] text-slate-600">macOS Sequoia</span>
+      </div>
+    </div>
+  );
+}
 
 function Hero() {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-24 pb-10 px-6">
-      <DotGrid />
+      {/* Animated grid background replaces the old static DotGrid */}
+      <AnimatedGridPattern
+        numSquares={30}
+        maxOpacity={0.06}
+        duration={3}
+        className="text-rose-400/20 stroke-white/[0.04]"
+      />
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,_rgba(244,63,94,0.15)_0%,_rgba(2,6,23,0.85)_60%,_rgb(2,6,23)_100%)]" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-rose-500/8 blur-[160px] pointer-events-none" />
 
@@ -315,7 +285,7 @@ function Hero() {
           Free to start · No credit card required
         </motion.p>
 
-        {/* ── Dual Mockup: MacBook + iPhone ─── */}
+        {/* ── Dual Mockup: Safari (Mac) + iPhone 15 Pro ── */}
         <motion.div
           initial={{ opacity: 0, y: 70, scale: 0.88 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -325,24 +295,30 @@ function Hero() {
           {/* Shared glow */}
           <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-rose-500/10 via-transparent to-transparent blur-2xl pointer-events-none" />
 
-          {/* MacBook — behind, left, gentle float */}
+          {/* Safari (Mac) — behind, left, gentle float */}
           <motion.div
             animate={{ y: [0, -10, 0] }}
             transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
             className="relative -mr-14 mb-6 z-0 hidden md:block"
-            style={{ filter: "drop-shadow(0 40px 60px rgba(0,0,0,0.6))" }}
+            style={{ filter: "drop-shadow(0 40px 60px rgba(0,0,0,0.7))" }}
           >
-            <MacBookMockup />
+            <Safari url="app.call-ava.com" width={380}>
+              <HeroMacContent />
+            </Safari>
           </motion.div>
 
-          {/* iPhone — front, right, faster float */}
+          {/* iPhone 15 Pro — front, right, faster float */}
           <motion.div
             animate={{ y: [0, -18, 0] }}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
             className="relative z-10"
-            style={{ filter: "drop-shadow(0 40px 80px rgba(244,63,94,0.2))" }}
+            style={{ filter: "drop-shadow(0 40px 80px rgba(244,63,94,0.25))" }}
           >
-            <IPhoneMockup />
+            {/* Rose glow behind phone */}
+            <div className="absolute inset-0 -m-8 bg-rose-500/20 blur-3xl rounded-full pointer-events-none" />
+            <Iphone15Pro width={200}>
+              <HeroPhoneContent />
+            </Iphone15Pro>
           </motion.div>
 
           {/* Floating labels */}
@@ -389,132 +365,117 @@ function Hero() {
 //  2 = mac: terminal fires
 //  3 = phone: Ava waveform + response
 
-function ShowcasePhone({ step }: { step: number }) {
+function ShowcasePhoneContent({ step }: { step: number }) {
   return (
-    <div className="relative mx-auto shrink-0" style={{ width: 200, height: 400 }}>
-      {/* Glow */}
-      <div className="absolute inset-x-6 inset-y-10 bg-rose-500/20 blur-2xl rounded-full pointer-events-none" />
-      {/* Body */}
-      <div className="relative w-full h-full rounded-[34px] bg-gradient-to-b from-slate-800 to-slate-900 border-2 border-slate-700 shadow-2xl shadow-black/50 overflow-hidden">
-        {/* Buttons */}
-        <div className="absolute -left-[3px] top-20 w-[2px] h-6 bg-slate-600 rounded-l-full" />
-        <div className="absolute -left-[3px] top-28 w-[2px] h-8 bg-slate-600 rounded-l-full" />
-        <div className="absolute -right-[3px] top-28 w-[2px] h-10 bg-slate-600 rounded-r-full" />
-        {/* Screen */}
-        <div className="absolute inset-[2px] rounded-[33px] bg-slate-950 overflow-hidden">
-          {/* Dynamic Island */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-20 h-5 bg-black rounded-full z-10" />
-          {/* Status */}
-          <div className="flex items-center justify-between px-5 pt-11 pb-0.5">
-            <span className="text-[9px] text-white/60">9:41</span>
-            <div className="flex gap-0.5 items-end h-2">
-              {[2, 4, 6, 8].map((h, i) => (
-                <div key={i} className="w-0.5 bg-white/50 rounded-sm" style={{ height: h }} />
+    <div className="w-full h-full bg-slate-950 overflow-hidden">
+      {/* Status */}
+      <div className="flex items-center justify-between px-5 pt-[14%] pb-0.5">
+        <span className="text-[9px] text-white/60">9:41</span>
+        <div className="flex gap-0.5 items-end h-2">
+          {[2, 4, 6, 8].map((h, i) => (
+            <div key={i} className="w-0.5 bg-white/50 rounded-sm" style={{ height: h }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Chat area */}
+      <div className="flex flex-col gap-2.5 px-3 pt-2 pb-10">
+        {/* Header */}
+        <div className="flex items-center gap-2 pb-2 border-b border-white/5">
+          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center">
+            <span className="text-[10px]">🌸</span>
+          </div>
+          <span className="text-white text-[10px] font-semibold">Ava</span>
+          <div className="ml-auto flex items-center gap-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-emerald-400 text-[8px]">Live</span>
+          </div>
+        </div>
+
+        {/* Step 1: user message */}
+        <AnimatePresence>
+          {step >= 1 && (
+            <motion.div
+              key="user-msg"
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="self-end max-w-[85%]"
+            >
+              <div className="px-3 py-2 rounded-2xl rounded-br-sm bg-rose-500 text-white text-[9px] leading-relaxed shadow-lg shadow-rose-500/20">
+                Ava, what&apos;s the latest file in my Mac&apos;s Downloads folder?
+              </div>
+              <p className="text-right text-[7px] text-slate-600 mt-1 pr-1">09:41</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Step 3: Ava response */}
+        <AnimatePresence>
+          {step >= 3 && (
+            <motion.div
+              key="ava-response"
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+              className="self-start max-w-[90%] flex flex-col gap-1.5"
+            >
+              <div className="flex items-center gap-[2px] h-4 pl-1">
+                {[2, 4, 6, 9, 6, 11, 7, 4, 10, 6, 4, 8].map((h, i) => (
+                  <motion.div
+                    key={i}
+                    className="w-0.5 rounded-full bg-rose-400"
+                    style={{ height: h }}
+                    animate={{ height: [h, h * 2, h] }}
+                    transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.05, ease: "easeInOut" }}
+                  />
+                ))}
+              </div>
+              <div className="px-3 py-2 rounded-2xl rounded-bl-sm bg-white/[0.06] border border-white/10 text-slate-300 text-[9px] leading-relaxed">
+                I found <span className="text-rose-400 font-semibold">image_receipt.png</span> — latest file from Apr 2. I&apos;ve just sent it to your screen. 📎
+              </div>
+              <p className="text-[7px] text-slate-600 pl-1">09:41</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Typing indicator */}
+        <AnimatePresence>
+          {step === 2 && (
+            <motion.div
+              key="typing"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="self-start flex items-center gap-1 px-3 py-2 rounded-2xl rounded-bl-sm bg-white/[0.04] border border-white/8"
+            >
+              {[0, 0.2, 0.4].map((delay) => (
+                <motion.div
+                  key={delay}
+                  className="w-1 h-1 rounded-full bg-slate-400"
+                  animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
+                  transition={{ duration: 0.8, repeat: Infinity, delay }}
+                />
               ))}
-            </div>
-          </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
-          {/* Chat area */}
-          <div className="flex flex-col gap-2.5 px-3 pt-3 pb-16">
-            {/* Header */}
-            <div className="flex items-center gap-2 pb-2 border-b border-white/5">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center">
-                <span className="text-[10px]">🌸</span>
-              </div>
-              <span className="text-white text-[10px] font-semibold">Ava</span>
-              <div className="ml-auto flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="text-emerald-400 text-[8px]">Live</span>
-              </div>
-            </div>
-
-            {/* Step 1: user message */}
-            <AnimatePresence>
-              {step >= 1 && (
-                <motion.div
-                  key="user-msg"
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                  className="self-end max-w-[85%]"
-                >
-                  <div className="px-3 py-2 rounded-2xl rounded-br-sm bg-rose-500 text-white text-[9px] leading-relaxed shadow-lg shadow-rose-500/20">
-                    Ava, what&apos;s the latest file in my Mac&apos;s Downloads folder?
-                  </div>
-                  <p className="text-right text-[7px] text-slate-600 mt-1 pr-1">09:41</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Step 3: Ava response */}
-            <AnimatePresence>
-              {step >= 3 && (
-                <motion.div
-                  key="ava-response"
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                  className="self-start max-w-[90%] flex flex-col gap-1.5"
-                >
-                  {/* Waveform */}
-                  <div className="flex items-center gap-[2px] h-4 pl-1">
-                    {[2, 4, 6, 9, 6, 11, 7, 4, 10, 6, 4, 8].map((h, i) => (
-                      <motion.div
-                        key={i}
-                        className="w-0.5 rounded-full bg-rose-400"
-                        style={{ height: h }}
-                        animate={{ height: [h, h * 2, h] }}
-                        transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.05, ease: "easeInOut" }}
-                      />
-                    ))}
-                  </div>
-                  <div className="px-3 py-2 rounded-2xl rounded-bl-sm bg-white/[0.06] border border-white/10 text-slate-300 text-[9px] leading-relaxed">
-                    I found <span className="text-rose-400 font-semibold">image_receipt.png</span> — latest file from Apr 2. I&apos;ve just sent it to your screen. 📎
-                  </div>
-                  <p className="text-[7px] text-slate-600 pl-1">09:41</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Typing indicator (between steps 1 and 3) */}
-            <AnimatePresence>
-              {step === 2 && (
-                <motion.div
-                  key="typing"
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="self-start flex items-center gap-1 px-3 py-2 rounded-2xl rounded-bl-sm bg-white/[0.04] border border-white/8"
-                >
-                  {[0, 0.2, 0.4].map((delay) => (
-                    <motion.div
-                      key={delay}
-                      className="w-1 h-1 rounded-full bg-slate-400"
-                      animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
-                      transition={{ duration: 0.8, repeat: Infinity, delay }}
-                    />
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* Input bar */}
-          <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 px-3 py-2 rounded-full bg-white/[0.04] border border-white/10">
-            <span className="text-slate-600 text-[9px] flex-1">Message Ava...</span>
-            <div className="w-5 h-5 rounded-full bg-rose-500/20 flex items-center justify-center">
-              <Mic2 size={9} className="text-rose-400" />
-            </div>
-          </div>
+      {/* Input bar */}
+      <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 px-3 py-2 rounded-full bg-white/[0.04] border border-white/10">
+        <span className="text-slate-600 text-[9px] flex-1">Message Ava...</span>
+        <div className="w-5 h-5 rounded-full bg-rose-500/20 flex items-center justify-center">
+          <Mic2 size={9} className="text-rose-400" />
         </div>
       </div>
     </div>
   );
 }
 
-function ShowcaseMac({ step }: { step: number }) {
+function ShowcaseMacContent({ step }: { step: number }) {
   const terminalLines = [
     { text: "$ ls -la ~/Downloads", color: "text-slate-400", delay: 0 },
     { text: "total 96", color: "text-slate-500", delay: 0.15 },
@@ -525,101 +486,56 @@ function ShowcaseMac({ step }: { step: number }) {
   ];
 
   return (
-    <div className="shrink-0" style={{ width: 420 }}>
-      {/* Window chrome */}
-      <div className="rounded-xl overflow-hidden border border-slate-700/80 shadow-2xl shadow-black/50 bg-slate-950">
-        {/* Title bar */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-slate-900/90 border-b border-slate-800">
-          <div className="w-3 h-3 rounded-full bg-red-500" />
-          <div className="w-3 h-3 rounded-full bg-yellow-400" />
-          <div className="w-3 h-3 rounded-full bg-green-500" />
-          <div className="flex-1 mx-3 px-3 py-1 rounded-md bg-slate-800 border border-slate-700">
-            <span className="text-[10px] text-slate-400 font-mono">Terminal — zsh — 80×24</span>
-          </div>
-          <Terminal size={12} className="text-slate-500" />
-        </div>
-
-        {/* Terminal body */}
-        <div className="p-4 h-56 font-mono text-[11px] leading-relaxed bg-slate-950 overflow-hidden">
-          <AnimatePresence>
-            {step >= 2 && (
-              <motion.div
-                key="terminal-content"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col gap-0.5"
+    <div className="w-full h-full bg-slate-950 p-4 font-mono text-[11px] leading-relaxed overflow-hidden">
+      <AnimatePresence>
+        {step >= 2 ? (
+          <motion.div
+            key="terminal-content"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="flex flex-col gap-0.5"
+          >
+            {terminalLines.map((line, i) => (
+              <motion.p
+                key={i}
+                className={line.color}
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: line.delay, duration: 0.3 }}
               >
-                {terminalLines.map((line, i) => (
-                  <motion.p
-                    key={i}
-                    className={line.color}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: line.delay, duration: 0.3 }}
-                  >
-                    {line.text}
-                  </motion.p>
-                ))}
-                {/* Blinking cursor */}
-                <motion.span
-                  className="inline-block w-2 h-3 bg-white/80 align-middle ml-0.5 mt-1"
-                  animate={{ opacity: [1, 0, 1] }}
-                  transition={{ duration: 1, repeat: Infinity }}
-                />
-              </motion.div>
-            )}
-
-            {step < 2 && (
-              <motion.div
-                key="idle"
-                className="flex flex-col gap-1 h-full justify-center items-center opacity-20"
-              >
-                <Terminal size={28} className="text-slate-500" />
-                <p className="text-slate-500 text-[10px]">Waiting for command...</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Status bar */}
-        <div className="flex items-center justify-between px-4 py-2 bg-slate-900/60 border-t border-slate-800">
-          <div className="flex items-center gap-1.5">
-            <AnimatePresence>
-              {step >= 2 ? (
-                <motion.div
-                  key="active"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center gap-1.5"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-pulse" />
-                  <span className="text-[9px] text-rose-400 font-mono">Ava executing...</span>
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="idle-status"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex items-center gap-1.5"
-                >
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />
-                  <span className="text-[9px] text-slate-600 font-mono">Idle</span>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-          <span className="text-[9px] text-slate-600 font-mono">macOS Sequoia · Ava Bridge</span>
-        </div>
-      </div>
+                {line.text}
+              </motion.p>
+            ))}
+            <motion.span
+              className="inline-block w-2 h-3 bg-white/80 align-middle ml-0.5 mt-1"
+              animate={{ opacity: [1, 0, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="idle"
+            className="flex flex-col gap-1 h-full justify-center items-center opacity-20"
+          >
+            <Terminal size={28} className="text-slate-500" />
+            <p className="text-slate-500 text-[10px]">Waiting for command...</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 function InteractiveShowcase() {
   const [step, setStep] = useState(0);
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
+  const sectionRef = useRef<HTMLElement>(null);
+  const inView = useInView(sectionRef, { once: true, margin: "-100px" });
+
+  // Refs for AnimatedBeam
+  const containerRef = useRef<HTMLDivElement>(null);
+  const phoneRef = useRef<HTMLDivElement>(null);
+  const macRef = useRef<HTMLDivElement>(null);
 
   // Start the loop once in view
   useEffect(() => {
@@ -631,13 +547,13 @@ function InteractiveShowcase() {
         setStep(0);
         await wait(600);
         if (cancelled) break;
-        setStep(1);           // user message
+        setStep(1);
         await wait(2200);
         if (cancelled) break;
-        setStep(2);           // mac terminal
+        setStep(2);
         await wait(2800);
         if (cancelled) break;
-        setStep(3);           // ava response
+        setStep(3);
         await wait(4000);
         if (cancelled) break;
       }
@@ -648,7 +564,7 @@ function InteractiveShowcase() {
   }, [inView]);
 
   return (
-    <section id="showcase" ref={ref} className="relative py-28 px-6 overflow-hidden">
+    <section id="showcase" ref={sectionRef} className="relative py-28 px-6 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,_rgba(244,63,94,0.06)_0%,_transparent_70%)] pointer-events-none" />
       <DotGrid className="opacity-30" />
       <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-transparent to-slate-950 pointer-events-none" />
@@ -694,54 +610,60 @@ function InteractiveShowcase() {
 
         {/* Main visual */}
         <motion.div
+          ref={containerRef}
           initial={{ opacity: 0, y: 40 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-          className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-8"
+          className="relative flex flex-col md:flex-row items-center justify-center gap-6 md:gap-8"
         >
+          {/* AnimatedBeam connecting phone to mac */}
+          <AnimatedBeam
+            containerRef={containerRef as React.RefObject<HTMLElement>}
+            fromRef={phoneRef as React.RefObject<HTMLElement>}
+            toRef={macRef as React.RefObject<HTMLElement>}
+            curvature={-40}
+            gradientStartColor="#e11d48"
+            gradientStopColor="#fb7185"
+            pathColor="rgba(244,63,94,0.1)"
+            pathOpacity={0.3}
+            duration={3}
+          />
+          <AnimatedBeam
+            containerRef={containerRef as React.RefObject<HTMLElement>}
+            fromRef={macRef as React.RefObject<HTMLElement>}
+            toRef={phoneRef as React.RefObject<HTMLElement>}
+            curvature={40}
+            gradientStartColor="#34d399"
+            gradientStopColor="#6ee7b7"
+            pathColor="rgba(52,211,153,0.1)"
+            pathOpacity={0.3}
+            duration={3}
+            delay={1.5}
+          />
+
           {/* Phone */}
-          <ShowcasePhone step={step} />
-
-          {/* Connection arrows */}
-          <div className="flex flex-col items-center gap-3 shrink-0">
-            {/* Phone → Mac */}
-            <div className="flex items-center gap-1">
-              {[0, 1, 2, 3].map((i) => (
-                <motion.div
-                  key={i}
-                  className="w-2 h-2 rounded-full bg-rose-400"
-                  animate={step === 1 || step === 2
-                    ? { opacity: [0, 1, 0], x: [0, 4, 8] }
-                    : { opacity: 0.15 }}
-                  transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.15 }}
-                />
-              ))}
-              <ArrowRight size={14} className={cn("transition-colors", step >= 2 ? "text-rose-400" : "text-slate-700")} />
-            </div>
-
-            {/* Label */}
-            <div className="px-3 py-1.5 rounded-full border border-white/8 bg-white/[0.02] text-[10px] text-slate-500 whitespace-nowrap">
-              P2P Bridge
-            </div>
-
-            {/* Mac → Phone (return) */}
-            <div className="flex items-center gap-1 flex-row-reverse">
-              {[0, 1, 2, 3].map((i) => (
-                <motion.div
-                  key={i}
-                  className="w-2 h-2 rounded-full bg-emerald-400"
-                  animate={step === 3
-                    ? { opacity: [0, 1, 0], x: [0, -4, -8] }
-                    : { opacity: 0.15 }}
-                  transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.15 }}
-                />
-              ))}
-              <ArrowRight size={14} className={cn("rotate-180 transition-colors", step === 3 ? "text-emerald-400" : "text-slate-700")} />
+          <div ref={phoneRef} className="shrink-0">
+            <div className="relative">
+              <div className="absolute inset-0 -m-4 bg-rose-500/15 blur-2xl rounded-full pointer-events-none" />
+              <Iphone15Pro width={190}>
+                <ShowcasePhoneContent step={step} />
+              </Iphone15Pro>
             </div>
           </div>
 
-          {/* Mac terminal */}
-          <ShowcaseMac step={step} />
+          {/* P2P label in center */}
+          <div className="flex flex-col items-center gap-2 shrink-0 z-10">
+            <div className="px-3 py-1.5 rounded-full border border-white/8 bg-white/[0.02] text-[10px] text-slate-500 whitespace-nowrap backdrop-blur-sm">
+              P2P Bridge
+            </div>
+          </div>
+
+          {/* Mac */}
+          <div ref={macRef} className="shrink-0">
+            <Safari url="Terminal — zsh" width={420}>
+              <ShowcaseMacContent step={step} />
+            </Safari>
+          </div>
         </motion.div>
 
         {/* Caption */}
@@ -907,7 +829,7 @@ const features: Feature[] = [
   {
     icon: Eye,
     title: "Live Screen Analysis",
-    desc: "Point Ava at your screen — she reads, summarizes, and acts on what&apos;s visible instantly.",
+    desc: "Point Ava at your screen — she reads, summarizes, and acts on what's visible instantly.",
     cols: "md:col-span-1",
     accentBg: "from-blue-500/10 to-transparent",
     accentIcon: "bg-blue-500/15 text-blue-400",
@@ -1105,12 +1027,22 @@ function Pricing() {
                 whileHover={!plan.popular ? { scale: 1.02, transition: { type: "spring", stiffness: 260, damping: 20 } } : {}}
                 style={plan.popular ? { scale: 1.05 } : {}}
                 className={cn(
-                  "relative flex flex-col rounded-2xl border p-8 transition-colors duration-300",
+                  "relative flex flex-col rounded-2xl border p-8 transition-colors duration-300 overflow-hidden",
                   plan.popular
                     ? "border-rose-500 bg-gradient-to-b from-rose-500/[0.09] to-rose-500/[0.03] shadow-[0_0_40px_rgba(244,63,94,0.2)] z-10"
                     : "border-white/10 bg-white/[0.025] hover:border-white/20"
                 )}
               >
+                {/* BorderBeam only on the Pro card */}
+                {plan.popular && (
+                  <BorderBeam
+                    colorFrom="#e11d48"
+                    colorTo="#fb7185"
+                    size={80}
+                    duration={8}
+                  />
+                )}
+
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <Badge className="px-4 py-1 text-[11px] font-bold shadow-xl shadow-rose-500/40 whitespace-nowrap">
