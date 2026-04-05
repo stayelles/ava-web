@@ -7,7 +7,7 @@ import {
   Sparkles, Shield, Terminal, Star, ChevronDown, Layers, Wifi,
   ArrowRight, Lock, Globe, Cpu,
 } from "lucide-react";
-import { SiApple } from "react-icons/si";
+import { SiApple, SiGoogleplay } from "react-icons/si";
 
 function WindowsIcon({ size = 16 }: { size?: number }) {
   return (
@@ -201,7 +201,7 @@ function Hero() {
           <motion.a href="https://play.google.com/store/apps/details?id=com.kemyamo.ava"
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white font-bold text-sm transition-all">
-            <Smartphone size={15} /> Google Play
+            <SiGoogleplay size={15} /> Google Play
           </motion.a>
           {/* Desktop */}
           <motion.a href="/Ava.dmg"
@@ -849,7 +849,7 @@ function FinalCTA() {
             <motion.a href="https://play.google.com/store/apps/details?id=com.kemyamo.ava"
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white font-bold text-base transition-all">
-              <Smartphone size={18} /> Google Play
+              <SiGoogleplay size={18} /> Google Play
             </motion.a>
           </div>
           {/* Desktop */}
