@@ -3,41 +3,36 @@
 import { useRef, useState, useEffect } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import {
-  Mic2, Monitor, Eye, Brain, Bell, Zap,
-  Check, ArrowRight, Apple, Smartphone, Download,
-  Sparkles, Shield, MessageSquare, Terminal,
+  Mic2, Monitor, Brain, Bell, Zap, Check, Apple, Smartphone,
+  Sparkles, Shield, Terminal, Star, ChevronDown, Layers, Wifi,
+  ArrowRight, Lock, Globe, Cpu,
 } from "lucide-react";
+import { SiWindows11, SiApple } from "react-icons/si";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import Iphone15Pro from "@/components/magicui/iphone-15-pro";
-import { Safari } from "@/components/magicui/safari";
-import { AnimatedGridPattern } from "@/components/magicui/animated-grid-pattern";
 import { BorderBeam } from "@/components/magicui/border-beam";
-import { AnimatedBeam } from "@/components/magicui/animated-beam";
 
-// ─── Shared utilities ──────────────────────────────────────────────────────────
+// ─── Pre-computed waveform heights (no Math.random in render) ────────────────
+const WAVE_BARS_HERO = Array.from({ length: 24 }, (_, i) =>
+  Math.abs(Math.sin(i * 0.5) * 14 + Math.cos(i * 0.9) * 6 + 10)
+);
+const WAVE_BARS_FEAT = Array.from({ length: 40 }, (_, i) =>
+  Math.max(3, Math.abs(Math.sin(i * 0.4) * 20 + Math.cos(i * 0.7) * 12 + 20))
+);
 
-const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+// ─── Utilities ────────────────────────────────────────────────────────────────
 
-function FadeUp({
-  children,
-  delay = 0,
-  className = "",
-}: {
-  children: React.ReactNode;
-  delay?: number;
-  className?: string;
+function FadeUp({ children, delay = 0, className = "" }: {
+  children: React.ReactNode; delay?: number; className?: string;
 }) {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   return (
-    <motion.div
-      ref={ref}
-      className={className}
+    <motion.div ref={ref} className={className}
       initial={{ opacity: 0, y: 32 }}
       animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 32 }}
-      transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1], delay }}
-    >
+      transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1], delay }}>
       {children}
     </motion.div>
   );
@@ -45,945 +40,629 @@ function FadeUp({
 
 function DotGrid({ className }: { className?: string }) {
   return (
-    <div
-      className={cn("absolute inset-0 pointer-events-none", className)}
+    <div className={cn("absolute inset-0 pointer-events-none", className)}
       style={{
-        backgroundImage:
-          "radial-gradient(circle, rgba(255,255,255,0.07) 1px, transparent 1px)",
+        backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
         backgroundSize: "28px 28px",
-      }}
-    />
+      }} />
   );
 }
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
 function Navbar() {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", fn);
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
   return (
-    <motion.nav
-      initial={{ opacity: 0, y: -24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-5 left-1/2 z-50 -translate-x-1/2 w-[calc(100%-2.5rem)] max-w-xl"
-    >
-      <div className="flex items-center justify-between px-5 py-2.5 rounded-2xl backdrop-blur-xl bg-white/[0.04] border border-white/10 shadow-2xl shadow-black/30">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/40">
-            <span className="text-sm">🌸</span>
+    <motion.nav initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.1 }}
+      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4">
+      <div className={cn(
+        "flex items-center justify-between px-5 py-2.5 rounded-full border transition-all duration-300",
+        scrolled
+          ? "bg-slate-900/95 backdrop-blur-xl border-white/10 shadow-xl shadow-black/40"
+          : "bg-white/[0.04] backdrop-blur-xl border-white/10"
+      )}>
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-lg shadow-rose-500/30">
+            <span className="text-[11px] font-black text-white">A</span>
           </div>
-          <span className="font-bold text-white tracking-tight">Ava</span>
+          <span className="font-black text-white text-sm tracking-wide">Ava</span>
         </div>
-        <nav className="hidden sm:flex items-center gap-6 text-sm text-slate-400">
-          <a href="#showcase" className="hover:text-white transition-colors">How it Works</a>
-          <a href="#features" className="hover:text-white transition-colors">Features</a>
-          <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
-        </nav>
-        <motion.a
-          href="https://apps.apple.com/us/app/call-ava/id6759903590"
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.95 }}
-          className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-sm font-semibold transition-colors shadow-lg shadow-rose-500/30"
-        >
-          Get Ava
+        <div className="hidden sm:flex items-center gap-5">
+          {[["Features", "#features"], ["Pricing", "#pricing"], ["Download", "#download"]].map(([l, h]) => (
+            <a key={l} href={h} className="text-xs text-slate-400 hover:text-white transition-colors font-semibold">{l}</a>
+          ))}
+        </div>
+        <motion.a href="https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"
+          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+          className="px-4 py-1.5 rounded-full bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition-colors shadow-lg shadow-rose-500/25">
+          Get Ava Free
         </motion.a>
       </div>
     </motion.nav>
   );
 }
 
-// ─── Hero ─────────────────────────────────────────────────────────────────────
+// ─── Phone screen content ─────────────────────────────────────────────────────
 
-/** Phone screen content rendered inside Magic UI Iphone15Pro */
-function HeroPhoneContent() {
+function PhoneScreen() {
   return (
-    <div
-      className="w-full h-full bg-slate-950 flex flex-col items-center overflow-hidden"
-      style={{ paddingTop: "18%" }}
-    >
-      {/* Status bar */}
-      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-[12%] pt-[5%]">
-        <span className="text-white/70 font-medium" style={{ fontSize: "clamp(6px,2.2cqw,10px)" }}>9:41</span>
-        <div className="flex items-center gap-0.5">
-          {[2, 4, 6, 8].map((h, i) => (
-            <div key={i} className="w-0.5 bg-white/60 rounded-sm" style={{ height: h * 0.5 }} />
-          ))}
+    <div className="w-full h-full bg-[#020617] flex flex-col overflow-hidden rounded-[40px] select-none">
+      <div className="h-12 flex-shrink-0" />
+      <div className="flex-1 flex flex-col gap-3 px-4 py-3 overflow-hidden">
+        <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="self-start max-w-[78%] bg-white/[0.07] border border-white/10 rounded-2xl rounded-tl-none px-3 py-2">
+          <p className="text-white/85 text-[11px] leading-relaxed">Bonjour ! Comment puis-je t'aider ?</p>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.85, duration: 0.5 }}
+          className="self-end max-w-[78%] bg-rose-600 rounded-2xl rounded-tr-none px-3 py-2">
+          <p className="text-white text-[11px] leading-relaxed">Ouvre Spotify et joue mes favoris</p>
+        </motion.div>
+        <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 1.2, duration: 0.5 }}
+          className="self-start max-w-[78%] bg-white/[0.07] border border-white/10 rounded-2xl rounded-tl-none px-3 py-2">
+          <p className="text-white/85 text-[11px] leading-relaxed">J'ouvre Spotify et lance tes morceaux favoris 🎵</p>
+        </motion.div>
+      </div>
+      <div className="px-4 pb-4">
+        <div className="bg-white/[0.05] border border-white/10 rounded-2xl p-3 flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-full bg-rose-500/20 border border-rose-500/40 flex items-center justify-center flex-shrink-0">
+            <Mic2 size={13} className="text-rose-400" />
+          </div>
+          <div className="flex items-end gap-0.5 flex-1 h-5">
+            {WAVE_BARS_HERO.map((h, i) => (
+              <motion.div key={i} className="flex-1 rounded-full bg-rose-500"
+                animate={{ height: [2, h, 2] }}
+                transition={{ duration: 0.7 + i * 0.02, repeat: Infinity, ease: "easeInOut", delay: i * 0.04 }}
+              />
+            ))}
+          </div>
         </div>
-      </div>
-
-      {/* Avatar */}
-      <div className="relative mt-2">
-        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-400 via-rose-500 to-rose-700 flex items-center justify-center shadow-xl shadow-rose-500/40">
-          <span className="text-2xl">🌸</span>
-        </div>
-        <motion.div
-          className="absolute inset-0 rounded-full border-2 border-rose-400/50"
-          animate={{ scale: [1, 1.4, 1], opacity: [0.6, 0, 0.6] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
-      <p className="text-white font-semibold mt-2" style={{ fontSize: "clamp(7px,2.8cqw,11px)" }}>Ava is with you...</p>
-
-      {/* Waveform */}
-      <div className="flex items-center gap-[2px] mt-2" style={{ height: 16 }}>
-        {[2, 5, 8, 12, 8, 15, 10, 6, 14, 8, 5, 10, 7, 3].map((h, i) => (
-          <motion.div
-            key={i}
-            className="w-0.5 rounded-full bg-rose-400"
-            style={{ height: h * 0.7 }}
-            animate={{ height: [h * 0.7, h * 1.5, h * 0.7] }}
-            transition={{ duration: 0.85, repeat: Infinity, delay: i * 0.06, ease: "easeInOut" }}
-          />
-        ))}
-      </div>
-
-      {/* Chat bubble */}
-      <div
-        className="mx-3 mt-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3 py-2"
-        style={{ fontSize: "clamp(6px,2.2cqw,9px)" }}
-      >
-        <p className="text-slate-300 leading-relaxed">
-          &ldquo;Done! I&apos;ve opened Slack and sent your message. 📨&rdquo;
-        </p>
-      </div>
-
-      {/* Tab bar */}
-      <div className="absolute bottom-[4%] left-0 right-0 flex items-center justify-around px-4">
-        {["🌸", "💬", "🎁", "💳", "⚙️"].map((icon, i) => (
-          <div key={i} className={cn("text-sm", i !== 0 && "opacity-25")}>{icon}</div>
-        ))}
       </div>
     </div>
   );
 }
 
+// ─── Hero ─────────────────────────────────────────────────────────────────────
+
 function Hero() {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-24 pb-10 px-6">
-      <AnimatedGridPattern
-        numSquares={30}
-        maxOpacity={0.06}
-        duration={3}
-        className="text-rose-400/20 stroke-white/[0.04]"
-      />
-      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_80%_60%_at_50%_40%,_rgba(244,63,94,0.15)_0%,_rgba(2,6,23,0.85)_60%,_rgb(2,6,23)_100%)]" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-rose-500/8 blur-[160px] pointer-events-none" />
+    <section className="relative min-h-screen flex flex-col items-center justify-center pt-28 pb-20 overflow-hidden">
+      <DotGrid className="opacity-40" />
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(225,29,72,0.10) 0%, transparent 65%)" }} />
 
-      <div className="relative z-10 flex flex-col items-center text-center max-w-6xl mx-auto w-full">
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-        >
-          <Badge variant="outline" className="mb-8 px-4 py-1.5 text-xs tracking-widest uppercase">
-            <Sparkles size={11} className="mr-1.5" />
+      <div className="relative max-w-5xl mx-auto px-6 flex flex-col items-center text-center">
+
+        {/* Rating + badge */}
+        <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }} className="flex flex-wrap items-center justify-center gap-3 mb-7">
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/[0.06] border border-white/10">
+            {[...Array(5)].map((_, i) => <Star key={i} size={11} className="text-amber-400 fill-amber-400" />)}
+            <span className="text-white/70 text-xs font-bold ml-1">4.8</span>
+            <span className="text-white/25 text-xs mx-0.5">·</span>
+            <span className="text-white/45 text-xs">2 400+ users</span>
+          </div>
+          <Badge className="border-rose-500/30 text-rose-400 bg-rose-500/10 text-[10px] tracking-widest uppercase">
             Powered by Gemini Live
           </Badge>
         </motion.div>
 
         {/* Headline */}
-        <motion.h1
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
-          className="text-5xl sm:text-6xl md:text-7xl lg:text-[84px] font-bold tracking-tight leading-[1.04] max-w-4xl"
-        >
-          Experience your{" "}
-          <span className="bg-gradient-to-r from-rose-400 via-rose-500 to-pink-500 bg-clip-text text-transparent">
-            computer
-          </span>
+        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.65, delay: 0.1 }}
+          className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.05] mb-6">
+          Your AI companion
           <br />
-          like never before
+          <span className="relative inline-block">
+            <span className="bg-gradient-to-r from-rose-400 via-rose-500 to-pink-500 bg-clip-text text-transparent">
+              always by your side
+            </span>
+            <svg className="absolute -bottom-1.5 left-0 w-full overflow-visible" viewBox="0 0 400 10" fill="none" aria-hidden>
+              <motion.path d="M 4 7 Q 100 2 200 7 Q 300 12 396 7"
+                stroke="rgba(225,29,72,0.55)" strokeWidth="2.5" strokeLinecap="round"
+                initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                transition={{ delay: 0.9, duration: 0.9, ease: "easeOut" }} />
+            </svg>
+          </span>
         </motion.h1>
 
-        {/* Sub */}
-        <motion.p
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35, duration: 0.65 }}
-          className="mt-6 text-lg sm:text-xl text-slate-400 max-w-xl leading-relaxed"
-        >
-          Ava speaks naturally, controls your Mac remotely, reads your screen,
-          and remembers everything — from your phone. Available 24/7.
+        {/* Subtitle */}
+        <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-slate-400 text-lg sm:text-xl leading-relaxed max-w-xl mb-9">
+          Ava listens, acts, and remembers. Control your Mac, set reminders, and have real conversations — all with your voice.
         </motion.p>
 
-        {/* CTAs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.6 }}
-          className="mt-10 flex flex-col sm:flex-row items-center gap-3"
-        >
-          <motion.a
-            href="https://apps.apple.com/us/app/call-ava/id6759903590"
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.95 }}
-            className="group flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white font-semibold text-sm shadow-2xl shadow-rose-500/35 transition-all"
-          >
-            <Apple size={17} />
-            Download for iOS
-            <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
+        {/* CTA buttons */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="flex flex-wrap items-center justify-center gap-3 mb-20">
+          <motion.a href="https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"
+            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-sm shadow-2xl shadow-rose-500/35 transition-colors">
+            <Apple size={16} /> App Store
           </motion.a>
-          <motion.a
-            href="https://play.google.com/store/apps/details?id=com.kemyamo.ava"
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2.5 px-7 py-3.5 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold text-sm transition-all"
-          >
-            <Smartphone size={17} />
-            Android
+          <motion.a href="https://play.google.com/store/apps/details?id=com.kemyamo.ava"
+            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white font-bold text-sm transition-all">
+            <Smartphone size={16} /> Google Play
           </motion.a>
-          <div className="flex flex-col items-center gap-1">
-            <motion.a
-              href="https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava-1.0.0-arm64.dmg"
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2.5 px-7 py-3.5 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold text-sm transition-all"
-            >
-              <Download size={17} />
-              Mac (Apple Silicon)
-            </motion.a>
-            <a
-              href="https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava-1.0.0.dmg"
-              className="text-[11px] text-slate-600 hover:text-slate-400 transition-colors"
-            >
-              Mac Intel ?
-            </a>
-          </div>
-          <motion.a
-            href="https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava.Setup.1.0.0.exe"
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2.5 px-7 py-3.5 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold text-sm transition-all"
-          >
-            <Download size={17} />
-            Windows
+          <motion.a href="/Ava.dmg"
+            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white font-bold text-sm transition-all">
+            <Monitor size={16} /> Mac Desktop
           </motion.a>
         </motion.div>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="mt-3 text-xs text-slate-600"
-        >
-          Free to start · No credit card required
-        </motion.p>
+        {/* Phone mockup */}
+        <motion.div initial={{ opacity: 0, y: 48 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="relative">
+          {/* Glow */}
+          <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-72 h-20 rounded-full blur-3xl bg-rose-500/15 pointer-events-none" />
 
-        {/* ── Centered iPhone + floating pills ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 60, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{ delay: 0.5, duration: 1, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-16 relative flex items-center justify-center w-full max-w-4xl mx-auto"
-          style={{ minHeight: 560 }}
-        >
-          {/* Deep rose glow under phone */}
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-rose-500/20 blur-[80px] rounded-full pointer-events-none" />
-
-          {/* ── Left pills (Remote Control) ── */}
-          <div className="absolute left-0 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-4 items-start">
-            {/* Pill 1 */}
-            <motion.div
-              animate={{ y: [-5, 6, -5] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="flex items-center gap-3 pl-3 pr-5 py-3 rounded-2xl backdrop-blur-md bg-white/5 border border-white/10 shadow-xl"
-            >
-              <div className="w-9 h-9 rounded-xl bg-violet-500/15 border border-violet-500/20 flex items-center justify-center shrink-0">
-                <Monitor size={16} className="text-violet-400" />
-              </div>
-              <div className="text-left">
-                <p className="text-white text-xs font-semibold whitespace-nowrap">Remote Mac Control</p>
-                <p className="text-slate-500 text-[10px] whitespace-nowrap">Click, type & scroll remotely</p>
-              </div>
-            </motion.div>
-
-            {/* Pill 2 */}
-            <motion.div
-              animate={{ y: [4, -5, 4] }}
-              transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
-              className="flex items-center gap-3 pl-3 pr-5 py-3 rounded-2xl backdrop-blur-md bg-white/5 border border-white/10 shadow-xl"
-            >
-              <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/20 flex items-center justify-center shrink-0">
-                <Zap size={16} className="text-amber-400" />
-              </div>
-              <div className="text-left">
-                <p className="text-white text-xs font-semibold whitespace-nowrap">Instant Execution</p>
-                <p className="text-slate-500 text-[10px] whitespace-nowrap">Commands run in &lt;100ms</p>
-              </div>
-            </motion.div>
-
-            {/* Pill 3 */}
-            <motion.div
-              animate={{ y: [-3, 7, -3] }}
-              transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 1.6 }}
-              className="flex items-center gap-3 pl-3 pr-5 py-3 rounded-2xl backdrop-blur-md bg-white/5 border border-white/10 shadow-xl"
-            >
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center shrink-0">
-                <Eye size={16} className="text-emerald-400" />
-              </div>
-              <div className="text-left">
-                <p className="text-white text-xs font-semibold whitespace-nowrap">Live Screen Analysis</p>
-                <p className="text-slate-500 text-[10px] whitespace-nowrap">Reads what&apos;s on your Mac</p>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* ── Centered iPhone, levitating ── */}
-          <motion.div
-            animate={{ y: [0, -16, 0] }}
-            transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut" }}
-            className="relative z-10"
-            style={{ filter: "drop-shadow(0 50px 80px rgba(244,63,94,0.3))" }}
-          >
-            <Iphone15Pro width={260}>
-              <HeroPhoneContent />
-            </Iphone15Pro>
+          {/* Left pill */}
+          <motion.div animate={{ y: [0, -7, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute -left-4 top-20 hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 border border-white/10 shadow-xl shadow-black/40 z-10">
+            <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center">
+              <Monitor size={13} className="text-indigo-400" />
+            </div>
+            <div>
+              <p className="text-[9px] text-white/35 leading-none">Remote control</p>
+              <p className="text-[11px] text-white font-bold leading-none mt-0.5">Mac Desktop</p>
+            </div>
           </motion.div>
 
-          {/* ── Right pills (Voice & Human) ── */}
-          <div className="absolute right-0 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-4 items-end">
-            {/* Pill 1 */}
-            <motion.div
-              animate={{ y: [-6, 5, -6] }}
-              transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
-              className="flex items-center gap-3 pr-3 pl-5 py-3 rounded-2xl backdrop-blur-md bg-rose-500/8 border border-rose-500/20 shadow-xl"
-            >
-              <div className="text-right">
-                <p className="text-white text-xs font-semibold whitespace-nowrap">Ultra-realistic Voice</p>
-                <p className="text-slate-500 text-[10px] whitespace-nowrap">Powered by Gemini Live</p>
-              </div>
-              <div className="w-9 h-9 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center shrink-0">
-                <Mic2 size={16} className="text-rose-400" />
-              </div>
-            </motion.div>
+          {/* Right pill */}
+          <motion.div animate={{ y: [0, -9, 0] }} transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
+            className="absolute -right-4 top-28 hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 border border-white/10 shadow-xl shadow-black/40 z-10">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
+              <Brain size={13} className="text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-[9px] text-white/35 leading-none">Memory active</p>
+              <p className="text-[11px] text-white font-bold leading-none mt-0.5">Knows you</p>
+            </div>
+          </motion.div>
 
-            {/* Pill 2 */}
-            <motion.div
-              animate={{ y: [5, -4, 5] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1.1 }}
-              className="flex items-center gap-3 pr-3 pl-5 py-3 rounded-2xl backdrop-blur-md bg-white/5 border border-white/10 shadow-xl"
-            >
-              <div className="text-right">
-                <p className="text-white text-xs font-semibold whitespace-nowrap">Your AI Best Friend</p>
-                <p className="text-slate-500 text-[10px] whitespace-nowrap">Always there, always listens</p>
-              </div>
-              <div className="w-9 h-9 rounded-xl bg-pink-500/15 border border-pink-500/20 flex items-center justify-center shrink-0">
-                <span className="text-base leading-none">👯</span>
-              </div>
-            </motion.div>
+          {/* Bottom-left pill */}
+          <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 4.1, repeat: Infinity, ease: "easeInOut", delay: 1.1 }}
+            className="absolute -left-2 bottom-28 hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 border border-white/10 shadow-xl shadow-black/40 z-10">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+              <Bell size={13} className="text-amber-400" />
+            </div>
+            <div>
+              <p className="text-[9px] text-white/35 leading-none">Reminder set</p>
+              <p className="text-[11px] text-white font-bold leading-none mt-0.5">Tomorrow 9am</p>
+            </div>
+          </motion.div>
 
-            {/* Pill 3 */}
-            <motion.div
-              animate={{ y: [-4, 6, -4] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-              className="flex items-center gap-3 pr-3 pl-5 py-3 rounded-2xl backdrop-blur-md bg-white/5 border border-white/10 shadow-xl"
-            >
-              <div className="text-right">
-                <p className="text-white text-xs font-semibold whitespace-nowrap">Learn new languages</p>
-                <p className="text-slate-500 text-[10px] whitespace-nowrap">Practice with a patient tutor</p>
-              </div>
-              <div className="w-9 h-9 rounded-xl bg-blue-500/15 border border-blue-500/20 flex items-center justify-center shrink-0">
-                <span className="text-base leading-none">🌍</span>
-              </div>
-            </motion.div>
-          </div>
+          <Iphone15Pro className="w-[250px] sm:w-[280px] relative z-0" src="">
+            <PhoneScreen />
+          </Iphone15Pro>
         </motion.div>
       </div>
     </section>
   );
 }
 
-// ─── Interactive Showcase ──────────────────────────────────────────────────────
-// Animation steps:
-//  0 = reset / idle
-//  1 = phone: user message appears
-//  2 = mac: terminal fires
-//  3 = phone: Ava waveform + response
+// ─── Trust Strip ──────────────────────────────────────────────────────────────
 
-function ShowcasePhoneContent({ step }: { step: number }) {
+function TrustStrip() {
+  const names = ["App Store", "Google Play", "Product Hunt", "Gemini Live", "Supabase", "MCP Protocol"];
   return (
-    <div className="w-full h-full bg-slate-950 overflow-hidden">
-      {/* Status */}
-      <div className="flex items-center justify-between px-5 pt-[14%] pb-0.5">
-        <span className="text-[9px] text-white/60">9:41</span>
-        <div className="flex gap-0.5 items-end h-2">
-          {[2, 4, 6, 8].map((h, i) => (
-            <div key={i} className="w-0.5 bg-white/50 rounded-sm" style={{ height: h }} />
+    <section className="py-10 border-y border-white/[0.06] bg-white/[0.01]">
+      <div className="max-w-6xl mx-auto px-6">
+        <p className="text-center text-[10px] font-bold uppercase tracking-widest text-white/20 mb-7">
+          Trusted by thousands worldwide
+        </p>
+        <div className="flex items-center justify-center flex-wrap gap-x-10 gap-y-3">
+          {names.map(n => (
+            <span key={n} className="text-white/18 font-black text-sm tracking-wide select-none">{n}</span>
           ))}
         </div>
       </div>
-
-      {/* Chat area */}
-      <div className="flex flex-col gap-2.5 px-3 pt-2 pb-10">
-        {/* Header */}
-        <div className="flex items-center gap-2 pb-2 border-b border-white/5">
-          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-rose-400 to-rose-600 flex items-center justify-center">
-            <span className="text-[10px]">🌸</span>
-          </div>
-          <span className="text-white text-[10px] font-semibold">Ava</span>
-          <div className="ml-auto flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-emerald-400 text-[8px]">Live</span>
-          </div>
-        </div>
-
-        {/* Step 1: user message */}
-        <AnimatePresence>
-          {step >= 1 && (
-            <motion.div
-              key="user-msg"
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="self-end max-w-[85%]"
-            >
-              <div className="px-3 py-2 rounded-2xl rounded-br-sm bg-rose-500 text-white text-[9px] leading-relaxed shadow-lg shadow-rose-500/20">
-                Ava, what&apos;s the latest file in my Mac&apos;s Downloads folder?
-              </div>
-              <p className="text-right text-[7px] text-slate-600 mt-1 pr-1">09:41</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Step 3: Ava response */}
-        <AnimatePresence>
-          {step >= 3 && (
-            <motion.div
-              key="ava-response"
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-              className="self-start max-w-[90%] flex flex-col gap-1.5"
-            >
-              <div className="flex items-center gap-[2px] h-4 pl-1">
-                {[2, 4, 6, 9, 6, 11, 7, 4, 10, 6, 4, 8].map((h, i) => (
-                  <motion.div
-                    key={i}
-                    className="w-0.5 rounded-full bg-rose-400"
-                    style={{ height: h }}
-                    animate={{ height: [h, h * 2, h] }}
-                    transition={{ duration: 0.7, repeat: Infinity, delay: i * 0.05, ease: "easeInOut" }}
-                  />
-                ))}
-              </div>
-              <div className="px-3 py-2 rounded-2xl rounded-bl-sm bg-white/[0.06] border border-white/10 text-slate-300 text-[9px] leading-relaxed">
-                I found <span className="text-rose-400 font-semibold">image_receipt.png</span> — latest file from Apr 2. I&apos;ve just sent it to your screen. 📎
-              </div>
-              <p className="text-[7px] text-slate-600 pl-1">09:41</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Typing indicator */}
-        <AnimatePresence>
-          {step === 2 && (
-            <motion.div
-              key="typing"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="self-start flex items-center gap-1 px-3 py-2 rounded-2xl rounded-bl-sm bg-white/[0.04] border border-white/8"
-            >
-              {[0, 0.2, 0.4].map((delay) => (
-                <motion.div
-                  key={delay}
-                  className="w-1 h-1 rounded-full bg-slate-400"
-                  animate={{ opacity: [0.3, 1, 0.3], y: [0, -2, 0] }}
-                  transition={{ duration: 0.8, repeat: Infinity, delay }}
-                />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Input bar */}
-      <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 px-3 py-2 rounded-full bg-white/[0.04] border border-white/10">
-        <span className="text-slate-600 text-[9px] flex-1">Message Ava...</span>
-        <div className="w-5 h-5 rounded-full bg-rose-500/20 flex items-center justify-center">
-          <Mic2 size={9} className="text-rose-400" />
-        </div>
-      </div>
-    </div>
+    </section>
   );
 }
 
-function ShowcaseMacContent({ step }: { step: number }) {
-  const terminalLines = [
-    { text: "$ ls -la ~/Downloads", color: "text-slate-400", delay: 0 },
-    { text: "total 96", color: "text-slate-500", delay: 0.15 },
-    { text: "-rw-r--r--  1 user  staff   48K  Apr 01  invoice_mars.pdf", color: "text-slate-400", delay: 0.3 },
-    { text: "-rw-r--r--  1 user  staff  2.1M  Apr 02  image_receipt.png", color: "text-white font-semibold", delay: 0.45 },
-    { text: "→ Latest: image_receipt.png (Apr 02, 09:41)", color: "text-emerald-400", delay: 0.65 },
-    { text: "→ Sending metadata to Ava...", color: "text-rose-400", delay: 0.85 },
-  ];
+// ─── What makes Ava different ─────────────────────────────────────────────────
 
+const DIFFS = [
+  {
+    icon: Mic2, color: "rose",
+    title: "Ultra-realistic voice",
+    desc: "Powered by Gemini Live — the most natural AI voice you've ever heard. Talk like you'd talk to a friend.",
+    visual: (
+      <div className="flex items-end gap-0.5 h-8 w-full">
+        {Array.from({ length: 28 }, (_, i) => Math.abs(Math.sin(i * 0.55) * 18 + 6)).map((h, i) => (
+          <div key={i} className="flex-1 rounded-full bg-rose-500/50" style={{ height: h }} />
+        ))}
+      </div>
+    ),
+  },
+  {
+    icon: Monitor, color: "indigo",
+    title: "Remote Mac control",
+    desc: "Send commands from your phone. Ava opens apps, runs scripts, and manages files on your Mac — instantly.",
+    visual: (
+      <div className="rounded-xl bg-black/50 border border-white/[0.08] px-3 py-2.5 text-left font-mono text-[10px] space-y-1">
+        <p className="text-emerald-400">$ open -a "Spotify"</p>
+        <p className="text-white/30">Launching...</p>
+        <p className="text-emerald-400">✓ Done in 0.4s</p>
+      </div>
+    ),
+  },
+  {
+    icon: Brain, color: "violet",
+    title: "Persistent memory",
+    desc: "Ava remembers your preferences, habits, and past conversations. Every session picks up where you left off.",
+    visual: (
+      <div className="flex flex-wrap gap-1.5">
+        {["Développeur", "Paris", "Préfère FR", "MacBook M3"].map(t => (
+          <span key={t} className="px-2 py-0.5 rounded-full bg-violet-500/12 border border-violet-500/20 text-[10px] text-violet-300">{t}</span>
+        ))}
+      </div>
+    ),
+  },
+];
+
+const DIFF_COLORS: Record<string, string> = {
+  rose: "bg-rose-500/10 border-rose-500/20 text-rose-400",
+  indigo: "bg-indigo-500/10 border-indigo-500/20 text-indigo-400",
+  violet: "bg-violet-500/10 border-violet-500/20 text-violet-400",
+};
+
+function Differentiators() {
   return (
-    <div className="w-full h-full bg-slate-950 p-4 font-mono text-[11px] leading-relaxed overflow-hidden">
-      <AnimatePresence>
-        {step >= 2 ? (
-          <motion.div
-            key="terminal-content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="flex flex-col gap-0.5"
-          >
-            {terminalLines.map((line, i) => (
-              <motion.p
-                key={i}
-                className={line.color}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: line.delay, duration: 0.3 }}
-              >
-                {line.text}
-              </motion.p>
-            ))}
-            <motion.span
-              className="inline-block w-2 h-3 bg-white/80 align-middle ml-0.5 mt-1"
-              animate={{ opacity: [1, 0, 1] }}
-              transition={{ duration: 1, repeat: Infinity }}
-            />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="idle"
-            className="flex flex-col gap-1 h-full justify-center items-center opacity-20"
-          >
-            <Terminal size={28} className="text-slate-500" />
-            <p className="text-slate-500 text-[10px]">Waiting for command...</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function InteractiveShowcase() {
-  const [step, setStep] = useState(0);
-  const sectionRef = useRef<HTMLElement>(null);
-  const inView = useInView(sectionRef, { once: true, margin: "-100px" });
-
-  // Refs for AnimatedBeam
-  const containerRef = useRef<HTMLDivElement>(null);
-  const phoneRef = useRef<HTMLDivElement>(null);
-  const macRef = useRef<HTMLDivElement>(null);
-
-  // Start the loop once in view
-  useEffect(() => {
-    if (!inView) return;
-    let cancelled = false;
-
-    const run = async () => {
-      while (!cancelled) {
-        setStep(0);
-        await wait(600);
-        if (cancelled) break;
-        setStep(1);
-        await wait(2200);
-        if (cancelled) break;
-        setStep(2);
-        await wait(2800);
-        if (cancelled) break;
-        setStep(3);
-        await wait(4000);
-        if (cancelled) break;
-      }
-    };
-
-    run();
-    return () => { cancelled = true; };
-  }, [inView]);
-
-  return (
-    <section id="showcase" ref={sectionRef} className="relative py-28 px-6 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_50%,_rgba(244,63,94,0.06)_0%,_transparent_70%)] pointer-events-none" />
+    <section className="relative py-24 sm:py-32 overflow-hidden">
       <DotGrid className="opacity-30" />
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-transparent to-slate-950 pointer-events-none" />
-
-      <div className="relative max-w-5xl mx-auto">
+      <div className="relative max-w-6xl mx-auto px-6">
         <FadeUp className="text-center mb-16">
-          <Badge variant="outline" className="mb-5">How it Works</Badge>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
-            Your phone controls{" "}
-            <span className="bg-gradient-to-r from-rose-400 to-rose-600 bg-clip-text text-transparent">
-              your Mac
-            </span>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">What makes Ava different</p>
+          <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+            AI that actually{" "}
+            <span className="text-rose-400 italic">does things</span>
           </h2>
-          <p className="mt-4 text-slate-400 text-lg max-w-lg mx-auto">
-            Speak to Ava on your phone. She executes on your desktop — in real time.
+          <p className="text-slate-400 text-lg mt-4 max-w-lg mx-auto leading-relaxed">
+            Not just a chatbot. Ava understands you, acts on your behalf, and gets smarter every day.
           </p>
         </FadeUp>
-
-        {/* Step indicator */}
-        <FadeUp className="flex justify-center gap-3 mb-12" delay={0.1}>
-          {[
-            { n: 1, label: "You ask" },
-            { n: 2, label: "Mac executes" },
-            { n: 3, label: "Ava responds" },
-          ].map(({ n, label }) => (
-            <div key={n} className="flex items-center gap-2">
-              <motion.div
-                animate={{
-                  backgroundColor: step >= n ? "rgb(244,63,94)" : "rgba(255,255,255,0.06)",
-                  borderColor: step >= n ? "rgba(244,63,94,0.8)" : "rgba(255,255,255,0.1)",
-                }}
-                className="w-7 h-7 rounded-full border flex items-center justify-center text-[10px] font-bold text-white"
-              >
-                {n}
+        <div className="grid md:grid-cols-3 gap-5">
+          {DIFFS.map((d, i) => (
+            <FadeUp key={d.title} delay={i * 0.1}>
+              <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300 }}
+                className="rounded-2xl bg-white/[0.04] border border-white/10 p-6 flex flex-col gap-4 h-full">
+                <div className={cn("w-11 h-11 rounded-xl border flex items-center justify-center flex-shrink-0", DIFF_COLORS[d.color])}>
+                  <d.icon size={20} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-white font-bold text-lg mb-2">{d.title}</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">{d.desc}</p>
+                </div>
+                <div className="pt-3 border-t border-white/[0.06]">{d.visual}</div>
               </motion.div>
-              <span className={cn("text-xs hidden sm:block transition-colors", step >= n ? "text-white" : "text-slate-600")}>
-                {label}
-              </span>
-              {n < 3 && <div className="w-8 h-px bg-white/10 hidden sm:block" />}
-            </div>
+            </FadeUp>
           ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Feature Bento ────────────────────────────────────────────────────────────
+
+function FeatureBento() {
+  return (
+    <section id="features" className="relative py-24 sm:py-32 overflow-hidden">
+      <DotGrid className="opacity-20" />
+      <div className="relative max-w-6xl mx-auto px-6">
+        <FadeUp className="text-center mb-16">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">Powerful features</p>
+          <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+            Built to boost
+            <br />
+            <span className="text-rose-400">your workflow</span>
+          </h2>
         </FadeUp>
 
-        {/* Main visual */}
-        <motion.div
-          ref={containerRef}
-          initial={{ opacity: 0, y: 40 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-          className="relative flex flex-col md:flex-row items-center justify-center gap-6 md:gap-8"
-        >
-          {/* AnimatedBeam connecting phone to mac */}
-          <AnimatedBeam
-            containerRef={containerRef as React.RefObject<HTMLElement>}
-            fromRef={phoneRef as React.RefObject<HTMLElement>}
-            toRef={macRef as React.RefObject<HTMLElement>}
-            curvature={-40}
-            gradientStartColor="#e11d48"
-            gradientStopColor="#fb7185"
-            pathColor="rgba(244,63,94,0.1)"
-            pathOpacity={0.3}
-            duration={3}
-          />
-          <AnimatedBeam
-            containerRef={containerRef as React.RefObject<HTMLElement>}
-            fromRef={macRef as React.RefObject<HTMLElement>}
-            toRef={phoneRef as React.RefObject<HTMLElement>}
-            curvature={40}
-            gradientStartColor="#34d399"
-            gradientStopColor="#6ee7b7"
-            pathColor="rgba(52,211,153,0.1)"
-            pathOpacity={0.3}
-            duration={3}
-            delay={1.5}
-          />
+        {/* Row 1 — Voice (3) + Remote+Memory stack (2) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
+          {/* Voice — wide */}
+          <FadeUp className="lg:col-span-3" delay={0.05}>
+            <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 200 }}
+              className="rounded-3xl overflow-hidden min-h-[300px] relative h-full"
+              style={{ background: "linear-gradient(135deg, #1c0a1c 0%, #2e0b20 60%, #1a0918 100%)", border: "1px solid rgba(225,29,72,0.18)" }}>
+              <div className="absolute inset-0 pointer-events-none"
+                style={{ background: "radial-gradient(ellipse at 20% 50%, rgba(225,29,72,0.14) 0%, transparent 60%)" }} />
+              <div className="relative p-8 flex flex-col h-full">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center">
+                    <Mic2 size={18} className="text-rose-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-bold leading-none">Ultra-realistic Voice</p>
+                    <p className="text-rose-400/60 text-xs mt-0.5">Gemini Live powered</p>
+                  </div>
+                </div>
+                <p className="text-white/50 text-sm leading-relaxed mb-8 max-w-sm">
+                  Experience the most natural AI conversation. Ava speaks with emotion, understands context, and responds in real-time with zero latency.
+                </p>
+                <div className="mt-auto">
+                  <div className="flex items-end gap-0.5 h-14">
+                    {WAVE_BARS_FEAT.map((h, i) => (
+                      <motion.div key={i} className="flex-1 rounded-full"
+                        style={{ background: "linear-gradient(to top, #9f1239, #f43f5e)" }}
+                        animate={{ height: [3, h, 3] }}
+                        transition={{ duration: 0.9, repeat: Infinity, repeatType: "reverse", delay: i * 0.035, ease: "easeInOut" }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-rose-400/50 text-[10px] mt-2 font-mono tracking-wide">● LIVE · Ava is speaking...</p>
+                </div>
+              </div>
+            </motion.div>
+          </FadeUp>
 
-          {/* Phone */}
-          <div ref={phoneRef} className="shrink-0">
+          {/* Right stack */}
+          <div className="lg:col-span-2 flex flex-col gap-4">
+            {/* Remote */}
+            <FadeUp delay={0.1}>
+              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 200 }}
+                className="rounded-3xl overflow-hidden relative"
+                style={{ background: "linear-gradient(135deg, #0c0e2a 0%, #10122e 100%)", border: "1px solid rgba(99,102,241,0.18)" }}>
+                <div className="absolute inset-0 pointer-events-none"
+                  style={{ background: "radial-gradient(ellipse at 80% 10%, rgba(99,102,241,0.14) 0%, transparent 60%)" }} />
+                <div className="relative p-6">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+                      <Monitor size={14} className="text-indigo-400" />
+                    </div>
+                    <p className="text-white font-bold text-sm">Remote Mac Control</p>
+                  </div>
+                  <div className="rounded-xl bg-black/50 border border-white/[0.07] px-3 py-2.5 font-mono text-[10px] space-y-1">
+                    <p className="text-emerald-400">$ open -a "Final Cut Pro"</p>
+                    <p className="text-white/30">Launching app...</p>
+                    <p className="text-emerald-400">✓ Opened successfully</p>
+                  </div>
+                </div>
+              </motion.div>
+            </FadeUp>
+
+            {/* Memory */}
+            <FadeUp delay={0.14}>
+              <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 200 }}
+                className="rounded-3xl overflow-hidden relative flex-1"
+                style={{ background: "linear-gradient(135deg, #0b1a0d 0%, #0e2010 100%)", border: "1px solid rgba(52,211,153,0.18)" }}>
+                <div className="absolute inset-0 pointer-events-none"
+                  style={{ background: "radial-gradient(ellipse at 30% 90%, rgba(52,211,153,0.10) 0%, transparent 60%)" }} />
+                <div className="relative p-6">
+                  <div className="flex items-center gap-2.5 mb-4">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+                      <Brain size={14} className="text-emerald-400" />
+                    </div>
+                    <p className="text-white font-bold text-sm">Persistent Memory</p>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["Préfère le français", "Dev / Maker", "MacBook M3", "Paris"].map(t => (
+                      <span key={t} className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-300">{t}</span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            </FadeUp>
+          </div>
+        </div>
+
+        {/* Row 2 — Reminders (2) + MCP (2) + Privacy (1) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          <FadeUp className="lg:col-span-2" delay={0.18}>
+            <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 200 }}
+              className="rounded-3xl overflow-hidden relative min-h-[200px]"
+              style={{ background: "linear-gradient(135deg, #1a1200 0%, #241900 100%)", border: "1px solid rgba(251,191,36,0.18)" }}>
+              <div className="relative p-6">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                    <Bell size={14} className="text-amber-400" />
+                  </div>
+                  <p className="text-white font-bold text-sm">Smart Reminders</p>
+                </div>
+                <p className="text-white/45 text-xs leading-relaxed mb-4">Just say it. Ava schedules and sends push notifications at the right time.</p>
+                <div className="space-y-2">
+                  {["Appel médecin — demain 9h", "Deploy avant 18h", "Call team — vendredi"].map(r => (
+                    <div key={r} className="flex items-center gap-2 bg-white/[0.04] rounded-lg px-3 py-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
+                      <p className="text-white/65 text-[11px]">{r}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </FadeUp>
+
+          <FadeUp className="lg:col-span-2" delay={0.22}>
+            <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 200 }}
+              className="rounded-3xl overflow-hidden relative min-h-[200px]"
+              style={{ background: "linear-gradient(135deg, #0e0a1e 0%, #130d2a 100%)", border: "1px solid rgba(167,139,250,0.18)" }}>
+              <div className="relative p-6">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className="w-8 h-8 rounded-lg bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
+                    <Layers size={14} className="text-violet-400" />
+                  </div>
+                  <p className="text-white font-bold text-sm">MCP Integrations</p>
+                </div>
+                <p className="text-white/45 text-xs leading-relaxed mb-4">Connect Notion, GitHub, Google Calendar and more via MCP servers.</p>
+                <div className="flex flex-wrap gap-2">
+                  {["Notion", "GitHub", "Calendar", "Slack", "Brave"].map(t => (
+                    <span key={t} className="px-2.5 py-1 rounded-lg bg-white/[0.06] border border-white/10 text-white/55 text-[11px] font-medium">{t}</span>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </FadeUp>
+
+          <FadeUp className="lg:col-span-1" delay={0.26}>
+            <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 200 }}
+              className="rounded-3xl overflow-hidden relative min-h-[200px]"
+              style={{ background: "linear-gradient(135deg, #0a1320 0%, #0d1a28 100%)", border: "1px solid rgba(56,189,248,0.18)" }}>
+              <div className="relative p-6 flex flex-col h-full">
+                <div className="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center mb-3">
+                  <Shield size={14} className="text-sky-400" />
+                </div>
+                <p className="text-white font-bold text-sm mb-2">Privacy First</p>
+                <p className="text-white/45 text-xs leading-relaxed">Your data stays yours. No training on your conversations. Ever.</p>
+              </div>
+            </motion.div>
+          </FadeUp>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Integrations ─────────────────────────────────────────────────────────────
+
+const INTEG = [
+  { name: "iOS", icon: Apple, cls: "text-rose-400" },
+  { name: "Android", icon: Smartphone, cls: "text-emerald-400" },
+  { name: "macOS", icon: Monitor, cls: "text-white/55" },
+  { name: "Windows", icon: Monitor, cls: "text-sky-400" },
+  { name: "Notion", icon: Layers, cls: "text-white/55" },
+  { name: "GitHub", icon: Terminal, cls: "text-white/55" },
+  { name: "Gemini", icon: Sparkles, cls: "text-indigo-400" },
+  { name: "MCP", icon: Wifi, cls: "text-violet-400" },
+];
+
+function Integrations() {
+  return (
+    <section className="py-20 border-y border-white/[0.06]" style={{ background: "rgba(255,255,255,0.012)" }}>
+      <div className="max-w-6xl mx-auto px-6">
+        <FadeUp className="text-center mb-12">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-3">Works everywhere</p>
+          <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            Integrations with your{" "}
+            <span className="text-rose-400">favorite tools</span>
+          </h2>
+        </FadeUp>
+        <FadeUp delay={0.1}>
+          <div className="flex items-center justify-center flex-wrap gap-3">
+            {INTEG.map(item => (
+              <motion.div key={item.name} whileHover={{ y: -4, scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 400 }}
+                className="flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-white/[0.04] border border-white/10 w-[90px] cursor-default">
+                <item.icon size={20} className={item.cls} />
+                <p className="text-white/40 text-[11px] font-semibold">{item.name}</p>
+              </motion.div>
+            ))}
+          </div>
+        </FadeUp>
+      </div>
+    </section>
+  );
+}
+
+// ─── Testimonials ─────────────────────────────────────────────────────────────
+
+const TESTIMONIALS = [
+  { name: "Sophie L.", role: "Product Designer", stars: 5, text: "I've tried every AI assistant out there. Ava is the only one that actually feels like talking to a real person. The voice quality is insane." },
+  { name: "Marc D.", role: "Indie Developer", stars: 5, text: "The remote desktop control changed my life. I control my Mac from my phone while commuting. Ava just gets it done." },
+  { name: "Léa P.", role: "Entrepreneur", stars: 5, text: "The memory feature is what sold me. Ava remembers my preferences between sessions. It feels like having a real personal assistant." },
+  { name: "Thomas R.", role: "Software Engineer", stars: 5, text: "MCP integrations with Notion and GitHub are a game changer. I manage everything through voice commands now." },
+];
+
+function Testimonials() {
+  return (
+    <section className="relative py-24 sm:py-32 overflow-hidden">
+      <DotGrid className="opacity-25" />
+      <div className="relative max-w-6xl mx-auto px-6">
+        <FadeUp className="text-center mb-16">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">Testimonials</p>
+          <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+            What our users
+            <br />are saying
+          </h2>
+        </FadeUp>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {TESTIMONIALS.map((t, i) => (
+            <FadeUp key={t.name} delay={i * 0.08}>
+              <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300 }}
+                className="rounded-2xl bg-white/[0.04] border border-white/10 p-5 flex flex-col gap-3 h-full">
+                <div className="flex gap-0.5">
+                  {[...Array(t.stars)].map((_, j) => <Star key={j} size={11} className="text-amber-400 fill-amber-400" />)}
+                </div>
+                <p className="text-slate-400 text-sm leading-relaxed flex-1">"{t.text}"</p>
+                <div className="border-t border-white/[0.06] pt-3">
+                  <p className="text-white font-semibold text-sm">{t.name}</p>
+                  <p className="text-white/30 text-xs">{t.role}</p>
+                </div>
+              </motion.div>
+            </FadeUp>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Showcase ─────────────────────────────────────────────────────────────────
+
+function Showcase() {
+  return (
+    <section className="relative py-24 sm:py-32 overflow-hidden">
+      <div className="absolute inset-0"
+        style={{ background: "linear-gradient(135deg, #070818 0%, #0e0c2c 45%, #070818 100%)" }} />
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at 50% 0%, rgba(99,102,241,0.11) 0%, transparent 60%)" }} />
+      <DotGrid className="opacity-30" />
+      <div className="relative max-w-6xl mx-auto px-6">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <FadeUp>
+            <Badge className="border-indigo-500/30 text-indigo-400 bg-indigo-500/10 text-[10px] tracking-widest uppercase mb-6">
+              All in one app
+            </Badge>
+            <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white mb-6 leading-tight">
+              A clear and intuitive
+              <br />
+              <span className="text-indigo-400">AI experience</span>
+            </h2>
+            <p className="text-slate-400 text-lg leading-relaxed mb-8">
+              Clean interface, powerful features. Ava handles the complexity so you can focus on what matters most.
+            </p>
+            <div className="space-y-4">
+              {[
+                { icon: Mic2, label: "Voice-first interface", desc: "Tap and speak — no typing needed" },
+                { icon: Brain, label: "Context-aware AI", desc: "Understands what you mean, not just what you say" },
+                { icon: Zap, label: "Instant responses", desc: "Real-time streaming, zero wait time" },
+              ].map(item => (
+                <div key={item.label} className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <item.icon size={14} className="text-indigo-400" />
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold text-sm">{item.label}</p>
+                    <p className="text-white/35 text-xs mt-0.5">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </FadeUp>
+          <FadeUp delay={0.15} className="flex justify-center">
             <div className="relative">
-              <div className="absolute inset-0 -m-4 bg-rose-500/15 blur-2xl rounded-full pointer-events-none" />
-              <Iphone15Pro width={190}>
-                <ShowcasePhoneContent step={step} />
+              <div className="absolute -inset-10 rounded-full blur-3xl bg-indigo-500/08 pointer-events-none" />
+              <Iphone15Pro className="w-[240px] relative" src="">
+                <PhoneScreen />
               </Iphone15Pro>
             </div>
-          </div>
-
-          {/* P2P label in center */}
-          <div className="flex flex-col items-center gap-2 shrink-0 z-10">
-            <div className="px-3 py-1.5 rounded-full border border-white/8 bg-white/[0.02] text-[10px] text-slate-500 whitespace-nowrap backdrop-blur-sm">
-              P2P Bridge
-            </div>
-          </div>
-
-          {/* Mac */}
-          <div ref={macRef} className="shrink-0">
-            <Safari url="Terminal — zsh" width={420}>
-              <ShowcaseMacContent step={step} />
-            </Safari>
-          </div>
-        </motion.div>
-
-        {/* Caption */}
-        <FadeUp className="mt-12 text-center" delay={0.3}>
-          <p className="text-slate-500 text-sm">
-            The animation loops automatically — no interaction needed. This is exactly what happens in real time.
-          </p>
-        </FadeUp>
-      </div>
-    </section>
-  );
-}
-
-// ─── Marquee ──────────────────────────────────────────────────────────────────
-
-const quotes = [
-  { text: "Ava changed how I work on my Mac. Genuinely magical.", author: "Thomas L." },
-  { text: "Finally an AI that actually remembers what I said last week.", author: "Amina K." },
-  { text: "The voice is so natural I forget it's AI. Insane quality.", author: "Lucas M." },
-  { text: "Controls my desktop while I'm on a call. Next level.", author: "Priya S." },
-  { text: "Worth every credit. Screen analysis is genius.", author: "Julien R." },
-  { text: "Like having a best friend who's an expert at everything.", author: "Sara B." },
-];
-
-function Marquee() {
-  return (
-    <section className="relative py-14 overflow-hidden border-y border-white/[0.05]">
-      <div
-        className="absolute inset-0 pointer-events-none z-10"
-        style={{ maskImage: "linear-gradient(to right, black, transparent 10%, transparent 90%, black)" }}
-      />
-      <motion.div
-        animate={{ x: ["0%", "-50%"] }}
-        transition={{ duration: 32, repeat: Infinity, ease: "linear" }}
-        className="flex gap-5 shrink-0"
-      >
-        {[...quotes, ...quotes].map((q, i) => (
-          <div
-            key={i}
-            className="shrink-0 w-72 px-6 py-5 rounded-2xl backdrop-blur-xl bg-white/[0.03] border border-white/[0.07]"
-          >
-            <p className="text-slate-300 text-sm leading-relaxed">&ldquo;{q.text}&rdquo;</p>
-            <p className="mt-3 text-rose-400 text-xs font-semibold">— {q.author}</p>
-          </div>
-        ))}
-      </motion.div>
-    </section>
-  );
-}
-
-// ─── Features Bento ───────────────────────────────────────────────────────────
-
-interface Feature {
-  icon: React.ElementType;
-  title: string;
-  desc: string;
-  cols: string;
-  accentBg: string;
-  accentIcon: string;
-  accentOrb: string;
-  visual?: React.ReactNode;
-}
-
-function WaveformVisual() {
-  return (
-    <div className="flex items-center gap-[3px] h-10 mt-3">
-      {[3, 6, 11, 17, 11, 20, 14, 8, 18, 12, 6, 14, 9, 4, 16, 10].map((h, i) => (
-        <motion.div
-          key={i}
-          className="w-1 rounded-full bg-rose-400/60"
-          style={{ height: h }}
-          animate={{ height: [h, h * 1.9, h] }}
-          transition={{ duration: 0.95, repeat: Infinity, delay: i * 0.055, ease: "easeInOut" }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function TerminalVisual() {
-  return (
-    <div className="mt-3 w-full rounded-xl bg-slate-950/80 border border-white/8 overflow-hidden">
-      <div className="flex gap-1.5 px-3 py-2 bg-slate-900/60 border-b border-white/5">
-        <div className="w-2 h-2 rounded-full bg-red-500/70" />
-        <div className="w-2 h-2 rounded-full bg-yellow-400/70" />
-        <div className="w-2 h-2 rounded-full bg-green-500/70" />
-      </div>
-      <div className="p-3 font-mono text-[10px] leading-relaxed">
-        <p className="text-slate-500">$ ava click &quot;Send&quot; in Slack</p>
-        <p className="text-slate-400 mt-1">→ Found element: [button#send]</p>
-        <p className="text-emerald-400/80">→ Clicked. Message sent ✓</p>
-      </div>
-    </div>
-  );
-}
-
-function ScreenAnalysisVisual() {
-  return (
-    <div className="mt-3 w-full rounded-xl bg-slate-950/80 border border-white/8 p-3 text-[10px] font-mono leading-relaxed">
-      <span className="text-slate-500">$ </span><span className="text-blue-400">ava analyze</span>
-      <br />
-      <span className="text-slate-400">→ Detected: Chrome open</span>
-      <br />
-      <span className="text-slate-400">→ Tab: &quot;Q4 Report - Notion&quot;</span>
-      <br />
-      <span className="text-rose-400/80">→ Summarizing page...</span>
-    </div>
-  );
-}
-
-function MemoryVisual() {
-  const nodes = [
-    { cx: 28, cy: 22, label: "Jordan" },
-    { cx: 72, cy: 18, label: "Ava project" },
-    { cx: 20, cy: 68, label: "French" },
-    { cx: 68, cy: 62, label: "Mac M3" },
-    { cx: 48, cy: 42, label: "Dev team" },
-  ];
-  return (
-    <div className="relative mt-3 h-20 w-full overflow-hidden rounded-xl bg-slate-950/60 border border-white/5">
-      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 80">
-        {nodes.map((a, i) =>
-          nodes.slice(i + 1).map((b, j) => (
-            <line key={`${i}-${j}`} x1={a.cx} y1={a.cy} x2={b.cx} y2={b.cy} stroke="rgba(52,211,153,0.12)" strokeWidth="0.6" />
-          ))
-        )}
-        {nodes.map((n, i) => (
-          <circle key={i} cx={n.cx} cy={n.cy} r="2.5" fill="rgba(52,211,153,0.5)" />
-        ))}
-      </svg>
-      <div className="absolute inset-0 flex flex-wrap gap-1 p-2 content-start">
-        {nodes.map((n) => (
-          <span key={n.label} className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px]">
-            {n.label}
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-const features: Feature[] = [
-  {
-    icon: Mic2,
-    title: "Ultra-Realistic Native Voice",
-    desc: "Gemini Live powers Ava — real-time barge-in, sub-100ms latency, natural emotion. iOS & Android native.",
-    cols: "md:col-span-2",
-    accentBg: "from-rose-500/10 to-transparent",
-    accentIcon: "bg-rose-500/15 text-rose-400",
-    accentOrb: "bg-rose-500/25",
-    visual: <WaveformVisual />,
-  },
-  {
-    icon: Monitor,
-    title: "Remote Mac Control",
-    desc: "Ava clicks, types, scrolls and automates your Mac — all from a voice command on your phone.",
-    cols: "md:col-span-1",
-    accentBg: "from-violet-500/10 to-transparent",
-    accentIcon: "bg-violet-500/15 text-violet-400",
-    accentOrb: "bg-violet-500/25",
-    visual: <TerminalVisual />,
-  },
-  {
-    icon: Eye,
-    title: "Live Screen Analysis",
-    desc: "Point Ava at your screen — she reads, summarizes, and acts on what's visible instantly.",
-    cols: "md:col-span-1",
-    accentBg: "from-blue-500/10 to-transparent",
-    accentIcon: "bg-blue-500/15 text-blue-400",
-    accentOrb: "bg-blue-500/25",
-    visual: <ScreenAnalysisVisual />,
-  },
-  {
-    icon: Brain,
-    title: "Persistent Memory",
-    desc: "Every detail you share is permanently remembered. Ava builds a growing model of you across sessions.",
-    cols: "md:col-span-2",
-    accentBg: "from-emerald-500/10 to-transparent",
-    accentIcon: "bg-emerald-500/15 text-emerald-400",
-    accentOrb: "bg-emerald-500/25",
-    visual: <MemoryVisual />,
-  },
-  {
-    icon: Bell,
-    title: "Smart Reminders",
-    desc: "Say it once — Ava schedules and fires push notifications at the exact right moment.",
-    cols: "md:col-span-1",
-    accentBg: "from-amber-500/10 to-transparent",
-    accentIcon: "bg-amber-500/15 text-amber-400",
-    accentOrb: "bg-amber-500/20",
-  },
-  {
-    icon: Zap,
-    title: "MCP Integrations",
-    desc: "Connect Notion, GitHub, Brave and any JSON-RPC server. Your tools, your context, one voice.",
-    cols: "md:col-span-1",
-    accentBg: "from-cyan-500/10 to-transparent",
-    accentIcon: "bg-cyan-500/15 text-cyan-400",
-    accentOrb: "bg-cyan-500/20",
-  },
-  {
-    icon: Shield,
-    title: "Privacy-first",
-    desc: "No training on your data. Supabase-backed, RLS-enabled. Your conversations stay yours.",
-    cols: "md:col-span-1",
-    accentBg: "from-slate-400/8 to-transparent",
-    accentIcon: "bg-slate-400/12 text-slate-300",
-    accentOrb: "bg-slate-400/15",
-  },
-  {
-    icon: MessageSquare,
-    title: "Silent Text Chat",
-    desc: "Switch to text-only mode — full Ava intelligence, full memory, zero audio. Perfect for meetings.",
-    cols: "md:col-span-2",
-    accentBg: "from-pink-500/10 to-transparent",
-    accentIcon: "bg-pink-500/15 text-pink-400",
-    accentOrb: "bg-pink-500/20",
-  },
-];
-
-function BentoCard({ feature, index }: { feature: Feature; index: number }) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-  const Icon = feature.icon;
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, y: 36 }}
-      animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 36 }}
-      transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1], delay: index * 0.07 }}
-      whileHover={{ scale: 1.025, transition: { type: "spring", stiffness: 280, damping: 22 } }}
-      className={cn(
-        feature.cols,
-        "group relative rounded-2xl border border-white/[0.07] hover:border-white/[0.15]",
-        "transition-all duration-300 overflow-hidden cursor-default",
-        `bg-gradient-to-br ${feature.accentBg}`,
-        "backdrop-blur-sm"
-      )}
-    >
-      {/* Hover orb */}
-      <div className={cn(
-        "absolute -top-12 -right-12 w-44 h-44 rounded-full blur-3xl opacity-0 group-hover:opacity-60 transition-opacity duration-700 pointer-events-none",
-        feature.accentOrb
-      )} />
-      <div className={cn(
-        "absolute -bottom-16 -left-10 w-52 h-52 rounded-full blur-3xl opacity-15 pointer-events-none",
-        feature.accentOrb
-      )} />
-
-      <div className="relative p-6 flex flex-col gap-4 min-h-[200px]">
-        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shrink-0", feature.accentIcon)}>
-          <Icon size={22} />
-        </div>
-        <div>
-          <h3 className="font-semibold text-white text-[17px] tracking-tight">{feature.title}</h3>
-          <p className="mt-2 text-slate-400 text-sm leading-relaxed">{feature.desc}</p>
-        </div>
-        {feature.visual && <div className="mt-auto">{feature.visual}</div>}
-      </div>
-    </motion.div>
-  );
-}
-
-function Features() {
-  return (
-    <section id="features" className="relative py-32 px-6 overflow-hidden">
-      <DotGrid className="opacity-40" />
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-transparent to-slate-950 pointer-events-none" />
-      <div className="relative max-w-5xl mx-auto">
-        <FadeUp className="text-center mb-16">
-          <Badge variant="outline" className="mb-5">Features</Badge>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
-            Everything you need,{" "}
-            <span className="text-slate-500">nothing you don&apos;t</span>
-          </h2>
-          <p className="mt-4 text-slate-400 text-lg max-w-lg mx-auto">
-            Ava is your AI companion across every device — powerful, private, always on.
-          </p>
-        </FadeUp>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {features.map((f, i) => (
-            <BentoCard key={f.title} feature={f} index={i} />
-          ))}
+          </FadeUp>
         </div>
       </div>
     </section>
@@ -992,221 +671,212 @@ function Features() {
 
 // ─── Pricing ──────────────────────────────────────────────────────────────────
 
-const ALL_FEATURES = [
-  "Unlimited Voice Calls",
-  "Full Desktop Control",
-  "Unlimited Screen Analysis",
-  "Smart Reminders",
-  "MCP Server Integrations",
-  "iOS & Android Apps",
+const PLANS = [
+  {
+    label: "1 month", price: "19.99€", per: "/month", href: "https://woonixltd.gumroad.com/l/ava-pro",
+    popular: false, note: null,
+  },
+  {
+    label: "3 months", price: "14.99€", per: "/month", href: "https://woonixltd.gumroad.com/l/ava-pro",
+    popular: true, note: "44.99€ total",
+  },
+  {
+    label: "6 months", price: "11.99€", per: "/month", href: "https://woonixltd.gumroad.com/l/ava-pro",
+    popular: false, note: "71.99€ total",
+  },
 ];
 
-const plans = [
-  {
-    name: "1 Month",
-    price: "19.99",
-    perMonth: null,
-    billing: "billed monthly",
-    savings: null,
-    popular: false,
-    features: ALL_FEATURES,
-    cta: "Get Started",
-    href: "https://woonixltd.gumroad.com/l/avam1",
-  },
-  {
-    name: "3 Months",
-    price: "44.99",
-    perMonth: "14.99",
-    billing: "billed every 3 months",
-    savings: "Save 25%",
-    popular: true,
-    features: ALL_FEATURES,
-    cta: "Best Value",
-    href: "https://woonixltd.gumroad.com/l/avam1?quarterly=true&wanted=true",
-  },
-  {
-    name: "6 Months",
-    price: "71.99",
-    perMonth: "11.99",
-    billing: "billed every 6 months",
-    savings: "Save 40%",
-    popular: false,
-    features: ALL_FEATURES,
-    cta: "Get Started",
-    href: "https://woonixltd.gumroad.com/l/avam1?biannually=true&wanted=true",
-  },
+const PLAN_FEATURES = [
+  "Unlimited voice conversations",
+  "Remote Mac/PC control",
+  "Smart push reminders",
+  "MCP integrations",
+  "Persistent memory",
+  "Priority support",
 ];
 
 function Pricing() {
   return (
-    <section id="pricing" className="relative py-32 px-6 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,_rgba(244,63,94,0.07)_0%,_transparent_70%)] pointer-events-none" />
-      <div className="relative max-w-5xl mx-auto">
-        <FadeUp className="text-center mb-20">
-          <Badge variant="outline" className="mb-5">Pricing</Badge>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
-            One plan, full access
+    <section id="pricing" className="relative py-24 sm:py-32 overflow-hidden">
+      <DotGrid className="opacity-30" />
+      <div className="relative max-w-5xl mx-auto px-6">
+        <FadeUp className="text-center mb-16">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">Pricing</p>
+          <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">
+            Flexible pricing plans
           </h2>
-          <p className="mt-4 text-slate-400 text-lg">Choose your billing cycle. Everything included.</p>
+          <p className="text-slate-400 text-lg mt-4 max-w-lg mx-auto">
+            All plans unlock every feature. Pick the duration that suits you.
+          </p>
         </FadeUp>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-          {plans.map((plan, i) => (
-            <FadeUp key={plan.name} delay={i * 0.1}>
-              <motion.div
-                whileHover={!plan.popular ? { scale: 1.02, transition: { type: "spring", stiffness: 260, damping: 20 } } : {}}
-                style={plan.popular ? { scale: 1.05 } : {}}
-                className={cn(
-                  "relative flex flex-col rounded-2xl border p-8 transition-colors duration-300 overflow-hidden",
-                  plan.popular
-                    ? "border-rose-500 bg-gradient-to-b from-rose-500/[0.09] to-rose-500/[0.03] shadow-[0_0_40px_rgba(244,63,94,0.2)] z-10"
-                    : "border-white/10 bg-white/[0.025] hover:border-white/20"
-                )}
-              >
+        <div className="grid md:grid-cols-3 gap-5">
+          {PLANS.map((plan, i) => (
+            <FadeUp key={plan.label} delay={i * 0.08}>
+              <div className={cn(
+                "relative rounded-3xl border p-8 flex flex-col h-full",
+                plan.popular ? "bg-rose-500/[0.07] border-rose-500/30" : "bg-white/[0.03] border-white/10"
+              )}>
+                {plan.popular && <BorderBeam size={200} duration={8} colorFrom="#e11d48" colorTo="#f43f5e" />}
                 {plan.popular && (
-                  <BorderBeam
-                    colorFrom="#e11d48"
-                    colorTo="#fb7185"
-                    size={80}
-                    duration={8}
-                  />
-                )}
-
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <Badge className="px-4 py-1 text-[11px] font-bold shadow-xl shadow-rose-500/40 whitespace-nowrap">
-                      ✦ Most Popular
-                    </Badge>
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="px-4 py-1 rounded-full bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-500/30 whitespace-nowrap">
+                      Most Popular
+                    </span>
                   </div>
                 )}
-
-                <div className="flex items-center justify-between">
-                  <p className="text-slate-400 text-sm font-medium tracking-wide">{plan.name}</p>
-                  {plan.savings && (
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                      {plan.savings}
-                    </span>
-                  )}
+                <p className="text-white/35 text-xs font-bold uppercase tracking-wider mb-4">{plan.label}</p>
+                <div className="flex items-end gap-1 mb-1">
+                  <span className="text-4xl font-black text-white">{plan.price}</span>
+                  <span className="text-white/35 text-sm mb-1.5">{plan.per}</span>
                 </div>
-
-                <div className="mt-2 flex items-end gap-1.5">
-                  <span className="text-[44px] font-bold leading-none text-white">{plan.price}€</span>
-                </div>
-                {plan.perMonth ? (
-                  <p className="mt-1 text-slate-500 text-sm">
-                    <span className="text-slate-300 font-medium">{plan.perMonth}€/mo</span> · {plan.billing}
-                  </p>
-                ) : (
-                  <p className="mt-1 text-slate-500 text-sm">{plan.billing}</p>
-                )}
-
-                <div className="my-6 h-px bg-white/[0.07]" />
-
-                <ul className="flex flex-col gap-3.5 flex-1">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-center gap-3 text-sm text-slate-300">
-                      <div className="w-4 h-4 rounded-full bg-rose-500/15 flex items-center justify-center shrink-0">
+                {plan.note
+                  ? <p className="text-white/20 text-xs mb-7">{plan.note} billed upfront</p>
+                  : <div className="mb-7" />
+                }
+                <ul className="space-y-3 mb-8 flex-1">
+                  {PLAN_FEATURES.map(f => (
+                    <li key={f} className="flex items-center gap-2.5 text-sm text-slate-400">
+                      <div className="w-4 h-4 rounded-full bg-rose-500/20 flex items-center justify-center flex-shrink-0">
                         <Check size={9} className="text-rose-400" />
                       </div>
                       {f}
                     </li>
                   ))}
                 </ul>
-
-                <motion.a
-                  href={plan.href}
-                  data-gumroad-overlay-checkout="true"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.96 }}
+                <motion.a href={plan.href} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   className={cn(
-                    "mt-8 block text-center px-6 py-3.5 rounded-xl font-semibold text-sm transition-all",
+                    "block text-center py-3.5 rounded-2xl font-bold text-sm transition-all",
                     plan.popular
-                      ? "bg-rose-500 hover:bg-rose-400 text-white shadow-xl shadow-rose-500/30"
-                      : "bg-white/[0.05] hover:bg-white/[0.09] text-white border border-white/10"
-                  )}
-                >
-                  {plan.cta}
+                      ? "bg-rose-500 hover:bg-rose-400 text-white shadow-lg shadow-rose-500/25"
+                      : "bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white"
+                  )}>
+                  Get Started
                 </motion.a>
-              </motion.div>
+              </div>
             </FadeUp>
           ))}
         </div>
-
-        <FadeUp className="mt-10 text-center text-slate-600 text-sm" delay={0.3}>
-          Full access on all plans · Cancel anytime · 5 free credits / day on free tier
-        </FadeUp>
       </div>
     </section>
   );
 }
 
-// ─── CTA ──────────────────────────────────────────────────────────────────────
+// ─── FAQ ──────────────────────────────────────────────────────────────────────
 
-function CTA() {
-  const stars = Array.from({ length: 50 }, (_, i) => ({
-    id: i,
-    top: `${(i * 37 + 11) % 100}%`,
-    left: `${(i * 53 + 7) % 100}%`,
-    size: i % 3 === 0 ? 1.5 : 1,
-    opacity: ((i * 17) % 5) / 10 + 0.08,
-    duration: ((i * 13) % 3) + 2,
-    delay: (i * 7) % 5,
-  }));
+const FAQS = [
+  { q: "What is Ava?", a: "Ava is an AI companion powered by Gemini Live. She can control your Mac remotely, set smart reminders, remember your preferences, and hold natural voice conversations." },
+  { q: "Which devices does Ava support?", a: "Ava is available on iOS, Android, Mac (Apple Silicon & Intel), and Windows. All platforms sync seamlessly through your account." },
+  { q: "How does remote Mac control work?", a: "Install Ava Desktop on your Mac and link it to your phone. Then send voice commands from anywhere — Ava executes them on your computer in seconds." },
+  { q: "Is my data private?", a: "Yes. Ava does not train on your conversations. Your memory data is stored encrypted and is never shared with third parties." },
+  { q: "Can I try Ava for free?", a: "Yes! You get 5 free daily conversation credits with no credit card required. Subscribe to Ava Pro for unlimited access to all features." },
+];
 
+function FAQ() {
+  const [open, setOpen] = useState<number | null>(null);
   return (
-    <section className="relative py-32 px-6 overflow-hidden">
-      <DotGrid className="opacity-25" />
-      <div className="absolute inset-0 pointer-events-none">
-        {stars.map((s) => (
-          <motion.div
-            key={s.id}
-            className="absolute rounded-full bg-white"
-            style={{ top: s.top, left: s.left, width: s.size, height: s.size, opacity: s.opacity }}
-            animate={{ opacity: [s.opacity, s.opacity * 4, s.opacity] }}
-            transition={{ duration: s.duration, repeat: Infinity, delay: s.delay }}
-          />
-        ))}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[700px] h-[500px] bg-gradient-to-t from-rose-500/12 via-violet-500/5 to-transparent blur-3xl" />
-      </div>
-
-      <div className="relative max-w-3xl mx-auto text-center">
-        <FadeUp>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1]">
-            Experience Ava like{" "}
-            <span className="text-slate-500">never before</span>
+    <section className="relative py-24 sm:py-32 overflow-hidden">
+      <DotGrid className="opacity-20" />
+      <div className="relative max-w-2xl mx-auto px-6">
+        <FadeUp className="text-center mb-16">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">FAQ</p>
+          <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+            Frequently asked
+            <br />questions
           </h2>
         </FadeUp>
-        <FadeUp delay={0.1}>
-          <p className="mt-6 text-slate-400 text-lg">
-            Join thousands of users who let Ava run their day. Free to start.
-          </p>
-        </FadeUp>
-        <FadeUp delay={0.2} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <motion.a href="https://apps.apple.com/us/app/call-ava/id6759903590" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white font-semibold shadow-2xl shadow-rose-500/35 transition-all">
-            <Apple size={18} />iOS App
-          </motion.a>
-          <motion.a href="https://play.google.com/store/apps/details?id=com.kemyamo.ava" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2.5 px-8 py-4 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold transition-all">
-            <Smartphone size={18} />Android App
-          </motion.a>
-          <div className="flex flex-col items-center gap-1">
-            <motion.a href="https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava-1.0.0-arm64.dmg" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2.5 px-8 py-4 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold transition-all">
-              <Download size={18} />Mac (Apple Silicon)
-            </motion.a>
-            <a href="https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava-1.0.0.dmg"
-              className="text-[11px] text-slate-600 hover:text-slate-400 transition-colors">
-              Mac Intel ?
-            </a>
+        <div className="space-y-2">
+          {FAQS.map((faq, i) => (
+            <FadeUp key={i} delay={i * 0.06}>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                <button onClick={() => setOpen(open === i ? null : i)}
+                  className="w-full flex items-center justify-between px-5 py-4 text-left gap-4">
+                  <span className="text-white font-semibold text-sm">{faq.q}</span>
+                  <motion.div animate={{ rotate: open === i ? 180 : 0 }} transition={{ duration: 0.22 }} className="flex-shrink-0">
+                    <ChevronDown size={15} className="text-white/35" />
+                  </motion.div>
+                </button>
+                <AnimatePresence initial={false}>
+                  {open === i && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}>
+                      <p className="px-5 pb-5 text-slate-400 text-sm leading-relaxed border-t border-white/[0.06] pt-4">
+                        {faq.a}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </FadeUp>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Final CTA ────────────────────────────────────────────────────────────────
+
+function FinalCTA() {
+  return (
+    <section id="download" className="relative py-24 sm:py-32 overflow-hidden">
+      <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #1c0510 0%, #280a1c 50%, #1c0510 100%)" }} />
+      <div className="absolute inset-0 pointer-events-none"
+        style={{ background: "radial-gradient(ellipse at 50% 50%, rgba(225,29,72,0.16) 0%, transparent 65%)" }} />
+      <DotGrid className="opacity-45" />
+      <div className="relative max-w-4xl mx-auto px-6 text-center">
+        <FadeUp>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500/12 border border-rose-500/22 mb-8">
+            <Sparkles size={13} className="text-rose-400" />
+            <span className="text-rose-400 text-xs font-bold">Start for free today — no credit card</span>
           </div>
-          <motion.a href="https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava.Setup.1.0.0.exe" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2.5 px-8 py-4 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold transition-all">
-            <Download size={18} />Windows
-          </motion.a>
-        </FadeUp>
-        <FadeUp delay={0.3}>
-          <p className="mt-5 text-xs text-slate-700">call-ava.com</p>
+          <h2 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white mb-6 leading-[1.04]">
+            Supercharge your
+            <br />
+            <span className="text-rose-400">daily productivity</span>
+          </h2>
+          <p className="text-slate-400 text-xl mb-12 max-w-xl mx-auto leading-relaxed">
+            5 free daily credits, no card required. Join 2,400+ users already talking to Ava.
+          </p>
+          {/* Mobile */}
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
+            <motion.a href="https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"
+              whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-base shadow-2xl shadow-rose-500/40 transition-colors">
+              <SiApple size={18} /> App Store
+            </motion.a>
+            <motion.a href="https://play.google.com/store/apps/details?id=com.kemyamo.ava"
+              whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white font-bold text-base transition-all">
+              <Smartphone size={18} /> Google Play
+            </motion.a>
+          </div>
+          {/* Desktop */}
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <motion.a href="/Ava.dmg"
+              whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+              className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
+              <div className="flex items-center gap-2 font-bold text-sm">
+                <SiApple size={15} /> Mac — Apple Silicon
+              </div>
+              <span className="text-white/35 text-[10px] font-medium">M1 / M2 / M3 / M4</span>
+            </motion.a>
+            <motion.a href="/AvaIntel.dmg"
+              whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+              className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
+              <div className="flex items-center gap-2 font-bold text-sm">
+                <Cpu size={15} /> Mac — Intel
+              </div>
+              <span className="text-white/35 text-[10px] font-medium">x86_64</span>
+            </motion.a>
+            <motion.a href="/AvaSetup.exe"
+              whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+              className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
+              <div className="flex items-center gap-2 font-bold text-sm">
+                <SiWindows11 size={15} /> Windows
+              </div>
+              <span className="text-white/35 text-[10px] font-medium">10 / 11</span>
+            </motion.a>
+          </div>
         </FadeUp>
       </div>
     </section>
@@ -1216,46 +886,61 @@ function CTA() {
 // ─── Footer ───────────────────────────────────────────────────────────────────
 
 function Footer() {
-  const cols = [
-    { title: "Download", links: [
-      { label: "iOS App", href: "https://apps.apple.com/us/app/call-ava/id6759903590" },
-      { label: "Android App", href: "https://play.google.com/store/apps/details?id=com.kemyamo.ava" },
-      { label: "Mac (Apple Silicon)", href: "https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava-1.0.0-arm64.dmg" },
-      { label: "Mac (Intel)", href: "https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava-1.0.0.dmg" },
-      { label: "Windows", href: "https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava.Setup.1.0.0.exe" },
-    ]},
-    { title: "Legal", links: [
-      { label: "Terms", href: "https://call-ava.com/cgu" },
-      { label: "Privacy", href: "https://call-ava.com/confidentialite" },
-    ]},
-    { title: "Community", links: [
-      { label: "WhatsApp", href: "https://whatsapp.com/channel/0029VbCsZ3A6WaKv6TLkxO0r" },
-      { label: "About Ava", href: "https://call-ava.com" },
-    ]},
-  ];
-
   return (
-    <footer className="border-t border-white/[0.05] py-14 px-6">
-      <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-10">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-rose-500 flex items-center justify-center shadow-lg shadow-rose-500/30">
-              <span className="text-sm">🌸</span>
+    <footer className="border-t border-white/[0.06] py-14">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-md shadow-rose-500/20">
+                <span className="text-sm font-black text-white">A</span>
+              </div>
+              <span className="font-black text-white">Ava</span>
             </div>
-            <span className="font-bold text-white">Ava</span>
+            <p className="text-white/25 text-sm leading-relaxed max-w-xs">
+              Your AI companion, always by your side. Powered by Gemini Live.
+            </p>
           </div>
-          <p className="mt-2 text-slate-500 text-sm">Your AI friend, always there.</p>
-          <p className="mt-1 text-slate-700 text-xs">© 2026 Ava. All rights reserved.</p>
-        </div>
-        <div className="grid grid-cols-3 gap-x-14 gap-y-3 text-sm">
-          {cols.map((col) => (
-            <div key={col.title} className="flex flex-col gap-3">
-              <p className="text-slate-500 font-semibold text-[10px] uppercase tracking-widest">{col.title}</p>
-              {col.links.map((l) => (
-                <a key={l.label} href={l.href} className="text-slate-400 hover:text-white transition-colors">{l.label}</a>
+          <div>
+            <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-4">Download</p>
+            <ul className="space-y-2.5">
+              {[
+                ["iOS App", "https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"],
+                ["Android App", "https://play.google.com/store/apps/details?id=com.kemyamo.ava"],
+                ["Mac (Apple Silicon)", "/Ava.dmg"],
+                ["Mac (Intel)", "/AvaIntel.dmg"],
+                ["Windows", "/AvaSetup.exe"],
+              ].map(([l, h]) => (
+                <li key={l}><a href={h} className="text-white/35 hover:text-white text-sm transition-colors">{l}</a></li>
               ))}
-            </div>
-          ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-4">Legal</p>
+            <ul className="space-y-2.5">
+              {[
+                ["Terms of Service", "https://call-ava.com/cgu"],
+                ["Privacy Policy", "https://call-ava.com/confidentialite"],
+              ].map(([l, h]) => (
+                <li key={l}><a href={h} className="text-white/35 hover:text-white text-sm transition-colors">{l}</a></li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-4">Community</p>
+            <ul className="space-y-2.5">
+              {[
+                ["WhatsApp Community", "https://chat.whatsapp.com/H8SWG0yHpzK4FBc7u7wBv9"],
+                ["About Ava", "#"],
+              ].map(([l, h]) => (
+                <li key={l}><a href={h} className="text-white/35 hover:text-white text-sm transition-colors">{l}</a></li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-white/[0.06] pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p className="text-white/18 text-xs">© 2026 Ava. All rights reserved.</p>
+          <p className="text-white/18 text-xs">Powered by Gemini Live · Made with ♥</p>
         </div>
       </div>
     </footer>
@@ -1264,16 +949,20 @@ function Footer() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function Home() {
+export default function Page() {
   return (
-    <main className="relative bg-slate-950 text-white overflow-x-hidden">
+    <main className="bg-[#020617] min-h-screen">
       <Navbar />
       <Hero />
-      <InteractiveShowcase />
-      <Marquee />
-      <Features />
+      <TrustStrip />
+      <Differentiators />
+      <FeatureBento />
+      <Integrations />
+      <Testimonials />
+      <Showcase />
       <Pricing />
-      <CTA />
+      <FAQ />
+      <FinalCTA />
       <Footer />
     </main>
   );
