@@ -77,7 +77,7 @@ function Navbar() {
           : "bg-white/[0.04] backdrop-blur-xl border-white/10"
       )}>
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Ava" className="w-7 h-7 rounded-full object-cover shadow-lg shadow-rose-500/30" />
+          <img src="/logo.png" alt="Ava" className="w-7 h-7 rounded-full object-cover shadow-lg shadow-rose-500/30" style={{ objectPosition: "center 30%" }} />
           <span className="font-black text-white text-sm tracking-wide">Ava</span>
         </div>
         <div className="hidden sm:flex items-center gap-5">
@@ -898,7 +898,7 @@ function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           <div className="col-span-2 md:col-span-1">
             <div className="flex items-center gap-2 mb-4">
-              <img src="/logo.png" alt="Ava" className="w-8 h-8 rounded-full object-cover shadow-md shadow-rose-500/20" />
+              <img src="/logo.png" alt="Ava" className="w-8 h-8 rounded-full object-cover shadow-md shadow-rose-500/20" style={{ objectPosition: "center 30%" }} />
               <span className="font-black text-white">Ava</span>
             </div>
             <p className="text-white/25 text-sm leading-relaxed max-w-xs">
