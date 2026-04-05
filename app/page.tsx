@@ -192,20 +192,35 @@ function Hero() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           className="flex flex-wrap items-center justify-center gap-3 mb-20">
+          {/* Mobile */}
           <motion.a href="https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-sm shadow-2xl shadow-rose-500/35 transition-colors">
-            <Apple size={16} /> App Store
+            <SiApple size={15} /> App Store
           </motion.a>
           <motion.a href="https://play.google.com/store/apps/details?id=com.kemyamo.ava"
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white font-bold text-sm transition-all">
-            <Smartphone size={16} /> Google Play
+            <Smartphone size={15} /> Google Play
           </motion.a>
+          {/* Desktop */}
           <motion.a href="/Ava.dmg"
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-            className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white font-bold text-sm transition-all">
-            <Monitor size={16} /> Mac Desktop
+            className="inline-flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition-all">
+            <div className="flex items-center gap-1.5 font-bold text-sm"><SiApple size={13} /> Mac — Apple Silicon</div>
+            <span className="text-white/35 text-[10px]">M1 / M2 / M3 / M4</span>
+          </motion.a>
+          <motion.a href="/AvaIntel.dmg"
+            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+            className="inline-flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition-all">
+            <div className="flex items-center gap-1.5 font-bold text-sm"><Cpu size={13} /> Mac — Intel</div>
+            <span className="text-white/35 text-[10px]">x86_64</span>
+          </motion.a>
+          <motion.a href="/AvaSetup.exe"
+            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+            className="inline-flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition-all">
+            <div className="flex items-center gap-1.5 font-bold text-sm"><WindowsIcon size={13} /> Windows</div>
+            <span className="text-white/35 text-[10px]">10 / 11</span>
           </motion.a>
         </motion.div>
 
