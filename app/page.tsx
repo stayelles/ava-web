@@ -234,7 +234,7 @@ function Hero() {
             Android
           </motion.a>
           <motion.a
-            href="https://call-ava.com"
+            href="https://github.com/stayelles/ava-desktop/releases/latest"
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.95 }}
             className="flex items-center gap-2.5 px-7 py-3.5 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold text-sm transition-all"
@@ -242,6 +242,11 @@ function Hero() {
             <Download size={17} />
             Mac Desktop
           </motion.a>
+          <div className="flex items-center gap-2.5 px-7 py-3.5 rounded-2xl border border-white/[0.06] text-slate-600 font-semibold text-sm cursor-not-allowed select-none">
+            <Download size={17} />
+            Windows
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/[0.05] text-slate-500">Soon</span>
+          </div>
         </motion.div>
 
         <motion.p
@@ -1173,10 +1178,14 @@ function CTA() {
             className="flex items-center gap-2.5 px-8 py-4 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold transition-all">
             <Smartphone size={18} />Android App
           </motion.a>
-          <motion.a href="https://call-ava.com" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
+          <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
             className="flex items-center gap-2.5 px-8 py-4 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold transition-all">
             <Download size={18} />Mac Desktop
           </motion.a>
+          <div className="flex items-center gap-2.5 px-8 py-4 rounded-2xl border border-white/[0.06] text-slate-600 font-semibold cursor-not-allowed select-none">
+            <Download size={18} />Windows
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/[0.05] text-slate-500">Soon</span>
+          </div>
         </FadeUp>
         <FadeUp delay={0.3}>
           <p className="mt-5 text-xs text-slate-700">call-ava.com</p>
@@ -1193,7 +1202,8 @@ function Footer() {
     { title: "Download", links: [
       { label: "iOS App", href: "https://apps.apple.com/us/app/call-ava/id6759903590" },
       { label: "Android App", href: "https://play.google.com/store/apps/details?id=com.kemyamo.ava" },
-      { label: "Mac Desktop", href: "https://call-ava.com" },
+      { label: "Mac Desktop", href: "https://github.com/stayelles/ava-desktop/releases/latest" },
+      { label: "Windows (coming soon)", href: "https://github.com/stayelles/ava-desktop/releases/latest" },
     ]},
     { title: "Legal", links: [
       { label: "Terms", href: "https://call-ava.com/cgu" },
