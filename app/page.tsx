@@ -975,54 +975,49 @@ function Features() {
 
 // ─── Pricing ──────────────────────────────────────────────────────────────────
 
+const ALL_FEATURES = [
+  "Unlimited Voice Calls",
+  "Full Desktop Control",
+  "Unlimited Screen Analysis",
+  "Smart Reminders",
+  "MCP Server Integrations",
+  "Telegram Bridge",
+  "iOS & Android Apps",
+];
+
 const plans = [
   {
-    name: "Plus",
-    price: "14.99",
-    desc: "For personal daily use",
+    name: "1 Month",
+    price: "19.99",
+    perMonth: null,
+    billing: "billed monthly",
+    savings: null,
     popular: false,
-    features: [
-      "1 Hour of Voice / month",
-      "Full Desktop Control",
-      "5 min Screen Analysis / day",
-      "Unlimited Text Chat",
-      "Smart Reminders",
-      "iOS & Android apps",
-    ],
-    cta: "Get Plus",
-    href: "https://call-ava.com",
+    features: ALL_FEATURES,
+    cta: "Get Started",
+    href: "https://woonixltd.gumroad.com/l/avam1",
   },
   {
-    name: "Pro",
-    price: "39.99",
-    desc: "For power users & professionals",
+    name: "3 Months",
+    price: "44.99",
+    perMonth: "14.99",
+    billing: "billed every 3 months",
+    savings: "Save 25%",
     popular: true,
-    features: [
-      "4 Hours of Voice / month",
-      "Advanced P2P Desktop Control",
-      "Unlimited Screen Analysis",
-      "Priority Task Execution",
-      "MCP server integrations",
-      "Telegram bridge",
-    ],
-    cta: "Get Pro",
-    href: "https://call-ava.com",
+    features: ALL_FEATURES,
+    cta: "Best Value",
+    href: "https://woonixltd.gumroad.com/l/avam1?quarterly=true&wanted=true",
   },
   {
-    name: "Max",
-    price: "79.99",
-    desc: "For teams & heavy workflows",
+    name: "6 Months",
+    price: "71.99",
+    perMonth: "11.99",
+    billing: "billed every 6 months",
+    savings: "Save 40%",
     popular: false,
-    features: [
-      "15 Hours of Voice / month",
-      "Maximum Network Priority",
-      "Unrestricted Control",
-      "VIP Support",
-      "Unlimited MCP servers",
-      "Custom AI persona",
-    ],
-    cta: "Get Max",
-    href: "https://call-ava.com",
+    features: ALL_FEATURES,
+    cta: "Get Started",
+    href: "https://woonixltd.gumroad.com/l/avam1?biannually=true&wanted=true",
   },
 ];
 
@@ -1034,9 +1029,9 @@ function Pricing() {
         <FadeUp className="text-center mb-20">
           <Badge variant="outline" className="mb-5">Pricing</Badge>
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight">
-            Simple, transparent plans
+            One plan, full access
           </h2>
-          <p className="mt-4 text-slate-400 text-lg">Start free. Upgrade when you&apos;re ready.</p>
+          <p className="mt-4 text-slate-400 text-lg">Choose your billing cycle. Everything included.</p>
         </FadeUp>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
@@ -1052,7 +1047,6 @@ function Pricing() {
                     : "border-white/10 bg-white/[0.025] hover:border-white/20"
                 )}
               >
-                {/* BorderBeam only on the Pro card */}
                 {plan.popular && (
                   <BorderBeam
                     colorFrom="#e11d48"
@@ -1069,12 +1063,26 @@ function Pricing() {
                     </Badge>
                   </div>
                 )}
-                <p className="text-slate-400 text-sm font-medium tracking-wide">{plan.name}</p>
+
+                <div className="flex items-center justify-between">
+                  <p className="text-slate-400 text-sm font-medium tracking-wide">{plan.name}</p>
+                  {plan.savings && (
+                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                      {plan.savings}
+                    </span>
+                  )}
+                </div>
+
                 <div className="mt-2 flex items-end gap-1.5">
                   <span className="text-[44px] font-bold leading-none text-white">{plan.price}€</span>
-                  <span className="text-slate-500 text-sm mb-2">/mo</span>
                 </div>
-                <p className="mt-1.5 text-slate-500 text-sm">{plan.desc}</p>
+                {plan.perMonth ? (
+                  <p className="mt-1 text-slate-500 text-sm">
+                    <span className="text-slate-300 font-medium">{plan.perMonth}€/mo</span> · {plan.billing}
+                  </p>
+                ) : (
+                  <p className="mt-1 text-slate-500 text-sm">{plan.billing}</p>
+                )}
 
                 <div className="my-6 h-px bg-white/[0.07]" />
 
@@ -1091,6 +1099,7 @@ function Pricing() {
 
                 <motion.a
                   href={plan.href}
+                  data-gumroad-overlay-checkout="true"
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.96 }}
                   className={cn(
@@ -1108,7 +1117,7 @@ function Pricing() {
         </div>
 
         <FadeUp className="mt-10 text-center text-slate-600 text-sm" delay={0.3}>
-          All plans billed monthly · Cancel anytime · 5 free credits / day on free tier
+          Full access on all plans · Cancel anytime · 5 free credits / day on free tier
         </FadeUp>
       </div>
     </section>
