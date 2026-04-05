@@ -930,8 +930,8 @@ function Footer() {
             <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-4">Community</p>
             <ul className="space-y-2.5">
               {[
-                ["WhatsApp Community", "https://chat.whatsapp.com/H8SWG0yHpzK4FBc7u7wBv9"],
-                ["About Ava", "#"],
+                ["WhatsApp Channel", "https://whatsapp.com/channel/0029VbCsZ3A6WaKv6TLkxO0r"],
+                ["Twitter / X", "https://x.com/woonixltd"],
               ].map(([l, h]) => (
                 <li key={l}><a href={h} className="text-white/35 hover:text-white text-sm transition-colors">{l}</a></li>
               ))}
