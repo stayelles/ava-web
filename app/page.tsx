@@ -7,7 +7,15 @@ import {
   Sparkles, Shield, Terminal, Star, ChevronDown, Layers, Wifi,
   ArrowRight, Lock, Globe, Cpu,
 } from "lucide-react";
-import { SiWindows11, SiApple } from "react-icons/si";
+import { SiApple } from "react-icons/si";
+
+function WindowsIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.851" />
+    </svg>
+  );
+}
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import Iphone15Pro from "@/components/magicui/iphone-15-pro";
@@ -872,7 +880,7 @@ function FinalCTA() {
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
               <div className="flex items-center gap-2 font-bold text-sm">
-                <SiWindows11 size={15} /> Windows
+                <WindowsIcon size={15} /> Windows
               </div>
               <span className="text-white/35 text-[10px] font-medium">10 / 11</span>
             </motion.a>
