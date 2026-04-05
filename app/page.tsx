@@ -79,7 +79,7 @@ function Navbar() {
           <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
         </nav>
         <motion.a
-          href="https://apps.apple.com"
+          href="https://apps.apple.com/us/app/call-ava/id6759903590"
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.95 }}
           className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-sm font-semibold transition-colors shadow-lg shadow-rose-500/30"
@@ -215,7 +215,7 @@ function Hero() {
           className="mt-10 flex flex-col sm:flex-row items-center gap-3"
         >
           <motion.a
-            href="https://apps.apple.com"
+            href="https://apps.apple.com/us/app/call-ava/id6759903590"
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.95 }}
             className="group flex items-center gap-2.5 px-7 py-3.5 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white font-semibold text-sm shadow-2xl shadow-rose-500/35 transition-all"
@@ -225,7 +225,7 @@ function Hero() {
             <ArrowRight size={15} className="group-hover:translate-x-1 transition-transform" />
           </motion.a>
           <motion.a
-            href="https://play.google.com"
+            href="https://play.google.com/store/apps/details?id=com.kemyamo.ava"
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.95 }}
             className="flex items-center gap-2.5 px-7 py-3.5 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold text-sm transition-all"
@@ -981,7 +981,6 @@ const ALL_FEATURES = [
   "Unlimited Screen Analysis",
   "Smart Reminders",
   "MCP Server Integrations",
-  "Telegram Bridge",
   "iOS & Android Apps",
 ];
 
@@ -1166,11 +1165,11 @@ function CTA() {
           </p>
         </FadeUp>
         <FadeUp delay={0.2} className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
-          <motion.a href="https://apps.apple.com" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
+          <motion.a href="https://apps.apple.com/us/app/call-ava/id6759903590" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
             className="flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white font-semibold shadow-2xl shadow-rose-500/35 transition-all">
             <Apple size={18} />iOS App
           </motion.a>
-          <motion.a href="https://play.google.com" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
+          <motion.a href="https://play.google.com/store/apps/details?id=com.kemyamo.ava" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
             className="flex items-center gap-2.5 px-8 py-4 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold transition-all">
             <Smartphone size={18} />Android App
           </motion.a>
@@ -1192,8 +1191,8 @@ function CTA() {
 function Footer() {
   const cols = [
     { title: "Download", links: [
-      { label: "iOS App", href: "https://apps.apple.com" },
-      { label: "Android App", href: "https://play.google.com" },
+      { label: "iOS App", href: "https://apps.apple.com/us/app/call-ava/id6759903590" },
+      { label: "Android App", href: "https://play.google.com/store/apps/details?id=com.kemyamo.ava" },
       { label: "Mac Desktop", href: "https://call-ava.com" },
     ]},
     { title: "Legal", links: [
