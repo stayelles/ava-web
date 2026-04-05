@@ -233,17 +233,25 @@ function Hero() {
             <Smartphone size={17} />
             Android
           </motion.a>
+          <div className="flex flex-col items-center gap-1">
+            <motion.a
+              href="https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava-1.0.0-arm64.dmg"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-2.5 px-7 py-3.5 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold text-sm transition-all"
+            >
+              <Download size={17} />
+              Mac (Apple Silicon)
+            </motion.a>
+            <a
+              href="https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava-1.0.0.dmg"
+              className="text-[11px] text-slate-600 hover:text-slate-400 transition-colors"
+            >
+              Mac Intel ?
+            </a>
+          </div>
           <motion.a
-            href="https://github.com/stayelles/ava-desktop/releases/latest"
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2.5 px-7 py-3.5 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold text-sm transition-all"
-          >
-            <Download size={17} />
-            Mac Desktop
-          </motion.a>
-          <motion.a
-            href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava.Setup.1.0.0.exe"
+            href="https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava.Setup.1.0.0.exe"
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.95 }}
             className="flex items-center gap-2.5 px-7 py-3.5 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold text-sm transition-all"
@@ -1182,11 +1190,17 @@ function CTA() {
             className="flex items-center gap-2.5 px-8 py-4 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold transition-all">
             <Smartphone size={18} />Android App
           </motion.a>
-          <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-2.5 px-8 py-4 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold transition-all">
-            <Download size={18} />Mac Desktop
-          </motion.a>
-          <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava.Setup.1.0.0.exe" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
+          <div className="flex flex-col items-center gap-1">
+            <motion.a href="https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava-1.0.0-arm64.dmg" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-2.5 px-8 py-4 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold transition-all">
+              <Download size={18} />Mac (Apple Silicon)
+            </motion.a>
+            <a href="https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava-1.0.0.dmg"
+              className="text-[11px] text-slate-600 hover:text-slate-400 transition-colors">
+              Mac Intel ?
+            </a>
+          </div>
+          <motion.a href="https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava.Setup.1.0.0.exe" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.95 }}
             className="flex items-center gap-2.5 px-8 py-4 rounded-2xl backdrop-blur-xl bg-white/[0.05] hover:bg-white/[0.08] border border-white/10 text-white font-semibold transition-all">
             <Download size={18} />Windows
           </motion.a>
@@ -1206,8 +1220,9 @@ function Footer() {
     { title: "Download", links: [
       { label: "iOS App", href: "https://apps.apple.com/us/app/call-ava/id6759903590" },
       { label: "Android App", href: "https://play.google.com/store/apps/details?id=com.kemyamo.ava" },
-      { label: "Mac Desktop", href: "https://github.com/stayelles/ava-desktop/releases/latest" },
-      { label: "Windows", href: "https://github.com/stayelles/ava-desktop/releases/latest/download/Ava.Setup.1.0.0.exe" },
+      { label: "Mac (Apple Silicon)", href: "https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava-1.0.0-arm64.dmg" },
+      { label: "Mac (Intel)", href: "https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava-1.0.0.dmg" },
+      { label: "Windows", href: "https://github.com/stayelles/ava-desktop/releases/download/v1.0.0/Ava.Setup.1.0.0.exe" },
     ]},
     { title: "Legal", links: [
       { label: "Terms", href: "https://call-ava.com/cgu" },
