@@ -158,7 +158,7 @@ function Hero() {
             <span className="text-white/45 text-xs">2 400+ users</span>
           </div>
           <Badge className="border-rose-500/30 text-rose-400 bg-rose-500/10 text-[10px] tracking-widest uppercase">
-            Powered by Gemini Live
+            Your AI Voice Companion
           </Badge>
         </motion.div>
 
@@ -268,7 +268,7 @@ const DIFFS = [
   {
     icon: Mic2, color: "rose",
     title: "Ultra-realistic voice",
-    desc: "Powered by Gemini Live — the most natural AI voice you've ever heard. Talk like you'd talk to a friend.",
+    desc: "The most natural AI voice you've ever heard. Talk like you'd talk to a friend.",
     visual: (
       <div className="flex items-end gap-0.5 h-8 w-full">
         {Array.from({ length: 28 }, (_, i) => Math.abs(Math.sin(i * 0.55) * 18 + 6)).map((h, i) => (
@@ -378,7 +378,7 @@ function FeatureBento() {
                   </div>
                   <div>
                     <p className="text-white font-bold leading-none">Ultra-realistic Voice</p>
-                    <p className="text-rose-400/60 text-xs mt-0.5">Gemini Live powered</p>
+                    <p className="text-rose-400/60 text-xs mt-0.5">Ultra-realistic AI voice</p>
                   </div>
                 </div>
                 <p className="text-white/50 text-sm leading-relaxed mb-8 max-w-sm">
@@ -525,7 +525,7 @@ const INTEG = [
   { name: "Windows", icon: Monitor, cls: "text-sky-400" },
   { name: "Notion", icon: Layers, cls: "text-white/55" },
   { name: "GitHub", icon: Terminal, cls: "text-white/55" },
-  { name: "Gemini", icon: Sparkles, cls: "text-indigo-400" },
+  { name: "AI", icon: Sparkles, cls: "text-indigo-400" },
   { name: "MCP", icon: Wifi, cls: "text-violet-400" },
 ];
 
@@ -751,7 +751,7 @@ function Pricing() {
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
 
 const FAQS = [
-  { q: "What is Ava?", a: "Ava is an AI companion powered by Gemini Live. She can control your Mac remotely, set smart reminders, remember your preferences, and hold natural voice conversations." },
+  { q: "What is Ava?", a: "Ava is an AI voice companion. She can control your Mac remotely, set smart reminders, remember your preferences, and hold natural voice conversations." },
   { q: "Which devices does Ava support?", a: "Ava is available on iOS, Android, Mac (Apple Silicon & Intel), and Windows. All platforms sync seamlessly through your account." },
   { q: "How does remote Mac control work?", a: "Install Ava Desktop on your Mac and link it to your phone. Then send voice commands from anywhere — Ava executes them on your computer in seconds." },
   { q: "Is my data private?", a: "Yes. Ava does not train on your conversations. Your memory data is stored encrypted and is never shared with third parties." },
@@ -883,7 +883,7 @@ function Footer() {
               <span className="font-black text-white">Ava</span>
             </div>
             <p className="text-white/25 text-sm leading-relaxed max-w-xs">
-              Your AI companion, always by your side. Powered by Gemini Live.
+              Your AI companion, always by your side.
             </p>
           </div>
           <div>
