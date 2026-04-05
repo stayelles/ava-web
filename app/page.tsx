@@ -925,7 +925,7 @@ function Footer() {
         </div>
         <div className="border-t border-white/[0.06] pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-white/18 text-xs">© 2026 Ava. All rights reserved.</p>
-          <p className="text-white/18 text-xs">Powered by Gemini Live · Made with ♥</p>
+          <p className="text-white/18 text-xs">Woonix ltd · Made with ♥</p>
         </div>
       </div>
     </footer>
