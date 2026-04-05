@@ -261,25 +261,6 @@ function Hero() {
   );
 }
 
-// ─── Trust Strip ──────────────────────────────────────────────────────────────
-
-function TrustStrip() {
-  const names = ["App Store", "Google Play", "Product Hunt", "Gemini Live", "Supabase", "MCP Protocol"];
-  return (
-    <section className="py-10 border-y border-white/[0.06] bg-white/[0.01]">
-      <div className="max-w-6xl mx-auto px-6">
-        <p className="text-center text-[10px] font-bold uppercase tracking-widest text-white/20 mb-7">
-          Trusted by thousands worldwide
-        </p>
-        <div className="flex items-center justify-center flex-wrap gap-x-10 gap-y-3">
-          {names.map(n => (
-            <span key={n} className="text-white/18 font-black text-sm tracking-wide select-none">{n}</span>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // ─── What makes Ava different ─────────────────────────────────────────────────
 
@@ -958,8 +939,7 @@ export default function Page() {
     <main className="bg-[#020617] min-h-screen">
       <Navbar />
       <Hero />
-      <TrustStrip />
-      <Differentiators />
+<Differentiators />
       <FeatureBento />
       <Integrations />
       <Testimonials />
