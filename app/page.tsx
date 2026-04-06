@@ -67,7 +67,6 @@ const NAV_ITEMS = [
   { name: "Features", link: "#features" },
   { name: "Pricing", link: "#pricing" },
   { name: "Download", link: "#download" },
-  { name: "Web App", link: "/app" },
 ];
 
 function Navbar() {
@@ -79,8 +78,8 @@ function Navbar() {
       <NavBody>
         <NavbarLogo />
         <NavItems items={NAV_ITEMS} />
-        <NavbarButton href="https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525" variant="primary">
-          Get Ava Free
+        <NavbarButton href="/app" variant="primary">
+          Start For Free
         </NavbarButton>
       </NavBody>
 
@@ -100,11 +99,8 @@ function Navbar() {
               {item.name}
             </a>
           ))}
-          <NavbarButton
-            href="https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"
-            variant="primary" className="w-full mt-2"
-          >
-            Get Ava Free
+          <NavbarButton href="/app" variant="primary" className="w-full mt-2">
+            Start For Free
           </NavbarButton>
         </MobileNavMenu>
       </MobileNav>

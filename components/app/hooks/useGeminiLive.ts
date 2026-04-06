@@ -1,0 +1,272 @@
+'use client'
+
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { GEMINI_MODEL, GEMINI_VOICE, WS_BASE, SYSTEM_INSTRUCTION } from '../constants'
+import type { TranscriptItem, SessionState } from '../types'
+
+function resampleTo16k(input: Float32Array, fromRate: number): Float32Array {
+  if (fromRate === 16000) return input
+  const ratio = fromRate / 16000
+  const outputLength = Math.floor(input.length / ratio)
+  const output = new Float32Array(outputLength)
+  for (let i = 0; i < outputLength; i++) {
+    const srcIdx = i * ratio
+    const lo = Math.floor(srcIdx)
+    const hi = Math.min(lo + 1, input.length - 1)
+    const frac = srcIdx - lo
+    output[i] = input[lo] * (1 - frac) + input[hi] * frac
+  }
+  return output
+}
+
+function float32ToBase64PCM16(samples: Float32Array): string {
+  const int16 = new Int16Array(samples.length)
+  for (let i = 0; i < samples.length; i++) {
+    int16[i] = Math.max(-32768, Math.min(32767, samples[i] * 32767))
+  }
+  const uint8 = new Uint8Array(int16.buffer)
+  let binary = ''
+  for (let i = 0; i < uint8.length; i++) binary += String.fromCharCode(uint8[i])
+  return btoa(binary)
+}
+
+export interface GeminiLiveOptions {
+  language: string
+  webSearch: boolean
+  onSessionEnd?: () => void
+}
+
+export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveOptions) {
+  const [sessionState, setSessionState] = useState<SessionState>('idle')
+  const [transcript, setTranscript] = useState<TranscriptItem[]>([])
+  const [statusText, setStatusText] = useState('Appuyez pour démarrer')
+  const [isAvaSpeaking, setIsAvaSpeaking] = useState(false)
+  const [isMuted, setIsMuted] = useState(false)
+
+  const wsRef = useRef<WebSocket | null>(null)
+  const audioCtxRef = useRef<AudioContext | null>(null)
+  const processorRef = useRef<ScriptProcessorNode | null>(null)
+  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
+  const silentGainRef = useRef<GainNode | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const nextPlayTimeRef = useRef(0)
+  const idCounterRef = useRef(0)
+  const isMutedRef = useRef(false)
+  const isClosingRef = useRef(false)
+
+  useEffect(() => { isMutedRef.current = isMuted }, [isMuted])
+
+  // PCM playback from Gemini (24000 Hz output)
+  const playPCMChunk = useCallback((base64: string) => {
+    const ctx = audioCtxRef.current
+    if (!ctx) return
+    try {
+      const binary = atob(base64)
+      const bytes = new Uint8Array(binary.length)
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+      const int16 = new Int16Array(bytes.buffer)
+      const float32 = new Float32Array(int16.length)
+      for (let i = 0; i < int16.length; i++) float32[i] = int16[i] / 32768.0
+      const buffer = ctx.createBuffer(1, float32.length, 24000)
+      buffer.getChannelData(0).set(float32)
+      const src = ctx.createBufferSource()
+      src.buffer = buffer
+      src.connect(ctx.destination)
+      const now = ctx.currentTime
+      if (nextPlayTimeRef.current < now) nextPlayTimeRef.current = now
+      src.start(nextPlayTimeRef.current)
+      nextPlayTimeRef.current += buffer.duration
+    } catch {}
+  }, [])
+
+  // Handle incoming WebSocket messages
+  const handleMessage = useCallback((raw: string) => {
+    let msg: any
+    try { msg = JSON.parse(raw) } catch { return }
+
+    if (msg.setupComplete !== undefined) {
+      setSessionState('connected')
+      setStatusText("J'écoute...")
+      return
+    }
+
+    const sc = msg.serverContent
+    if (!sc) return
+
+    if (sc.interrupted) {
+      nextPlayTimeRef.current = audioCtxRef.current?.currentTime ?? 0
+      setIsAvaSpeaking(false)
+      return
+    }
+
+    const audioData = sc.modelTurn?.parts?.[0]?.inlineData?.data ?? sc.audioChunks?.[0]?.data
+    if (audioData) {
+      setIsAvaSpeaking(true)
+      playPCMChunk(audioData)
+    }
+
+    if (sc.outputTranscription?.text) {
+      const txt = sc.outputTranscription.text
+      setTranscript(prev => {
+        const last = prev[prev.length - 1]
+        if (last?.role === 'ava') return [...prev.slice(0, -1), { ...last, text: last.text + txt }]
+        return [...prev, { id: ++idCounterRef.current, role: 'ava', text: txt }]
+      })
+    }
+
+    if (sc.inputTranscription?.text) {
+      const txt = sc.inputTranscription.text
+      setTranscript(prev => {
+        const last = prev[prev.length - 1]
+        if (last?.role === 'user') return [...prev.slice(0, -1), { ...last, text: last.text + txt }]
+        return [...prev, { id: ++idCounterRef.current, role: 'user', text: txt }]
+      })
+    }
+
+    if (sc.turnComplete) {
+      setIsAvaSpeaking(false)
+      setStatusText("J'écoute...")
+    }
+  }, [playPCMChunk])
+
+  const stopSession = useCallback(() => {
+    isClosingRef.current = true
+    wsRef.current?.close()
+    wsRef.current = null
+    processorRef.current?.disconnect()
+    processorRef.current = null
+    sourceRef.current?.disconnect()
+    sourceRef.current = null
+    silentGainRef.current?.disconnect()
+    silentGainRef.current = null
+    streamRef.current?.getTracks().forEach(t => t.stop())
+    streamRef.current = null
+    audioCtxRef.current?.close().catch(() => {})
+    audioCtxRef.current = null
+    nextPlayTimeRef.current = 0
+    setSessionState('idle')
+    setIsAvaSpeaking(false)
+    setIsMuted(false)
+    setStatusText('Appuyez pour démarrer')
+    onSessionEnd?.()
+    setTimeout(() => { isClosingRef.current = false }, 300)
+  }, [onSessionEnd])
+
+  const startSession = useCallback(async () => {
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
+    if (!apiKey) {
+      setStatusText('Clé API manquante — contactez le support')
+      setSessionState('error')
+      return
+    }
+
+    setSessionState('connecting')
+    setStatusText('Connexion...')
+    setTranscript([])
+    setIsAvaSpeaking(false)
+    isClosingRef.current = false
+
+    // AudioContext — do NOT force sampleRate, browser knows best
+    let ctx: AudioContext
+    try {
+      ctx = new AudioContext()
+      await ctx.resume() // critical: unblock audio processing
+      audioCtxRef.current = ctx
+      nextPlayTimeRef.current = 0
+    } catch {
+      setStatusText('Navigateur non supporté')
+      setSessionState('error')
+      return
+    }
+
+    // Microphone access
+    let stream: MediaStream
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+      streamRef.current = stream
+    } catch {
+      setStatusText("Microphone requis — autorisez l'accès dans votre navigateur")
+      setSessionState('error')
+      ctx.close()
+      audioCtxRef.current = null
+      return
+    }
+
+    const actualSampleRate = ctx.sampleRate // e.g. 44100 or 48000
+
+    // WebSocket
+    const ws = new WebSocket(`${WS_BASE}?key=${apiKey}`)
+    wsRef.current = ws
+
+    ws.onopen = () => {
+      const setupPayload: any = {
+        setup: {
+          model: `models/${GEMINI_MODEL}`,
+          generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: GEMINI_VOICE } } },
+          },
+          systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION(language, webSearch) }] },
+          inputAudioTranscription: {},
+          outputAudioTranscription: {},
+        },
+      }
+      if (webSearch) {
+        setupPayload.setup.tools = [{ googleSearch: {} }]
+      }
+      ws.send(JSON.stringify(setupPayload))
+
+      // Audio recording with proper resampling
+      const source = ctx.createMediaStreamSource(stream)
+      sourceRef.current = source
+      const silentGain = ctx.createGain()
+      silentGain.gain.value = 0
+      silentGainRef.current = silentGain
+      const processor = ctx.createScriptProcessor(4096, 1, 1)
+      processorRef.current = processor
+
+      processor.onaudioprocess = (e) => {
+        if (isMutedRef.current || ws.readyState !== WebSocket.OPEN) return
+        const raw = e.inputBuffer.getChannelData(0)
+        const resampled = resampleTo16k(raw, actualSampleRate)
+        const base64 = float32ToBase64PCM16(resampled)
+        ws.send(JSON.stringify({
+          realtimeInput: { mediaChunks: [{ mimeType: 'audio/pcm;rate=16000', data: base64 }] },
+        }))
+      }
+
+      source.connect(processor)
+      processor.connect(silentGain)
+      silentGain.connect(ctx.destination)
+    }
+
+    ws.onmessage = (event) => {
+      const d = event.data
+      if (typeof d === 'string') handleMessage(d)
+      else if (d instanceof ArrayBuffer) {
+        try { handleMessage(new TextDecoder().decode(d)) } catch {}
+      }
+    }
+
+    ws.onerror = () => {
+      if (!isClosingRef.current) {
+        setStatusText('Erreur de connexion — réessayez')
+        setSessionState('error')
+      }
+    }
+
+    ws.onclose = () => {
+      if (!isClosingRef.current) {
+        setSessionState('idle')
+        setIsAvaSpeaking(false)
+        setStatusText('Session terminée — appuyez pour recommencer')
+        onSessionEnd?.()
+      }
+    }
+  }, [language, webSearch, handleMessage, stopSession, onSessionEnd])
+
+  return {
+    sessionState, transcript, statusText, isAvaSpeaking,
+    isMuted, setIsMuted, startSession, stopSession,
+  }
+}
