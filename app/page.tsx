@@ -695,16 +695,16 @@ function Showcase() {
 
 const PLANS = [
   {
-    label: "1 month", price: "19.99€", per: "/month", href: "https://woonixltd.gumroad.com/l/ava-pro",
+    label: "1 month", price: "39.90€", per: "/month", href: "https://woonixltd.gumroad.com/l/avam1",
     popular: false, note: null,
   },
   {
-    label: "3 months", price: "14.99€", per: "/month", href: "https://woonixltd.gumroad.com/l/ava-pro",
-    popular: true, note: "44.99€ total",
+    label: "3 months", price: "99.99€", per: "/quarter", href: "https://woonixltd.gumroad.com/l/avam1?quarterly=true&wanted=true",
+    popular: true, note: "≈ 33.33€/month",
   },
   {
-    label: "6 months", price: "11.99€", per: "/month", href: "https://woonixltd.gumroad.com/l/ava-pro",
-    popular: false, note: "71.99€ total",
+    label: "6 months", price: "189.99€", per: "/ 6 months", href: "https://woonixltd.gumroad.com/l/avam1?biannually=true&wanted=true",
+    popular: false, note: "≈ 31.67€/month",
   },
 ];
 
@@ -765,7 +765,8 @@ function Pricing() {
                     </li>
                   ))}
                 </ul>
-                <motion.a href={plan.href} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                <motion.a href={plan.href} data-gumroad-overlay-checkout="true"
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   className={cn(
                     "block text-center py-3.5 rounded-2xl font-bold text-sm transition-all",
                     plan.popular

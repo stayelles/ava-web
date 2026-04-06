@@ -1,8 +1,8 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Crown, Check, ExternalLink, Zap, Globe, Monitor, Infinity } from 'lucide-react'
-import { GUMROAD_URL } from '../constants'
+import { Crown, Check, Zap, Globe, Monitor, Infinity } from 'lucide-react'
+import { GUMROAD_URL, GUMROAD_QUARTERLY_URL, GUMROAD_BIANNUAL_URL } from '../constants'
 import { isPro } from '../types'
 import type { UserData } from '../types'
 
@@ -15,6 +15,33 @@ const PRO_FEATURES = [
   { icon: Globe, text: 'Recherche web Google' },
   { icon: Monitor, text: 'Contrôle à distance (Desktop)' },
   { icon: Zap, text: 'Accès prioritaire aux nouvelles fonctionnalités' },
+]
+
+const PLANS = [
+  {
+    label: '1 mois',
+    price: '39,90€',
+    per: '/mois',
+    note: null,
+    href: GUMROAD_URL,
+    popular: false,
+  },
+  {
+    label: '3 mois',
+    price: '99,99€',
+    per: '/trimestre',
+    note: '≈ 33,33€/mois — économisez 16%',
+    href: GUMROAD_QUARTERLY_URL,
+    popular: true,
+  },
+  {
+    label: '6 mois',
+    price: '189,99€',
+    per: '/ 6 mois',
+    note: '≈ 31,67€/mois — économisez 20%',
+    href: GUMROAD_BIANNUAL_URL,
+    popular: false,
+  },
 ]
 
 export function SubscriptionTab({ user }: Props) {
@@ -105,46 +132,78 @@ export function SubscriptionTab({ user }: Props) {
         ))}
       </motion.div>
 
-      {/* Pricing card */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="rounded-2xl overflow-hidden"
-        style={{ background: 'rgba(225,29,72,0.06)', border: '1px solid rgba(225,29,72,0.18)' }}
-      >
-        <div className="px-5 py-5">
-          <div className="flex items-end gap-2 mb-1">
-            <span className="text-3xl font-black text-white">9,99€</span>
-            <span className="text-sm mb-1.5" style={{ color: '#64748b' }}>/mois</span>
-          </div>
-          <p className="text-xs" style={{ color: '#64748b' }}>
-            Via Gumroad — paiement sécurisé, annulation à tout moment
-          </p>
-        </div>
-
-        <motion.a
-          href={GUMROAD_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          className="flex items-center justify-center gap-2 mx-5 mb-5 py-3.5 rounded-xl font-bold text-sm"
-          style={{
-            background: '#e11d48', color: '#fff',
-            boxShadow: '0 0 24px rgba(225,29,72,0.35)',
-          }}
+      {/* Plan cards */}
+      {!pro && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="space-y-2"
         >
-          {pro ? 'Gérer mon abonnement' : 'Passer à Ava Pro'}
-          <ExternalLink size={14} />
-        </motion.a>
-      </motion.div>
+          <p className="text-[11px] font-bold uppercase tracking-widest px-1 mb-3" style={{ color: '#475569' }}>
+            Choisissez votre plan
+          </p>
+          {PLANS.map((plan) => (
+            <a
+              key={plan.label}
+              href={plan.href}
+              data-gumroad-overlay-checkout="true"
+              className="block rounded-2xl p-4 transition-all"
+              style={{
+                background: plan.popular ? 'rgba(225,29,72,0.08)' : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${plan.popular ? 'rgba(225,29,72,0.3)' : 'rgba(255,255,255,0.07)'}`,
+                textDecoration: 'none',
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider" style={{ color: plan.popular ? '#f43f5e' : '#64748b' }}>
+                      {plan.label}
+                    </span>
+                    {plan.popular && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: 'rgba(225,29,72,0.2)', color: '#f43f5e' }}>
+                        Populaire
+                      </span>
+                    )}
+                  </div>
+                  {plan.note && (
+                    <p className="text-[11px] mt-0.5" style={{ color: '#475569' }}>{plan.note}</p>
+                  )}
+                </div>
+                <div className="text-right">
+                  <span className="text-xl font-black text-white">{plan.price}</span>
+                  <span className="text-xs ml-1" style={{ color: '#64748b' }}>{plan.per}</span>
+                </div>
+              </div>
+            </a>
+          ))}
+        </motion.div>
+      )}
+
+      {/* Manage subscription (Pro users) */}
+      {pro && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <a
+            href={GUMROAD_URL}
+            data-gumroad-overlay-checkout="true"
+            className="flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm w-full"
+            style={{ background: '#e11d48', color: '#fff', boxShadow: '0 0 24px rgba(225,29,72,0.35)', textDecoration: 'none' }}
+          >
+            Gérer mon abonnement
+          </a>
+        </motion.div>
+      )}
 
       {!pro && (
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.25 }}
           className="text-center text-xs pb-2"
           style={{ color: '#334155' }}
         >
