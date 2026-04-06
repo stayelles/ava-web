@@ -21,6 +21,10 @@ import { Spotlight } from "@/components/ui/spotlight";
 import { cn } from "@/lib/utils";
 import Iphone15Pro from "@/components/magicui/iphone-15-pro";
 import { BorderBeam } from "@/components/magicui/border-beam";
+import {
+  Navbar as ResizableNavbar, NavBody, NavItems, MobileNav, NavbarLogo,
+  NavbarButton, MobileNavHeader, MobileNavToggle, MobileNavMenu,
+} from "@/components/ui/resizable-navbar";
 
 // ─── Pre-computed waveform heights (no Math.random in render) ────────────────
 const WAVE_BARS_HERO = Array.from({ length: 24 }, (_, i) =>
@@ -59,41 +63,52 @@ function DotGrid({ className }: { className?: string }) {
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
+const NAV_ITEMS = [
+  { name: "Features", link: "#features" },
+  { name: "Pricing", link: "#pricing" },
+  { name: "Download", link: "#download" },
+  { name: "Web App", link: "/app" },
+];
+
 function Navbar() {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", fn);
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <motion.nav initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.1 }}
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-lg px-4">
-      <div className={cn(
-        "flex items-center justify-between px-5 py-2.5 rounded-full border transition-all duration-300",
-        scrolled
-          ? "bg-slate-900/95 backdrop-blur-xl border-white/10 shadow-xl shadow-black/40"
-          : "bg-white/[0.04] backdrop-blur-xl border-white/10"
-      )}>
-        <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Ava" className="w-7 h-7 rounded-full object-cover shadow-lg shadow-rose-500/30" style={{ objectPosition: "center 45%" }} />
-          <span className="font-black text-white text-sm tracking-wide">Ava</span>
-        </div>
-        <div className="hidden sm:flex items-center gap-5">
-          {[["Features", "#features"], ["Pricing", "#pricing"], ["Download", "#download"]].map(([l, h]) => (
-            <a key={l} href={h} className="text-xs text-slate-400 hover:text-white transition-colors font-semibold">{l}</a>
-          ))}
-          <a href="/app" className="text-xs text-rose-400 hover:text-rose-300 transition-colors font-semibold">Web App</a>
-        </div>
-        <motion.a href="https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"
-          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-          className="px-4 py-1.5 rounded-full bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition-colors shadow-lg shadow-rose-500/25">
+    <ResizableNavbar>
+      {/* Desktop */}
+      <NavBody>
+        <NavbarLogo />
+        <NavItems items={NAV_ITEMS} />
+        <NavbarButton href="https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525" variant="primary">
           Get Ava Free
-        </motion.a>
-      </div>
-    </motion.nav>
+        </NavbarButton>
+      </NavBody>
+
+      {/* Mobile */}
+      <MobileNav>
+        <MobileNavHeader>
+          <NavbarLogo />
+          <MobileNavToggle
+            isOpen={isMobileMenuOpen}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          />
+        </MobileNavHeader>
+        <MobileNavMenu isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)}>
+          {NAV_ITEMS.map((item, idx) => (
+            <a key={idx} href={item.link} onClick={() => setIsMobileMenuOpen(false)}
+              className="text-slate-300 hover:text-white font-medium py-1 transition-colors">
+              {item.name}
+            </a>
+          ))}
+          <NavbarButton
+            href="https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"
+            variant="primary" className="w-full mt-2"
+          >
+            Get Ava Free
+          </NavbarButton>
+        </MobileNavMenu>
+      </MobileNav>
+    </ResizableNavbar>
   );
 }
 
