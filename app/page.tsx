@@ -212,19 +212,19 @@ function Hero() {
             <SiGoogleplay size={15} /> Google Play
           </motion.a>
           {/* Desktop */}
-          <motion.a href="/Ava.dmg"
+          <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-arm64.dmg"
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             className="inline-flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition-all">
             <div className="flex items-center gap-1.5 font-bold text-sm"><SiApple size={13} /> Mac — Apple Silicon</div>
             <span className="text-white/35 text-[10px]">M1 / M2 / M3 / M4</span>
           </motion.a>
-          <motion.a href="/AvaIntel.dmg"
+          <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-x64.dmg"
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             className="inline-flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition-all">
             <div className="flex items-center gap-1.5 font-bold text-sm"><Cpu size={13} /> Mac — Intel</div>
             <span className="text-white/35 text-[10px]">x86_64</span>
           </motion.a>
-          <motion.a href="/AvaSetup.exe"
+          <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/AvaSetup.exe"
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             className="inline-flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition-all">
             <div className="flex items-center gap-1.5 font-bold text-sm"><WindowsIcon size={13} /> Windows</div>
@@ -862,7 +862,7 @@ function FinalCTA() {
           </div>
           {/* Desktop */}
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <motion.a href="/Ava.dmg"
+            <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-arm64.dmg"
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
               <div className="flex items-center gap-2 font-bold text-sm">
@@ -870,7 +870,7 @@ function FinalCTA() {
               </div>
               <span className="text-white/35 text-[10px] font-medium">M1 / M2 / M3 / M4</span>
             </motion.a>
-            <motion.a href="/AvaIntel.dmg"
+            <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-x64.dmg"
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
               <div className="flex items-center gap-2 font-bold text-sm">
@@ -878,7 +878,7 @@ function FinalCTA() {
               </div>
               <span className="text-white/35 text-[10px] font-medium">x86_64</span>
             </motion.a>
-            <motion.a href="/AvaSetup.exe"
+            <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/AvaSetup.exe"
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
               <div className="flex items-center gap-2 font-bold text-sm">
@@ -915,9 +915,9 @@ function Footer() {
               {[
                 ["iOS App", "https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"],
                 ["Android App", "https://play.google.com/store/apps/details?id=com.kemyamo.ava"],
-                ["Mac (Apple Silicon)", "/Ava.dmg"],
-                ["Mac (Intel)", "/AvaIntel.dmg"],
-                ["Windows", "/AvaSetup.exe"],
+                ["Mac (Apple Silicon)", "https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-arm64.dmg"],
+                ["Mac (Intel)", "https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-x64.dmg"],
+                ["Windows", "https://github.com/stayelles/ava-desktop/releases/latest/download/AvaSetup.exe"],
               ].map(([l, h]) => (
                 <li key={l}><a href={h} className="text-white/35 hover:text-white text-sm transition-colors">{l}</a></li>
               ))}
