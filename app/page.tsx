@@ -17,6 +17,7 @@ function WindowsIcon({ size = 16 }: { size?: number }) {
   );
 }
 import { Badge } from "@/components/ui/badge";
+import { Spotlight } from "@/components/ui/spotlight";
 import { cn } from "@/lib/utils";
 import Iphone15Pro from "@/components/magicui/iphone-15-pro";
 import { BorderBeam } from "@/components/magicui/border-beam";
@@ -141,8 +142,15 @@ function PhoneScreen() {
 
 function Hero() {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center pt-28 pb-20 overflow-hidden">
-      <DotGrid className="opacity-40" />
+    <section className="relative min-h-screen flex flex-col items-center justify-center pt-28 pb-20 overflow-hidden bg-[#020617]">
+      {/* Grid background */}
+      <div className="pointer-events-none absolute inset-0 select-none"
+        style={{
+          backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }} />
+      {/* Spotlight — teinte rose pour matcher nos couleurs */}
+      <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" fill="#f43f5e" />
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(225,29,72,0.10) 0%, transparent 65%)" }} />
 
