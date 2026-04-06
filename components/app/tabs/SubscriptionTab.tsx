@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Crown, Check, Zap, Globe, Monitor, Infinity } from 'lucide-react'
+import { Crown, Check, Zap, Globe, Monitor, Infinity, ImageIcon, Brain, Bell, Layers } from 'lucide-react'
 import { GUMROAD_URL, GUMROAD_QUARTERLY_URL, GUMROAD_BIANNUAL_URL } from '../constants'
 import { isPro } from '../types'
 import type { UserData } from '../types'
@@ -10,10 +10,21 @@ interface Props {
   user: UserData
 }
 
+const FREE_FEATURES = [
+  '3 crédits vocaux offerts par jour',
+  'Voix ultra-réaliste (Gemini 2.5 Flash)',
+  'Mémoire conversationnelle',
+  '4 langues : FR, EN, DE, TR',
+]
+
 const PRO_FEATURES = [
-  { icon: Infinity, text: 'Crédits illimités' },
-  { icon: Globe, text: 'Recherche web Google' },
-  { icon: Monitor, text: 'Contrôle à distance (Desktop)' },
+  { icon: Infinity, text: 'Conversations vocales illimitées (sans limite de crédits)' },
+  { icon: Globe, text: 'Recherche web Google en temps réel' },
+  { icon: ImageIcon, text: 'Analyse d\'images pendant les appels (jusqu\'à 6)' },
+  { icon: Monitor, text: 'Contrôle à distance Mac/PC (via Ava Mobile)' },
+  { icon: Brain, text: 'Vision écran en temps réel (via Ava Mobile)' },
+  { icon: Bell, text: 'Rappels intelligents avec notifications push (mobile)' },
+  { icon: Layers, text: 'Intégrations MCP : Notion, GitHub, et plus (mobile)' },
   { icon: Zap, text: 'Accès prioritaire aux nouvelles fonctionnalités' },
 ]
 
@@ -109,33 +120,58 @@ export function SubscriptionTab({ user }: Props) {
         </div>
       </motion.div>
 
-      {/* Features list */}
+      {/* Free plan included */}
+      {!pro && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-2xl overflow-hidden"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <div className="px-4 py-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#475569' }}>
+              Plan gratuit (inclus)
+            </p>
+          </div>
+          <div className="px-4 py-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
+            {FREE_FEATURES.map(f => (
+              <span key={f} className="flex items-center gap-1.5 text-xs" style={{ color: '#64748b' }}>
+                <Check size={11} style={{ color: '#475569' }} />
+                {f}
+              </span>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Pro features list */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+        transition={{ delay: 0.12 }}
         className="rounded-2xl overflow-hidden"
         style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
       >
         <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#475569' }}>
-            Fonctionnalités Pro
+            {pro ? 'Votre plan Pro — actif' : 'Ce que vous débloquez avec Pro'}
           </p>
         </div>
         {PRO_FEATURES.map(({ icon: Icon, text }, i) => (
           <div
             key={text}
-            className="flex items-center gap-3 px-4 py-3"
+            className="flex items-center gap-3 px-4 py-2.5"
             style={{ borderBottom: i < PRO_FEATURES.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}
           >
             <div
-              className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ background: 'rgba(225,29,72,0.1)' }}
+              className="w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: pro ? 'rgba(52,211,153,0.1)' : 'rgba(225,29,72,0.1)' }}
             >
-              <Icon size={14} style={{ color: '#f43f5e' }} />
+              <Icon size={12} style={{ color: pro ? '#34d399' : '#f43f5e' }} />
             </div>
-            <span className="text-sm" style={{ color: '#cbd5e1' }}>{text}</span>
-            {pro && <Check size={14} className="ml-auto flex-shrink-0" style={{ color: '#34d399' }} />}
+            <span className="text-xs leading-snug" style={{ color: '#cbd5e1' }}>{text}</span>
+            {pro && <Check size={12} className="ml-auto flex-shrink-0" style={{ color: '#34d399' }} />}
           </div>
         ))}
       </motion.div>

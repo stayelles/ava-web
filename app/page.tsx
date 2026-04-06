@@ -709,11 +709,14 @@ const PLANS = [
 ];
 
 const PLAN_FEATURES = [
-  "Unlimited voice conversations",
-  "Remote Mac/PC control",
-  "Smart push reminders",
-  "MCP integrations",
-  "Persistent memory",
+  "Unlimited voice conversations (no credit cap)",
+  "Google real-time web search",
+  "Image sharing & analysis during calls",
+  "Remote Mac/PC control from anywhere",
+  "Real-time screen vision & analysis",
+  "Smart push reminders & scheduling",
+  "MCP integrations (Notion, GitHub...)",
+  "Persistent conversation memory",
   "Priority support",
 ];
 
