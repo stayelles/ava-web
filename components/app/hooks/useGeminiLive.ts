@@ -196,8 +196,9 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
 
     const actualSampleRate = ctx.sampleRate // e.g. 44100 or 48000
 
-    // WebSocket
+    // WebSocket — binaryType arraybuffer: browsers default to Blob which we can't handle inline
     const ws = new WebSocket(`${WS_BASE}?key=${apiKey}`)
+    ws.binaryType = 'arraybuffer'
     wsRef.current = ws
 
     ws.onopen = () => {
@@ -250,9 +251,13 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
 
     ws.onmessage = (event) => {
       const d = event.data
-      if (typeof d === 'string') handleMessage(d)
-      else if (d instanceof ArrayBuffer) {
+      if (typeof d === 'string') {
+        handleMessage(d)
+      } else if (d instanceof ArrayBuffer) {
         try { handleMessage(new TextDecoder().decode(d)) } catch {}
+      } else if (d instanceof Blob) {
+        // Fallback: Blob (shouldn't happen with binaryType=arraybuffer, but just in case)
+        d.text().then(txt => { try { handleMessage(txt) } catch {} }).catch(() => {})
       }
     }
 

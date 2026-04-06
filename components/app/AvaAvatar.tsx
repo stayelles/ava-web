@@ -95,6 +95,8 @@ export function AvaAvatar({ isActive, volume }: Props) {
             src="/logo.png"
             alt="Ava"
             fill
+            sizes="256px"
+            priority
             className="object-cover object-top"
             style={{
               transform: isActive
