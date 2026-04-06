@@ -85,6 +85,7 @@ function Navbar() {
           {[["Features", "#features"], ["Pricing", "#pricing"], ["Download", "#download"]].map(([l, h]) => (
             <a key={l} href={h} className="text-xs text-slate-400 hover:text-white transition-colors font-semibold">{l}</a>
           ))}
+          <a href="/app" className="text-xs text-rose-400 hover:text-rose-300 transition-colors font-semibold">Web App</a>
         </div>
         <motion.a href="https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"
           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -927,8 +928,10 @@ function Footer() {
             <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-4">Legal</p>
             <ul className="space-y-2.5">
               {[
-                ["Terms of Service", "https://call-ava.com/cgu"],
-                ["Privacy Policy", "https://call-ava.com/confidentialite"],
+                ["Terms of Service", "/cgu"],
+                ["Privacy Policy", "/confidentialite"],
+                ["Support", "/support"],
+                ["Delete Account", "/supprimer-compte"],
               ].map(([l, h]) => (
                 <li key={l}><a href={h} className="text-white/35 hover:text-white text-sm transition-colors">{l}</a></li>
               ))}
