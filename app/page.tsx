@@ -725,11 +725,17 @@ function Pricing() {
         <FadeUp className="text-center mb-16">
           <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">Pricing</p>
           <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">
-            Flexible pricing plans
+            Try free for 7 days
           </h2>
           <p className="text-slate-400 text-lg mt-4 max-w-lg mx-auto">
-            All plans unlock every feature. Pick the duration that suits you.
+            Start today at <span className="text-white font-bold">0€</span> — no charge until day 8. Cancel anytime.
           </p>
+          {/* Free trial badge */}
+          <div className="inline-flex items-center gap-2 mt-5 px-5 py-2 rounded-full text-sm font-semibold"
+            style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', color: '#34d399' }}>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
+            7-day free trial included on all plans
+          </div>
         </FadeUp>
         <div className="grid md:grid-cols-3 gap-5">
           {PLANS.map((plan, i) => (
@@ -746,14 +752,21 @@ function Pricing() {
                     </span>
                   </div>
                 )}
-                <p className="text-white/35 text-xs font-bold uppercase tracking-wider mb-4">{plan.label}</p>
-                <div className="flex items-end gap-1 mb-1">
+                {/* Today 0€ */}
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#34d399' }}>
+                    Today — 0€
+                  </span>
+                  <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wider">{plan.label}</span>
+                </div>
+                <div className="flex items-end gap-1 mb-0.5">
                   <span className="text-4xl font-black text-white">{plan.price}</span>
                   <span className="text-white/35 text-sm mb-1.5">{plan.per}</span>
                 </div>
+                <p className="text-white/25 text-xs mb-2">after 7-day free trial</p>
                 {plan.note
-                  ? <p className="text-white/20 text-xs mb-7">{plan.note} billed upfront</p>
-                  : <div className="mb-7" />
+                  ? <p className="text-white/20 text-xs mb-6">{plan.note}</p>
+                  : <div className="mb-6" />
                 }
                 <ul className="space-y-3 mb-8 flex-1">
                   {PLAN_FEATURES.map(f => (
@@ -773,12 +786,17 @@ function Pricing() {
                       ? "bg-rose-500 hover:bg-rose-400 text-white shadow-lg shadow-rose-500/25"
                       : "bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white"
                   )}>
-                  Get Started
+                  Start Free Trial
                 </motion.a>
               </div>
             </FadeUp>
           ))}
         </div>
+        <FadeUp delay={0.3}>
+          <p className="text-center text-xs text-slate-600 mt-8">
+            No credit card required for first 7 days · Cancel before day 8 and pay nothing
+          </p>
+        </FadeUp>
       </div>
     </section>
   );

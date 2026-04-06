@@ -65,6 +65,14 @@ export function SubscriptionTab({ user }: Props) {
         <p className="text-sm mt-1" style={{ color: '#64748b' }}>
           L&apos;expérience complète sans limites
         </p>
+        {/* Free trial banner */}
+        <div
+          className="inline-flex items-center gap-2 mt-3 px-4 py-1.5 rounded-full text-xs font-semibold"
+          style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', color: '#34d399' }}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+          7 jours gratuits — aujourd&apos;hui 0€
+        </div>
       </motion.div>
 
       {/* Current status */}
@@ -167,13 +175,16 @@ export function SubscriptionTab({ user }: Props) {
                       </span>
                     )}
                   </div>
+                  <p className="text-[10px] font-bold mt-0.5" style={{ color: '#34d399' }}>
+                    Aujourd&apos;hui 0€ · puis {plan.price}{plan.per}
+                  </p>
                   {plan.note && (
-                    <p className="text-[11px] mt-0.5" style={{ color: '#475569' }}>{plan.note}</p>
+                    <p className="text-[10px] mt-0" style={{ color: '#334155' }}>{plan.note}</p>
                   )}
                 </div>
-                <div className="text-right">
-                  <span className="text-xl font-black text-white">{plan.price}</span>
-                  <span className="text-xs ml-1" style={{ color: '#64748b' }}>{plan.per}</span>
+                <div className="text-right ml-3 flex-shrink-0">
+                  <span className="text-lg font-black text-white">{plan.price}</span>
+                  <span className="text-[10px] ml-0.5" style={{ color: '#64748b' }}>{plan.per}</span>
                 </div>
               </div>
             </a>
@@ -207,7 +218,8 @@ export function SubscriptionTab({ user }: Props) {
           className="text-center text-xs pb-2"
           style={{ color: '#334155' }}
         >
-          Après paiement sur Gumroad, revenez dans l&apos;app — votre statut Pro sera activé automatiquement.
+          7 jours gratuits · aucun débit avant le 8e jour · annulez avant et payez 0€
+          <br />Après abonnement, revenez dans l&apos;app — votre statut Pro s&apos;active automatiquement.
         </motion.p>
       )}
     </div>
