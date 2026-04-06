@@ -42,6 +42,7 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
   const [statusText, setStatusText] = useState('Appuyez pour démarrer')
   const [isAvaSpeaking, setIsAvaSpeaking] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
+  const [volumeLevel, setVolumeLevel] = useState(0)
 
   const wsRef = useRef<WebSocket | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
@@ -147,6 +148,7 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
     setSessionState('idle')
     setIsAvaSpeaking(false)
     setIsMuted(false)
+    setVolumeLevel(0)
     setStatusText('Appuyez pour démarrer')
     onSessionEnd?.()
     setTimeout(() => { isClosingRef.current = false }, 300)
@@ -226,8 +228,14 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
       processorRef.current = processor
 
       processor.onaudioprocess = (e) => {
-        if (isMutedRef.current || ws.readyState !== WebSocket.OPEN) return
         const raw = e.inputBuffer.getChannelData(0)
+        // Compute RMS for volume level
+        let sum = 0
+        for (let i = 0; i < raw.length; i++) sum += raw[i] * raw[i]
+        const rms = Math.sqrt(sum / raw.length)
+        setVolumeLevel(Math.min(rms * 6, 1))
+
+        if (isMutedRef.current || ws.readyState !== WebSocket.OPEN) return
         const resampled = resampleTo16k(raw, actualSampleRate)
         const base64 = float32ToBase64PCM16(resampled)
         ws.send(JSON.stringify({
@@ -267,6 +275,6 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
 
   return {
     sessionState, transcript, statusText, isAvaSpeaking,
-    isMuted, setIsMuted, startSession, stopSession,
+    isMuted, setIsMuted, startSession, stopSession, volumeLevel,
   }
 }
