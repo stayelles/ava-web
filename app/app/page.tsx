@@ -5,7 +5,10 @@ import { LoginScreen } from '@/components/app/LoginScreen'
 import { AppShell } from '@/components/app/AppShell'
 
 export default function AvaWebApp() {
-  const { user, loginLoading, loginError, login, logout, refreshUser, updatePin } = useUserData()
+  const {
+    user, loginLoading, loginError, login, logout,
+    refreshUser, updatePin, permissions, decrementCredits,
+  } = useUserData()
 
   if (!user) {
     return (
@@ -20,9 +23,11 @@ export default function AvaWebApp() {
   return (
     <AppShell
       user={user}
+      permissions={permissions}
       onLogout={logout}
       onUpdatePin={updatePin}
       onRefresh={refreshUser}
+      onDecrementCredits={decrementCredits}
     />
   )
 }

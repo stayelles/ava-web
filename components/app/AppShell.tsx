@@ -8,24 +8,31 @@ import { ProfileTab } from './tabs/ProfileTab'
 import { SubscriptionTab } from './tabs/SubscriptionTab'
 import { ReferralTab } from './tabs/ReferralTab'
 import { SettingsTab } from './tabs/SettingsTab'
-import type { AppTab, AppSettings, UserData } from './types'
+import type { AppTab, AppSettings, UserData, AvaPermissions } from './types'
+import { isPro } from './types'
 
 interface Props {
   user: UserData
+  permissions: AvaPermissions
   onLogout: () => void
   onUpdatePin: (pin: string) => Promise<{ ok: boolean; error?: string }>
   onRefresh: () => void
+  onDecrementCredits: () => Promise<void>
 }
 
 const DEFAULT_SETTINGS: AppSettings = { language: 'fr', webSearch: false }
 
-export function AppShell({ user, onLogout, onUpdatePin, onRefresh }: Props) {
+export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits }: Props) {
   const [activeTab, setActiveTab] = useState<AppTab>('voice')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
 
   const handleSessionEnd = useCallback(() => {
     onRefresh()
   }, [onRefresh])
+
+  const handleGoToSubscription = useCallback(() => {
+    setActiveTab('subscription')
+  }, [])
 
   return (
     <div
@@ -63,7 +70,10 @@ export function AppShell({ user, onLogout, onUpdatePin, onRefresh }: Props) {
               user={user}
               language={settings.language}
               webSearch={settings.webSearch}
+              permissions={permissions}
               onSessionEnd={handleSessionEnd}
+              onTurnComplete={onDecrementCredits}
+              onGoToSubscription={handleGoToSubscription}
             />
           )}
           {activeTab === 'profile' && (
@@ -76,7 +86,12 @@ export function AppShell({ user, onLogout, onUpdatePin, onRefresh }: Props) {
             <ReferralTab user={user} />
           )}
           {activeTab === 'settings' && (
-            <SettingsTab settings={settings} onSettingsChange={setSettings} />
+            <SettingsTab
+              settings={settings}
+              onSettingsChange={setSettings}
+              isPro={isPro(user)}
+              onGoToSubscription={handleGoToSubscription}
+            />
           )}
         </div>
       </div>

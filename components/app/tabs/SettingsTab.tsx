@@ -1,12 +1,14 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Globe, Search, Info } from 'lucide-react'
+import { Globe, Search, Info, Lock } from 'lucide-react'
 import type { AppSettings } from '../types'
 
 interface Props {
   settings: AppSettings
   onSettingsChange: (s: AppSettings) => void
+  isPro: boolean
+  onGoToSubscription?: () => void
 }
 
 const LANGUAGES = [
@@ -16,7 +18,7 @@ const LANGUAGES = [
   { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
 ]
 
-export function SettingsTab({ settings, onSettingsChange }: Props) {
+export function SettingsTab({ settings, onSettingsChange, isPro, onGoToSubscription }: Props) {
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full space-y-4">
       {/* Language */}
@@ -72,20 +74,36 @@ export function SettingsTab({ settings, onSettingsChange }: Props) {
         </div>
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-white">Recherche web</p>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-white">Recherche web</p>
+                {!isPro && (
+                  <span
+                    className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider cursor-pointer"
+                    style={{ background: 'rgba(225,29,72,0.12)', color: '#f43f5e', border: '1px solid rgba(225,29,72,0.2)' }}
+                    onClick={onGoToSubscription}
+                  >
+                    <Lock size={9} />Pro
+                  </span>
+                )}
+              </div>
               <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>
                 Google Search pour des informations en temps réel
               </p>
             </div>
             <button
-              onClick={() => onSettingsChange({ ...settings, webSearch: !settings.webSearch })}
-              className="relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200"
-              style={{ background: settings.webSearch ? '#e11d48' : 'rgba(255,255,255,0.1)' }}
+              onClick={() => isPro && onSettingsChange({ ...settings, webSearch: !settings.webSearch })}
+              disabled={!isPro}
+              className="relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-200 ml-3"
+              style={{
+                background: isPro && settings.webSearch ? '#e11d48' : 'rgba(255,255,255,0.1)',
+                opacity: isPro ? 1 : 0.4,
+                cursor: isPro ? 'pointer' : 'not-allowed',
+              }}
             >
               <span
                 className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200"
-                style={{ transform: settings.webSearch ? 'translateX(20px)' : 'translateX(0)' }}
+                style={{ transform: isPro && settings.webSearch ? 'translateX(20px)' : 'translateX(0)' }}
               />
             </button>
           </div>
