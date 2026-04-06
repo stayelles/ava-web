@@ -84,14 +84,20 @@ export default function AvaWebApp() {
   // ── Auth ────────────────────────────────────────────────────────────────────
 
   const handleLogin = async () => {
-    if (!loginEmail.trim() || loginPin.length < 4) {
-      setLoginError('Email et code PIN requis')
+    const identifier = loginEmail.trim()
+    if (!identifier || loginPin.length < 4) {
+      setLoginError('Identifiant et code PIN requis')
       return
     }
     setLoginLoading(true)
     setLoginError('')
     try {
-      const url = `${SUPABASE_URL}/rest/v1/ava_users?email=eq.${encodeURIComponent(loginEmail.trim())}&pin=eq.${loginPin}&select=id,email,credits,free_daily_credits`
+      // Support email OR numeric telegram_id
+      const isNumeric = /^\d+$/.test(identifier)
+      const filter = isNumeric
+        ? `telegram_id=eq.${identifier}`
+        : `email=eq.${encodeURIComponent(identifier)}`
+      const url = `${SUPABASE_URL}/rest/v1/ava_users?${filter}&pin=eq.${loginPin}&select=id,email,credits,free_daily_credits`
       const res = await fetch(url, {
         headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
       })
@@ -101,7 +107,7 @@ export default function AvaWebApp() {
         setUser(u)
         localStorage.setItem('ava_web_session', JSON.stringify(u))
       } else {
-        setLoginError('Email ou PIN incorrect')
+        setLoginError('Identifiant ou PIN incorrect')
       }
     } catch {
       setLoginError('Erreur de connexion. Réessayez.')
@@ -652,14 +658,14 @@ function LoginScreen({
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-semibold mb-2 uppercase tracking-wider" style={{ color: '#64748b' }}>
-                Email
+                Email ou identifiant
               </label>
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={e => onEmailChange(e.target.value)}
                 onKeyDown={handleKey}
-                placeholder="votre@email.com"
+                placeholder="votre@email.com ou 62402485"
                 style={inputStyle}
                 onFocus={e => (e.target.style.borderColor = 'rgba(225,29,72,0.5)')}
                 onBlur={e => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
@@ -705,7 +711,7 @@ function LoginScreen({
           </div>
 
           <p className="text-xs text-center mt-6" style={{ color: '#475569' }}>
-            Utilisez les identifiants de votre application Ava mobile
+            Utilisez votre email ou identifiant + PIN de l&apos;appli Ava
           </p>
         </div>
 
