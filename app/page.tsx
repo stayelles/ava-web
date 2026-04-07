@@ -709,7 +709,7 @@ const PLANS = [
 ];
 
 const PLAN_FEATURES = [
-  "Unlimited voice conversations (no credit cap)",
+  "250 min of voice per month (shared across web, mobile & desktop)",
   "Google real-time web search",
   "Image sharing & analysis during calls",
   "Remote Mac/PC control from anywhere",
