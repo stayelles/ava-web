@@ -12,7 +12,7 @@ interface Props {
 
 const FREE_FEATURES = [
   '3 crédits vocaux offerts par jour',
-  'Voix ultra-réaliste (Gemini 2.5 Flash)',
+  'Voix ultra-réaliste',
   'Mémoire conversationnelle',
   '4 langues : FR, EN, DE, TR',
 ]
@@ -164,12 +164,16 @@ function VoiceQuotaBar({ user, pro }: { user: UserData; pro: boolean }) {
 export function SubscriptionTab({ user }: Props) {
   const pro = isPro(user)
   const custom = isCustomPlan(user)
+  // Abonné via App Store / Google Play (RevenueCat) — subscription_tier mis à jour par le webhook RC
+  const hasMobileSubscription = !!user.subscription_tier &&
+    user.subscription_tier !== 'free' &&
+    user.subscription_source !== 'gumroad'
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full space-y-4">
 
-      {/* Mobile subscriber note — for RevenueCat subscribers (App Store / Google Play) */}
-      {!pro && !custom && (
+      {/* Mobile subscriber note — uniquement si abonnement RevenueCat détecté */}
+      {hasMobileSubscription && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

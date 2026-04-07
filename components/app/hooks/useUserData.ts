@@ -21,7 +21,7 @@ function applyVoiceReset(u: UserData): UserData {
 }
 
 const SESSION_KEY = 'ava_web_session'
-const SELECT_FIELDS = 'id,email,credits,free_daily_credits,subscription_source,subscription_expires_at,referral_code,telegram_id,user_name,voice_minutes_used,voice_quota_reset_at,custom_plan_expires_at,gemini_api_key_enc,gemini_api_key_iv,gemini_key_hint'
+const SELECT_FIELDS = 'id,email,credits,free_daily_credits,subscription_source,subscription_expires_at,subscription_tier,referral_code,telegram_id,user_name,voice_minutes_used,voice_quota_reset_at,custom_plan_expires_at,gemini_api_key_enc,gemini_api_key_iv,gemini_key_hint,text_messages_used,text_quota_reset_at'
 
 async function fetchMemory(userId: string): Promise<string> {
   try {
@@ -40,7 +40,7 @@ export function useUserData() {
   const [user, setUser] = useState<UserData | null>(null)
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginError, setLoginError] = useState('')
-  const [permissions, setPermissions] = useState<AvaPermissions>({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false })
+  const [permissions, setPermissions] = useState<AvaPermissions>({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false, dailyTextMessages: 10 })
   const [customApiKey, setCustomApiKey] = useState<string | null>(null)
 
   // Load saved session on mount + refresh memory + apply voice reset
@@ -113,7 +113,7 @@ export function useUserData() {
 
   const logout = useCallback(() => {
     setUser(null)
-    setPermissions({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false })
+    setPermissions({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false, dailyTextMessages: 10 })
     setCustomApiKey(null)
     localStorage.removeItem(SESSION_KEY)
   }, [])
@@ -242,10 +242,32 @@ export function useUserData() {
     }
   }, [user])
 
+  const incrementTextMessages = useCallback(async (): Promise<{ blocked: boolean }> => {
+    if (!user) return { blocked: true }
+    const limit = permissions.dailyTextMessages
+    const now = new Date()
+    const resetAt = user.text_quota_reset_at ? new Date(user.text_quota_reset_at) : null
+    const needsReset = !resetAt || resetAt <= now
+    const currentUsed = needsReset ? 0 : (user.text_messages_used ?? 0)
+    if (limit !== -1 && currentUsed >= limit) return { blocked: true }
+    const newUsed = currentUsed + 1
+    const nextReset = needsReset
+      ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
+      : user.text_quota_reset_at!
+    setUser(u => u ? { ...u, text_messages_used: newUsed, text_quota_reset_at: nextReset } : u)
+    fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${user.id}`, {
+      method: 'PATCH',
+      headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
+      body: JSON.stringify({ text_messages_used: newUsed, text_quota_reset_at: nextReset }),
+    }).catch(() => {})
+    return { blocked: false }
+  }, [user, permissions])
+
   return {
     user, setUser, permissions,
     loginLoading, loginError, login, logout,
     refreshUser, updatePin, decrementCredits, trackVoiceTime,
     customApiKey, saveApiKey, removeApiKey,
+    incrementTextMessages,
   }
 }

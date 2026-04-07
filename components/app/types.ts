@@ -5,6 +5,9 @@ export interface UserData {
   free_daily_credits: number
   subscription_source: string | null
   subscription_expires_at: string | null
+  subscription_tier?: string | null   // RevenueCat: 'free' | 'starter' | 'pro' | 'ultra'
+  text_messages_used?: number
+  text_quota_reset_at?: string | null
   referral_code: string | null
   telegram_id: string | null
   user_name?: string | null
@@ -39,6 +42,8 @@ export interface AvaPermissions {
   imageUpload: boolean   // Can send images during call
   unlimited: boolean     // No credit deduction
   canUseCustomApiKey: boolean  // Plan Custom — clé API Gemini personnelle
+  /** Messages texte par jour. -1 = illimité. */
+  dailyTextMessages: number
 }
 
 export const FREE_PERMISSIONS: AvaPermissions = {
@@ -46,6 +51,7 @@ export const FREE_PERMISSIONS: AvaPermissions = {
   imageUpload: false,
   unlimited: false,
   canUseCustomApiKey: false,
+  dailyTextMessages: 10,
 }
 
 export const PRO_PERMISSIONS: AvaPermissions = {
@@ -53,6 +59,7 @@ export const PRO_PERMISSIONS: AvaPermissions = {
   imageUpload: true,
   unlimited: true,
   canUseCustomApiKey: false,
+  dailyTextMessages: 300,
 }
 
 export function isPro(user: UserData): boolean {
@@ -68,7 +75,12 @@ export function isCustomPlan(user: UserData): boolean {
 
 export function resolvePermissions(user: UserData): AvaPermissions {
   const base = isPro(user) ? PRO_PERMISSIONS : FREE_PERMISSIONS
-  return { ...base, canUseCustomApiKey: isCustomPlan(user) }
+  const custom = isCustomPlan(user)
+  return {
+    ...base,
+    canUseCustomApiKey: custom,
+    dailyTextMessages: custom ? -1 : base.dailyTextMessages,
+  }
 }
 
 export function totalCredits(user: UserData): number {
