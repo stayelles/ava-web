@@ -30,7 +30,7 @@ export interface TranscriptItem {
 
 export type SessionState = 'idle' | 'connecting' | 'connected' | 'error'
 
-export type AppTab = 'voice' | 'profile' | 'subscription' | 'referral' | 'settings'
+export type AppTab = 'voice' | 'chat' | 'profile' | 'subscription' | 'referral' | 'settings'
 
 export interface AppSettings {
   language: 'fr' | 'en' | 'tr' | 'de'

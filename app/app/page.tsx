@@ -8,7 +8,7 @@ export default function AvaWebApp() {
   const {
     user, loginLoading, loginError, login, logout,
     refreshUser, updatePin, permissions, decrementCredits, trackVoiceTime,
-    customApiKey, saveApiKey, removeApiKey,
+    customApiKey, saveApiKey, removeApiKey, incrementTextMessages,
   } = useUserData()
 
   if (!user) {
@@ -33,6 +33,7 @@ export default function AvaWebApp() {
       customApiKey={customApiKey}
       onSaveApiKey={saveApiKey}
       onRemoveApiKey={removeApiKey}
+      onIncrementTextMessages={incrementTextMessages}
     />
   )
 }

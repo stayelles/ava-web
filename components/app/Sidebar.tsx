@@ -1,12 +1,13 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Mic, User, Crown, Users, Settings, LogOut } from 'lucide-react'
+import { Mic, MessageSquare, User, Crown, Users, Settings, LogOut } from 'lucide-react'
 import Image from 'next/image'
 import type { AppTab } from './types'
 
 const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'voice', label: 'Conversation', icon: Mic },
+  { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'profile', label: 'Profil', icon: User },
   { id: 'subscription', label: 'Abonnement', icon: Crown },
   { id: 'referral', label: 'Parrainage', icon: Users },

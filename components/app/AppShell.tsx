@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { Sidebar } from './Sidebar'
 import { BottomTabs } from './BottomTabs'
 import { VoiceTab } from './tabs/VoiceTab'
+import { ChatTab } from './tabs/ChatTab'
 import { ProfileTab } from './tabs/ProfileTab'
 import { SubscriptionTab } from './tabs/SubscriptionTab'
 import { ReferralTab } from './tabs/ReferralTab'
@@ -22,11 +23,12 @@ interface Props {
   customApiKey?: string | null
   onSaveApiKey?: (key: string, pin: string) => Promise<{ ok: boolean; error?: string }>
   onRemoveApiKey?: () => Promise<{ ok: boolean }>
+  onIncrementTextMessages: () => Promise<{ blocked: boolean }>
 }
 
 const DEFAULT_SETTINGS: AppSettings = { language: 'fr', webSearch: false }
 
-export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits, onTrackVoiceTime, customApiKey, onSaveApiKey, onRemoveApiKey }: Props) {
+export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits, onTrackVoiceTime, customApiKey, onSaveApiKey, onRemoveApiKey, onIncrementTextMessages }: Props) {
   const [activeTab, setActiveTab] = useState<AppTab>('voice')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
 
@@ -80,6 +82,15 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               onGoToSubscription={handleGoToSubscription}
               onVoiceDone={onTrackVoiceTime}
               customApiKey={customApiKey}
+            />
+          )}
+          {activeTab === 'chat' && (
+            <ChatTab
+              user={user}
+              permissions={permissions}
+              language={settings.language}
+              webSearch={settings.webSearch}
+              onIncrementTextMessages={onIncrementTextMessages}
             />
           )}
           {activeTab === 'profile' && (
