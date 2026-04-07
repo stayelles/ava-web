@@ -1,56 +1,106 @@
 'use client'
 
-import { useRef, useEffect, useState } from 'react'
+import { useRef, useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, Phone, Square, MessageCircle, X } from 'lucide-react'
+import { Mic, MicOff, Phone, Square, MessageCircle, X, ImageIcon, Crown } from 'lucide-react'
 import { useGeminiLive } from '../hooks/useGeminiLive'
-import { totalCredits } from '../types'
+import { totalCredits, isPro, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import { BackgroundParticles } from '../BackgroundParticles'
 import { FrequencyVisualizer } from '../FrequencyVisualizer'
 import { AvaAvatar } from '../AvaAvatar'
-import type { UserData } from '../types'
+import type { UserData, AvaPermissions } from '../types'
 
 interface Props {
   user: UserData
   language: string
   webSearch: boolean
+  permissions: AvaPermissions
   onSessionEnd?: () => void
+  onTurnComplete?: () => void
+  onGoToSubscription?: () => void
+  onVoiceDone?: (durationSeconds: number) => void
 }
 
-export function VoiceTab({ user, language, webSearch, onSessionEnd }: Props) {
+const MAX_IMAGES = 6
+
+export function VoiceTab({
+  user, language, webSearch, permissions,
+  onSessionEnd, onTurnComplete, onGoToSubscription, onVoiceDone,
+}: Props) {
+  const callDurationRef = useRef(0)
+
+  const handleSessionEnd = useCallback(() => {
+    onVoiceDone?.(callDurationRef.current)
+    onSessionEnd?.()
+  }, [onSessionEnd, onVoiceDone])
+
   const {
     sessionState, transcript, statusText, isAvaSpeaking,
-    isMuted, setIsMuted, startSession, stopSession, volumeLevel,
-  } = useGeminiLive({ language, webSearch, onSessionEnd })
+    isMuted, setIsMuted, startSession, stopSession, volumeLevel, sendImage,
+  } = useGeminiLive({
+    language,
+    webSearch: webSearch && permissions.webSearch,
+    memorySummary: user.memorySummary,
+    userName: user.user_name ?? undefined,
+    onSessionEnd: handleSessionEnd,
+    onTurnComplete,
+  })
 
   const [transcriptOpen, setTranscriptOpen] = useState(false)
   const transcriptEndRef = useRef<HTMLDivElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const [sendingImages, setSendingImages] = useState(false)
 
   useEffect(() => {
     if (transcriptOpen) transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [transcript, transcriptOpen])
 
   const credits = totalCredits(user)
+  const pro = isPro(user)
   const isActive = sessionState === 'connected'
   const isConnecting = sessionState === 'connecting'
   const isError = sessionState === 'error'
+  const noCredits = !pro && credits <= 0
+  const voiceRemaining = voiceMinutesRemaining(user)
+  const voiceQuota = voiceQuotaMinutes(user)
+  const voiceExhausted = voiceRemaining <= 0
+  const cannotStart = noCredits || voiceExhausted
 
-  // Volume shown: when user is speaking (mic active) show mic volume, when Ava speaks use simulated
   const displayVolume = isAvaSpeaking
-    ? volumeLevel * 0.5 + Math.random() * 0.15  // Ava speaking: simulate some movement
+    ? volumeLevel * 0.5 + Math.random() * 0.12
     : volumeLevel
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`
   const [callDuration, setCallDuration] = useState(0)
   useEffect(() => {
-    if (!isActive) { setCallDuration(0); return }
-    const t = setInterval(() => setCallDuration(p => p + 1), 1000)
+    if (!isActive) { setCallDuration(0); callDurationRef.current = 0; return }
+    const t = setInterval(() => setCallDuration(p => {
+      const next = p + 1
+      callDurationRef.current = next
+      return next
+    }), 1000)
     return () => clearInterval(t)
   }, [isActive])
 
+  const handleImageFiles = useCallback((files: FileList | null) => {
+    if (!files || !isActive) return
+    const toSend = Array.from(files).slice(0, MAX_IMAGES)
+    setSendingImages(true)
+    let done = 0
+    toSend.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(',')[1]
+        sendImage(base64, file.type || 'image/jpeg')
+        done++
+        if (done === toSend.length) setSendingImages(false)
+      }
+      reader.readAsDataURL(file)
+    })
+  }, [isActive, sendImage])
+
   return (
     <div className="relative h-full w-full flex flex-col overflow-hidden" style={{ background: '#020617' }}>
-      {/* Background particles */}
       <BackgroundParticles isActive={isActive} volume={displayVolume} />
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900/40 via-transparent to-slate-950 pointer-events-none z-0" />
 
@@ -59,13 +109,20 @@ export function VoiceTab({ user, language, webSearch, onSessionEnd }: Props) {
         {/* Credits */}
         <div
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-          style={{ background: 'rgba(10,18,38,0.7)', border: '1px solid rgba(255,255,255,0.08)', color: credits <= 2 ? '#f87171' : '#94a3b8' }}
+          style={{
+            background: 'rgba(10,18,38,0.7)',
+            border: `1px solid ${noCredits ? 'rgba(239,68,68,0.4)' : credits <= 3 ? 'rgba(245,158,11,0.3)' : 'rgba(255,255,255,0.08)'}`,
+            color: noCredits ? '#f87171' : credits <= 3 ? '#f59e0b' : '#94a3b8',
+          }}
         >
-          <span className="uppercase tracking-wider text-[10px]" style={{ color: '#475569' }}>Énergie</span>
-          <span>{credits}</span>
+          <span className="uppercase tracking-wider text-[10px]" style={{ color: '#475569' }}>
+            {pro ? '∞' : 'Énergie'}
+          </span>
+          {!pro && <span>{credits}</span>}
+          {pro && <Crown size={11} style={{ color: '#f43f5e' }} />}
         </div>
 
-        {/* Timer (shown when active) */}
+        {/* Timer */}
         <motion.div
           animate={{ opacity: isActive ? 1 : 0, y: isActive ? 0 : -8 }}
           transition={{ duration: 0.3 }}
@@ -86,9 +143,77 @@ export function VoiceTab({ user, language, webSearch, onSessionEnd }: Props) {
         </button>
       </div>
 
+      {/* Voice quota exhausted warning */}
+      <AnimatePresence>
+        {voiceExhausted && !isActive && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="relative z-50 mx-4 mb-1 px-4 py-3 rounded-2xl flex items-center justify-between gap-3"
+            style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}
+          >
+            <p className="text-xs font-semibold" style={{ color: '#fca5a5' }}>
+              Quota vocal mensuel atteint ({voiceQuota} min) — revenez le mois prochain{!pro ? ' ou passez à Pro' : ''}
+            </p>
+            {!pro && onGoToSubscription && (
+              <button
+                onClick={onGoToSubscription}
+                className="text-xs font-bold px-3 py-1.5 rounded-xl flex-shrink-0"
+                style={{ background: '#e11d48', color: '#fff' }}
+              >
+                Pro
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* No credits warning (free only, quota not exhausted) */}
+      <AnimatePresence>
+        {noCredits && !voiceExhausted && !isActive && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="relative z-50 mx-4 mb-1 px-4 py-3 rounded-2xl flex items-center justify-between gap-3"
+            style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}
+          >
+            <p className="text-xs font-semibold" style={{ color: '#fca5a5' }}>
+              Plus de crédits — revenez demain ou passez à Pro
+            </p>
+            {onGoToSubscription && (
+              <button
+                onClick={onGoToSubscription}
+                className="text-xs font-bold px-3 py-1.5 rounded-xl flex-shrink-0"
+                style={{ background: '#e11d48', color: '#fff' }}
+              >
+                Pro
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Low credits warning */}
+      <AnimatePresence>
+        {!noCredits && credits <= 3 && !pro && !isActive && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="relative z-50 mx-4 mb-1 px-4 py-2.5 rounded-2xl"
+            style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)' }}
+          >
+            <p className="text-xs" style={{ color: '#fcd34d' }}>
+              Plus que {credits} crédit{credits > 1 ? 's' : ''} — les crédits gratuits se rechargent chaque jour à minuit.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Main content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center pb-8 min-h-0">
-        {/* Name + role — fade out when active */}
         <motion.div
           animate={{ opacity: isActive ? 0 : 1, y: isActive ? 12 : 0, scale: isActive ? 0.9 : 1 }}
           transition={{ duration: 0.5 }}
@@ -96,16 +221,14 @@ export function VoiceTab({ user, language, webSearch, onSessionEnd }: Props) {
         >
           <h1 className="text-3xl font-bold text-white tracking-tight">Ava</h1>
           <p className="text-xs mt-1 uppercase tracking-widest font-medium" style={{ color: '#f43f5e' }}>
-            Assistante vocale IA
+            Meilleure amie & confidente
           </p>
         </motion.div>
 
-        {/* Avatar */}
         <div className="w-52 h-52 sm:w-64 sm:h-64 flex-shrink-0">
           <AvaAvatar isActive={isActive || isConnecting} volume={displayVolume} />
         </div>
 
-        {/* Status + visualizer */}
         <div className="mt-8 flex flex-col items-center gap-3">
           {isActive ? (
             <motion.div
@@ -115,13 +238,11 @@ export function VoiceTab({ user, language, webSearch, onSessionEnd }: Props) {
             >
               <FrequencyVisualizer volumeLevel={displayVolume} isActive={isActive} />
               <p className="text-xs uppercase font-semibold tracking-widest animate-pulse" style={{ color: 'rgba(225,29,72,0.7)' }}>
-                {isAvaSpeaking ? 'Ava vous répond...' : "J'écoute..."}
+                {isAvaSpeaking ? 'Ava est avec toi...' : "J'écoute..."}
               </p>
             </motion.div>
           ) : isError ? (
-            <div className="flex flex-col items-center gap-1.5 px-4">
-              <p className="text-xs font-bold tracking-widest uppercase" style={{ color: '#f87171' }}>Connexion échouée</p>
-            </div>
+            <p className="text-xs font-bold tracking-widest uppercase" style={{ color: '#f87171' }}>Connexion échouée</p>
           ) : (
             <motion.p
               key={statusText}
@@ -144,7 +265,7 @@ export function VoiceTab({ user, language, webSearch, onSessionEnd }: Props) {
         className="relative z-50 flex-shrink-0 w-full flex justify-center items-center gap-5 pb-6 pt-4"
         style={{ background: 'linear-gradient(to top, #020617 60%, transparent)' }}
       >
-        {/* Mute — only when active */}
+        {/* Mute */}
         <motion.button
           animate={{ opacity: isActive ? 1 : 0, scale: isActive ? 1 : 0.75 }}
           transition={{ duration: 0.2 }}
@@ -164,27 +285,57 @@ export function VoiceTab({ user, language, webSearch, onSessionEnd }: Props) {
         {/* Main call button */}
         <motion.button
           onClick={isActive ? stopSession : startSession}
-          disabled={isConnecting}
-          whileHover={isConnecting ? {} : { scale: 1.05 }}
-          whileTap={isConnecting ? {} : { scale: 0.95 }}
+          disabled={isConnecting || cannotStart}
+          whileHover={isConnecting || cannotStart ? {} : { scale: 1.05 }}
+          whileTap={isConnecting || cannotStart ? {} : { scale: 0.95 }}
           className="w-20 h-20 rounded-3xl flex items-center justify-center shadow-2xl transition-colors"
           style={{
-            background: isActive ? '#ef4444' : isError ? '#ea580c' : '#e11d48',
+            background: cannotStart && !isActive ? 'rgba(255,255,255,0.08)' : isActive ? '#ef4444' : isError ? '#ea580c' : '#e11d48',
             boxShadow: isActive
               ? '0 0 40px rgba(239,68,68,0.4)'
+              : cannotStart ? 'none'
               : '0 0 40px rgba(225,29,72,0.45), 0 0 80px rgba(225,29,72,0.15)',
+            opacity: cannotStart && !isActive ? 0.5 : 1,
           }}
         >
           {isActive
             ? <Square size={28} className="text-white fill-white" />
-            : <Phone size={28} className="text-white fill-white" />}
+            : <Phone size={28} className="text-white fill-white" style={{ opacity: cannotStart ? 0.5 : 1 }} />}
         </motion.button>
 
-        {/* Spacer to balance mute button */}
-        <div className="w-14 h-14" />
+        {/* Image upload (Pro only, shown when active) */}
+        <motion.div
+          animate={{ opacity: isActive && permissions.imageUpload ? 1 : 0, scale: isActive && permissions.imageUpload ? 1 : 0.75 }}
+          transition={{ duration: 0.2 }}
+          style={{ pointerEvents: isActive && permissions.imageUpload ? 'auto' : 'none' }}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={e => { handleImageFiles(e.target.files); e.target.value = '' }}
+          />
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={sendingImages}
+            className="p-4 rounded-full transition-all"
+            style={{
+              background: sendingImages ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: sendingImages ? '#818cf8' : 'rgba(255,255,255,0.7)',
+            }}
+          >
+            <ImageIcon size={22} />
+          </button>
+        </motion.div>
+
+        {/* Spacer when image button hidden */}
+        {(!isActive || !permissions.imageUpload) && <div className="w-14 h-14" />}
       </div>
 
-      {/* Transcript panel (slide in from right) */}
+      {/* Transcript panel */}
       <div
         className={`fixed inset-y-0 right-0 w-full md:w-96 z-[100] flex flex-col transition-transform duration-500 ease-out ${transcriptOpen ? 'translate-x-0' : 'translate-x-full'}`}
         style={{ background: 'rgba(10,15,30,0.97)', backdropFilter: 'blur(24px)', borderLeft: '1px solid rgba(255,255,255,0.07)' }}

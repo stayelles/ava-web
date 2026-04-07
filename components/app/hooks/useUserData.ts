@@ -2,21 +2,69 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_HEADERS } from '../constants'
-import type { UserData } from '../types'
+import type { UserData, AvaPermissions } from '../types'
+import { resolvePermissions, isPro, voiceQuotaMinutes } from '../types'
+
+function nextMonthReset(): string {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
+}
+
+// Check if monthly reset is needed and return corrected user object
+function applyVoiceReset(u: UserData): UserData {
+  const resetAt = u.voice_quota_reset_at ? new Date(u.voice_quota_reset_at) : null
+  if (!resetAt || resetAt <= new Date()) {
+    return { ...u, voice_minutes_used: 0, voice_quota_reset_at: nextMonthReset() }
+  }
+  return u
+}
 
 const SESSION_KEY = 'ava_web_session'
-const SELECT_FIELDS = 'id,email,credits,free_daily_credits,subscription_source,subscription_expires_at,referral_code,telegram_id'
+const SELECT_FIELDS = 'id,email,credits,free_daily_credits,subscription_source,subscription_expires_at,referral_code,telegram_id,user_name,voice_minutes_used,voice_quota_reset_at'
+
+async function fetchMemory(userId: string): Promise<string> {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/ava_user_memory?user_id=eq.${userId}&select=summary&limit=1`,
+      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
+    )
+    const data = await res.json()
+    return Array.isArray(data) && data[0]?.summary ? data[0].summary : ''
+  } catch {
+    return ''
+  }
+}
 
 export function useUserData() {
   const [user, setUser] = useState<UserData | null>(null)
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginError, setLoginError] = useState('')
+  const [permissions, setPermissions] = useState<AvaPermissions>({ webSearch: false, imageUpload: false, unlimited: false })
 
-  // Load saved session on mount
+  // Load saved session on mount + refresh memory + apply voice reset
   useEffect(() => {
     try {
       const saved = localStorage.getItem(SESSION_KEY)
-      if (saved) setUser(JSON.parse(saved))
+      if (saved) {
+        const raw = JSON.parse(saved) as UserData
+        const u = applyVoiceReset(raw)
+        setUser(u)
+        setPermissions(resolvePermissions(u))
+        // Persist reset if it happened
+        if (u.voice_minutes_used !== raw.voice_minutes_used) {
+          const { memorySummary: _, ...toStore } = u
+          localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
+          fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${u.id}`, {
+            method: 'PATCH',
+            headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
+            body: JSON.stringify({ voice_minutes_used: 0, voice_quota_reset_at: u.voice_quota_reset_at }),
+          }).catch(() => {})
+        }
+        // Refresh memory in background
+        fetchMemory(u.id).then(memorySummary => {
+          if (memorySummary) setUser(prev => prev ? { ...prev, memorySummary } : prev)
+        })
+      }
     } catch {}
   }, [])
 
@@ -34,9 +82,15 @@ export function useUserData() {
       })
       const data = await res.json()
       if (Array.isArray(data) && data.length > 0) {
-        const u = data[0] as UserData
+        const u = applyVoiceReset(data[0] as UserData)
+        setPermissions(resolvePermissions(u))
         setUser(u)
-        localStorage.setItem(SESSION_KEY, JSON.stringify(u))
+        const { memorySummary: _ms, ...toStore } = u
+        localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
+        // Fetch memory async — inject into user state without blocking login
+        fetchMemory(u.id).then(memorySummary => {
+          if (memorySummary) setUser(prev => prev ? { ...prev, memorySummary } : prev)
+        })
       } else {
         setLoginError('Identifiant ou PIN incorrect')
       }
@@ -49,6 +103,7 @@ export function useUserData() {
 
   const logout = useCallback(() => {
     setUser(null)
+    setPermissions({ webSearch: false, imageUpload: false, unlimited: false })
     localStorage.removeItem(SESSION_KEY)
   }, [])
 
@@ -61,9 +116,10 @@ export function useUserData() {
       })
       const data = await res.json()
       if (Array.isArray(data) && data.length > 0) {
-        const u = data[0] as UserData
+        const u = { ...data[0] as UserData, memorySummary: user.memorySummary }
         setUser(u)
-        localStorage.setItem(SESSION_KEY, JSON.stringify(u))
+        setPermissions(resolvePermissions(u))
+        localStorage.setItem(SESSION_KEY, JSON.stringify(data[0]))
       }
     } catch {}
   }, [user])
@@ -78,9 +134,6 @@ export function useUserData() {
         body: JSON.stringify({ pin: newPin }),
       })
       if (res.ok || res.status === 204) {
-        const updated = { ...user }
-        setUser(updated)
-        localStorage.setItem(SESSION_KEY, JSON.stringify(updated))
         return { ok: true }
       }
       return { ok: false, error: 'Erreur lors de la mise à jour' }
@@ -89,5 +142,58 @@ export function useUserData() {
     }
   }, [user])
 
-  return { user, setUser, loginLoading, loginError, login, logout, refreshUser, updatePin }
+  // Decrement 1 credit per completed turn (free users only)
+  const decrementCredits = useCallback(async () => {
+    if (!user || isPro(user)) return
+    // Decrement free_daily_credits first, then credits
+    const newFree = Math.max(0, (user.free_daily_credits ?? 0) - 1)
+    const newPaid = (user.free_daily_credits ?? 0) > 0
+      ? (user.credits ?? 0)
+      : Math.max(0, (user.credits ?? 0) - 1)
+
+    const updated: UserData = { ...user, free_daily_credits: newFree, credits: newPaid }
+    setUser(updated)
+    // Don't save memorySummary to localStorage
+    const { memorySummary: _, ...toStore } = updated
+    localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
+
+    // Persist to Supabase (best-effort, non-blocking)
+    fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${user.id}`, {
+      method: 'PATCH',
+      headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
+      body: JSON.stringify({ free_daily_credits: newFree, credits: newPaid }),
+    }).catch(() => {})
+  }, [user])
+
+  // Add voice session duration (seconds) to monthly counter
+  const trackVoiceTime = useCallback(async (durationSeconds: number) => {
+    if (!user || durationSeconds < 1) return
+    // Check if a monthly reset is needed before adding
+    const u = applyVoiceReset(user)
+    const minutesToAdd = durationSeconds / 60
+    const newUsed = (u.voice_minutes_used ?? 0) + minutesToAdd
+    const newQuota = voiceQuotaMinutes(u)
+    const updated: UserData = {
+      ...u,
+      voice_minutes_used: Math.min(newUsed, newQuota), // cap at quota
+      voice_quota_reset_at: u.voice_quota_reset_at,
+    }
+    setUser(updated)
+    const { memorySummary: _, ...toStore } = updated
+    localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
+    fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${user.id}`, {
+      method: 'PATCH',
+      headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        voice_minutes_used: updated.voice_minutes_used,
+        voice_quota_reset_at: updated.voice_quota_reset_at,
+      }),
+    }).catch(() => {})
+  }, [user])
+
+  return {
+    user, setUser, permissions,
+    loginLoading, loginError, login, logout,
+    refreshUser, updatePin, decrementCredits, trackVoiceTime,
+  }
 }

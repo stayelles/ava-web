@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import { Crown, Check, Zap, Globe, Monitor, Infinity, ImageIcon, Brain, Bell, Layers } from 'lucide-react'
 import { GUMROAD_URL, GUMROAD_QUARTERLY_URL, GUMROAD_BIANNUAL_URL } from '../constants'
-import { isPro } from '../types'
+import { isPro, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
 
 interface Props {
@@ -54,6 +54,88 @@ const PLANS = [
     popular: false,
   },
 ]
+
+function VoiceQuotaBar({ user, pro }: { user: UserData; pro: boolean }) {
+  const used = voiceMinutesUsed(user)
+  const quota = voiceQuotaMinutes(user)
+  const remaining = voiceMinutesRemaining(user)
+  const pct = Math.min(100, (used / quota) * 100)
+
+  const resetAt = user.voice_quota_reset_at
+    ? new Date(user.voice_quota_reset_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+    : null
+
+  const barColor = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : pro ? '#34d399' : '#f43f5e'
+
+  const fmtMin = (m: number) => {
+    const mins = Math.floor(m)
+    const secs = Math.round((m - mins) * 60)
+    if (mins === 0) return `${secs}s`
+    if (secs === 0) return `${mins} min`
+    return `${mins} min ${secs}s`
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.08 }}
+      className="rounded-2xl overflow-hidden"
+      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+    >
+      <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#475569' }}>
+          Temps vocal ce mois-ci
+        </p>
+      </div>
+      <div className="px-4 py-4 space-y-3">
+        {/* Labels */}
+        <div className="flex items-end justify-between">
+          <div>
+            <span className="text-2xl font-black text-white">{fmtMin(used)}</span>
+            <span className="text-xs ml-2" style={{ color: '#475569' }}>/ {quota} min</span>
+          </div>
+          <span
+            className="text-xs font-semibold px-2 py-0.5 rounded-full"
+            style={{
+              background: remaining <= 0 ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.05)',
+              color: remaining <= 0 ? '#f87171' : '#64748b',
+            }}
+          >
+            {remaining <= 0 ? 'Quota atteint' : `${fmtMin(remaining)} restantes`}
+          </span>
+        </div>
+
+        {/* Progress bar */}
+        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.07)' }}>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${pct}%` }}
+            transition={{ duration: 0.8, ease: 'easeOut' }}
+            className="h-full rounded-full"
+            style={{ background: barColor, boxShadow: `0 0 8px ${barColor}60` }}
+          />
+        </div>
+
+        {/* Segments */}
+        <div className="flex justify-between text-[10px]" style={{ color: '#334155' }}>
+          <span>0</span>
+          <span>{Math.round(quota * 0.25)} min</span>
+          <span>{Math.round(quota * 0.5)} min</span>
+          <span>{Math.round(quota * 0.75)} min</span>
+          <span>{quota} min</span>
+        </div>
+
+        {/* Reset date */}
+        {resetAt && (
+          <p className="text-[11px]" style={{ color: '#334155' }}>
+            Remise à zéro le {resetAt} · Partagé entre web, mobile et desktop
+          </p>
+        )}
+      </div>
+    </motion.div>
+  )
+}
 
 export function SubscriptionTab({ user }: Props) {
   const pro = isPro(user)
@@ -119,6 +201,9 @@ export function SubscriptionTab({ user }: Props) {
           )}
         </div>
       </motion.div>
+
+      {/* Voice quota progress bar */}
+      <VoiceQuotaBar user={user} pro={pro} />
 
       {/* Free plan included */}
       {!pro && (

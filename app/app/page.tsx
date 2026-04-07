@@ -7,7 +7,7 @@ import { AppShell } from '@/components/app/AppShell'
 export default function AvaWebApp() {
   const {
     user, loginLoading, loginError, login, logout,
-    refreshUser, updatePin, permissions, decrementCredits,
+    refreshUser, updatePin, permissions, decrementCredits, trackVoiceTime,
   } = useUserData()
 
   if (!user) {
@@ -28,6 +28,7 @@ export default function AvaWebApp() {
       onUpdatePin={updatePin}
       onRefresh={refreshUser}
       onDecrementCredits={decrementCredits}
+      onTrackVoiceTime={trackVoiceTime}
     />
   )
 }

@@ -18,11 +18,12 @@ interface Props {
   onUpdatePin: (pin: string) => Promise<{ ok: boolean; error?: string }>
   onRefresh: () => void
   onDecrementCredits: () => Promise<void>
+  onTrackVoiceTime: (seconds: number) => Promise<void>
 }
 
 const DEFAULT_SETTINGS: AppSettings = { language: 'fr', webSearch: false }
 
-export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits }: Props) {
+export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits, onTrackVoiceTime }: Props) {
   const [activeTab, setActiveTab] = useState<AppTab>('voice')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
 
@@ -74,6 +75,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               onSessionEnd={handleSessionEnd}
               onTurnComplete={onDecrementCredits}
               onGoToSubscription={handleGoToSubscription}
+              onVoiceDone={onTrackVoiceTime}
             />
           )}
           {activeTab === 'profile' && (

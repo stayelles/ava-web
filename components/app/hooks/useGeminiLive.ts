@@ -33,10 +33,15 @@ function float32ToBase64PCM16(samples: Float32Array): string {
 export interface GeminiLiveOptions {
   language: string
   webSearch: boolean
+  memorySummary?: string
+  userName?: string
   onSessionEnd?: () => void
+  onTurnComplete?: () => void
 }
 
-export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveOptions) {
+export function useGeminiLive({
+  language, webSearch, memorySummary, userName, onSessionEnd, onTurnComplete,
+}: GeminiLiveOptions) {
   const [sessionState, setSessionState] = useState<SessionState>('idle')
   const [transcript, setTranscript] = useState<TranscriptItem[]>([])
   const [statusText, setStatusText] = useState('Appuyez pour démarrer')
@@ -127,8 +132,9 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
     if (sc.turnComplete) {
       setIsAvaSpeaking(false)
       setStatusText("J'écoute...")
+      onTurnComplete?.()
     }
-  }, [playPCMChunk])
+  }, [playPCMChunk, onTurnComplete])
 
   const stopSession = useCallback(() => {
     isClosingRef.current = true
@@ -153,6 +159,17 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
     onSessionEnd?.()
     setTimeout(() => { isClosingRef.current = false }, 300)
   }, [onSessionEnd])
+
+  // Send image(s) to Gemini during an active session
+  const sendImage = useCallback((base64: string, mimeType: string) => {
+    const ws = wsRef.current
+    if (!ws || ws.readyState !== WebSocket.OPEN) return
+    ws.send(JSON.stringify({
+      realtimeInput: {
+        mediaChunks: [{ mimeType, data: base64 }],
+      },
+    }))
+  }, [])
 
   const startSession = useCallback(async () => {
     const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
@@ -194,7 +211,7 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
       return
     }
 
-    const actualSampleRate = ctx.sampleRate // e.g. 44100 or 48000
+    const actualSampleRate = ctx.sampleRate
 
     // WebSocket — binaryType arraybuffer: browsers default to Blob which we can't handle inline
     const ws = new WebSocket(`${WS_BASE}?key=${apiKey}`)
@@ -202,6 +219,7 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
     wsRef.current = ws
 
     ws.onopen = () => {
+      const sysPrompt = SYSTEM_INSTRUCTION(language, webSearch, memorySummary, userName)
       const setupPayload: any = {
         setup: {
           model: `models/${GEMINI_MODEL}`,
@@ -209,7 +227,7 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
             responseModalities: ['AUDIO'],
             speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: GEMINI_VOICE } } },
           },
-          systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION(language, webSearch) }] },
+          systemInstruction: { parts: [{ text: sysPrompt }] },
           inputAudioTranscription: {},
           outputAudioTranscription: {},
         },
@@ -256,7 +274,6 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
       } else if (d instanceof ArrayBuffer) {
         try { handleMessage(new TextDecoder().decode(d)) } catch {}
       } else if (d instanceof Blob) {
-        // Fallback: Blob (shouldn't happen with binaryType=arraybuffer, but just in case)
         d.text().then(txt => { try { handleMessage(txt) } catch {} }).catch(() => {})
       }
     }
@@ -276,10 +293,10 @@ export function useGeminiLive({ language, webSearch, onSessionEnd }: GeminiLiveO
         onSessionEnd?.()
       }
     }
-  }, [language, webSearch, handleMessage, stopSession, onSessionEnd])
+  }, [language, webSearch, memorySummary, userName, handleMessage, stopSession, onSessionEnd])
 
   return {
     sessionState, transcript, statusText, isAvaSpeaking,
-    isMuted, setIsMuted, startSession, stopSession, volumeLevel,
+    isMuted, setIsMuted, startSession, stopSession, volumeLevel, sendImage,
   }
 }

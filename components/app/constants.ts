@@ -13,6 +13,9 @@ export const GEMINI_VOICE = 'Kore'
 export const WS_BASE =
   'wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent'
 
+export const VOICE_QUOTA_PRO_MINUTES = 200   // min/mois pour les abonnés Pro
+export const VOICE_QUOTA_FREE_MINUTES = 30   // min/mois pour les utilisateurs gratuits
+
 export const GUMROAD_URL = 'https://woonixltd.gumroad.com/l/avam1'
 export const GUMROAD_QUARTERLY_URL = 'https://woonixltd.gumroad.com/l/avam1?quarterly=true&wanted=true'
 export const GUMROAD_BIANNUAL_URL = 'https://woonixltd.gumroad.com/l/avam1?biannually=true&wanted=true'
