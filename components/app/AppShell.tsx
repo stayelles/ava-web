@@ -19,11 +19,14 @@ interface Props {
   onRefresh: () => void
   onDecrementCredits: () => Promise<void>
   onTrackVoiceTime: (seconds: number) => Promise<void>
+  customApiKey?: string | null
+  onSaveApiKey?: (key: string, pin: string) => Promise<{ ok: boolean; error?: string }>
+  onRemoveApiKey?: () => Promise<{ ok: boolean }>
 }
 
 const DEFAULT_SETTINGS: AppSettings = { language: 'fr', webSearch: false }
 
-export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits, onTrackVoiceTime }: Props) {
+export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits, onTrackVoiceTime, customApiKey, onSaveApiKey, onRemoveApiKey }: Props) {
   const [activeTab, setActiveTab] = useState<AppTab>('voice')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
 
@@ -76,6 +79,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               onTurnComplete={onDecrementCredits}
               onGoToSubscription={handleGoToSubscription}
               onVoiceDone={onTrackVoiceTime}
+              customApiKey={customApiKey}
             />
           )}
           {activeTab === 'profile' && (
@@ -93,6 +97,11 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               onSettingsChange={setSettings}
               isPro={isPro(user)}
               onGoToSubscription={handleGoToSubscription}
+              canUseCustomApiKey={permissions.canUseCustomApiKey}
+              geminiKeyHint={user.gemini_key_hint}
+              customApiKey={customApiKey}
+              onSaveApiKey={onSaveApiKey}
+              onRemoveApiKey={onRemoveApiKey}
             />
           )}
         </div>

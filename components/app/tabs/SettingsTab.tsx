@@ -1,7 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Globe, Search, Info, Lock } from 'lucide-react'
+import { Globe, Search, Info, Lock, Key } from 'lucide-react'
 import type { AppSettings } from '../types'
 
 interface Props {
@@ -9,6 +10,11 @@ interface Props {
   onSettingsChange: (s: AppSettings) => void
   isPro: boolean
   onGoToSubscription?: () => void
+  canUseCustomApiKey?: boolean
+  geminiKeyHint?: string | null
+  customApiKey?: string | null
+  onSaveApiKey?: (key: string, pin: string) => Promise<{ ok: boolean; error?: string }>
+  onRemoveApiKey?: () => Promise<{ ok: boolean }>
 }
 
 const LANGUAGES = [
@@ -18,7 +24,30 @@ const LANGUAGES = [
   { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
 ]
 
-export function SettingsTab({ settings, onSettingsChange, isPro, onGoToSubscription }: Props) {
+export function SettingsTab({
+  settings, onSettingsChange, isPro, onGoToSubscription,
+  canUseCustomApiKey, geminiKeyHint, customApiKey, onSaveApiKey, onRemoveApiKey,
+}: Props) {
+  const [apiKeyInput, setApiKeyInput] = useState('')
+  const [pinInput, setPinInput]       = useState('')
+  const [apiKeySaving, setApiKeySaving] = useState(false)
+  const [apiKeyMsg, setApiKeyMsg]     = useState('')
+
+  const handleSaveKey = async () => {
+    if (!apiKeyInput.trim() || !pinInput.trim() || !onSaveApiKey) return
+    setApiKeySaving(true)
+    setApiKeyMsg('')
+    const result = await onSaveApiKey(apiKeyInput.trim(), pinInput.trim())
+    setApiKeySaving(false)
+    if (result.ok) {
+      setApiKeyInput('')
+      setPinInput('')
+      setApiKeyMsg('✓ Clé enregistrée et active pour cette session.')
+    } else {
+      setApiKeyMsg(result.error ?? 'Erreur lors de la sauvegarde.')
+    }
+  }
+
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full space-y-4">
       {/* Language */}
@@ -127,6 +156,96 @@ export function SettingsTab({ settings, onSettingsChange, isPro, onGoToSubscript
           </p>
         </div>
       </motion.div>
+
+      {/* Custom API Key (plan Custom only) */}
+      {canUseCustomApiKey && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="rounded-2xl overflow-hidden"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <Key size={13} style={{ color: '#475569' }} />
+            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#475569' }}>
+              Clé API Gemini
+            </p>
+          </div>
+          <div className="px-4 py-4 space-y-3">
+            {geminiKeyHint ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="text-[11px] font-bold px-2.5 py-1 rounded-full"
+                    style={{ background: 'rgba(52,211,153,0.12)', color: '#34d399' }}
+                  >
+                    ✓ Clé configurée ({geminiKeyHint})
+                  </span>
+                </div>
+                {!customApiKey && (
+                  <p className="text-xs" style={{ color: '#f59e0b' }}>
+                    ⚠️ Reconnectez-vous pour activer votre clé personnelle.
+                  </p>
+                )}
+                {customApiKey && (
+                  <p className="text-xs" style={{ color: '#34d399' }}>
+                    Clé active pour cette session.
+                  </p>
+                )}
+                <button
+                  onClick={async () => { if (onRemoveApiKey) await onRemoveApiKey() }}
+                  className="w-full py-2 rounded-xl text-sm font-semibold transition-all"
+                  style={{ background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}
+                >
+                  Supprimer la clé
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-xs" style={{ color: '#64748b' }}>
+                  Utilisez votre propre clé API Gemini à la place de la clé partagée de l&apos;app.
+                </p>
+                <input
+                  type="password"
+                  placeholder="Clé API Gemini (AIza…)"
+                  value={apiKeyInput}
+                  onChange={e => setApiKeyInput(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9' }}
+                />
+                <input
+                  type="password"
+                  placeholder="Confirmez votre PIN (pour chiffrer la clé)"
+                  value={pinInput}
+                  onChange={e => setPinInput(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#f1f5f9' }}
+                />
+                <p className="text-[11px]" style={{ color: '#475569' }}>
+                  🔒 Chiffrée avec votre PIN (AES-256). Indéchiffrable sans votre PIN, même par nos équipes.
+                </p>
+                <p className="text-[11px]" style={{ color: '#64748b' }}>
+                  ⚠️ La sécurité de votre clé dépend de la robustesse de votre PIN.
+                </p>
+                {apiKeyMsg && (
+                  <p className="text-xs font-medium" style={{ color: apiKeyMsg.startsWith('✓') ? '#34d399' : '#ef4444' }}>
+                    {apiKeyMsg}
+                  </p>
+                )}
+                <button
+                  onClick={handleSaveKey}
+                  disabled={apiKeySaving || !apiKeyInput.trim() || !pinInput.trim()}
+                  className="w-full py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
+                  style={{ background: '#e11d48', color: '#fff' }}
+                >
+                  {apiKeySaving ? 'Enregistrement...' : 'Enregistrer la clé'}
+                </button>
+              </>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* App info */}
       <motion.div

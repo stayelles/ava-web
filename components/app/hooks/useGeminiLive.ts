@@ -37,10 +37,11 @@ export interface GeminiLiveOptions {
   userName?: string
   onSessionEnd?: () => void
   onTurnComplete?: () => void
+  apiKey?: string
 }
 
 export function useGeminiLive({
-  language, webSearch, memorySummary, userName, onSessionEnd, onTurnComplete,
+  language, webSearch, memorySummary, userName, onSessionEnd, onTurnComplete, apiKey,
 }: GeminiLiveOptions) {
   const [sessionState, setSessionState] = useState<SessionState>('idle')
   const [transcript, setTranscript] = useState<TranscriptItem[]>([])
@@ -172,8 +173,8 @@ export function useGeminiLive({
   }, [])
 
   const startSession = useCallback(async () => {
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY
-    if (!apiKey) {
+    const effectiveKey = apiKey || process.env.NEXT_PUBLIC_GEMINI_API_KEY
+    if (!effectiveKey) {
       setStatusText('Clé API manquante — contactez le support')
       setSessionState('error')
       return
@@ -214,7 +215,7 @@ export function useGeminiLive({
     const actualSampleRate = ctx.sampleRate
 
     // WebSocket — binaryType arraybuffer: browsers default to Blob which we can't handle inline
-    const ws = new WebSocket(`${WS_BASE}?key=${apiKey}`)
+    const ws = new WebSocket(`${WS_BASE}?key=${effectiveKey}`)
     ws.binaryType = 'arraybuffer'
     wsRef.current = ws
 

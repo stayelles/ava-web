@@ -720,6 +720,27 @@ const PLAN_FEATURES = [
   "Priority support",
 ];
 
+const CUSTOM_PLANS = [
+  {
+    label: "1 month", price: "14.99€", per: "/month",
+    href: "https://woonixltd.gumroad.com/l/avacustom",
+    popular: false, note: null, badge: null,
+  },
+  {
+    label: "3 months", price: "29.99€", per: "/quarter",
+    href: "https://woonixltd.gumroad.com/l/avacustom?quarterly=true&wanted=true",
+    popular: true, note: "≈ 9.99€/month", badge: "2 months + 1 FREE",
+  },
+];
+
+const CUSTOM_FEATURES = [
+  "Everything in Pro — web search, images, remote control, MCP...",
+  "Truly unlimited voice — no minute counter, ever",
+  "Your own Gemini API key (Google AI Studio)",
+  "Instant access to the latest Gemini models",
+  "Key encrypted end-to-end with your PIN",
+];
+
 function Pricing() {
   return (
     <section id="pricing" className="relative py-24 sm:py-32 overflow-hidden">
@@ -798,6 +819,90 @@ function Pricing() {
         <FadeUp delay={0.3}>
           <p className="text-center text-xs text-slate-600 mt-8">
             No credit card required for first 7 days · Cancel before day 8 and pay nothing
+          </p>
+        </FadeUp>
+
+        {/* ── Ava Custom ── */}
+        <FadeUp delay={0.1} className="mt-20">
+          <div className="flex items-center gap-4 mb-10">
+            <div className="flex-1 h-px bg-white/[0.05]" />
+            <div className="text-center">
+              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#818cf8' }}>Ava Custom</p>
+              <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Bring your own API key</h3>
+              <p className="text-slate-400 text-sm mt-2 max-w-sm mx-auto">
+                Already have a <span className="text-white">Google AI Studio</span> account? Use your own Gemini quota — unlimited, no cap on Ava's side.
+              </p>
+            </div>
+            <div className="flex-1 h-px bg-white/[0.05]" />
+          </div>
+        </FadeUp>
+        <div className="grid sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
+          {CUSTOM_PLANS.map((plan, i) => (
+            <FadeUp key={plan.label} delay={0.12 + i * 0.08}>
+              <div className={cn(
+                "relative rounded-3xl border p-8 flex flex-col h-full",
+                plan.popular ? "border-indigo-500/30" : "bg-white/[0.03] border-white/10"
+              )}
+                style={plan.popular ? { background: 'rgba(99,102,241,0.06)' } : {}}
+              >
+                {plan.popular && <BorderBeam size={200} duration={10} colorFrom="#6366f1" colorTo="#818cf8" />}
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="px-4 py-1 rounded-full text-white text-xs font-bold shadow-lg whitespace-nowrap"
+                      style={{ background: '#6366f1', boxShadow: '0 4px 20px rgba(99,102,241,0.35)' }}>
+                      Most Popular
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#818cf8' }}>
+                    {plan.label}
+                  </span>
+                  {plan.badge && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.25)' }}>
+                      {plan.badge}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-end gap-1 mb-0.5">
+                  <span className="text-4xl font-black text-white">{plan.price}</span>
+                  <span className="text-white/35 text-sm mb-1.5">{plan.per}</span>
+                </div>
+                {plan.note
+                  ? <p className="text-white/20 text-xs mb-6">{plan.note}</p>
+                  : <div className="mb-6" />
+                }
+                <ul className="space-y-3 mb-8 flex-1">
+                  {CUSTOM_FEATURES.map(f => (
+                    <li key={f} className="flex items-center gap-2.5 text-sm text-slate-400">
+                      <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                        style={{ background: 'rgba(99,102,241,0.2)' }}>
+                        <Check size={9} style={{ color: '#818cf8' }} />
+                      </div>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <motion.a href={plan.href} data-gumroad-overlay-checkout="true"
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  className={cn(
+                    "block text-center py-3.5 rounded-2xl font-bold text-sm transition-all text-white",
+                    plan.popular
+                      ? "hover:opacity-90"
+                      : "bg-white/[0.07] hover:bg-white/[0.12] border border-white/10"
+                  )}
+                  style={plan.popular ? { background: '#6366f1', boxShadow: '0 0 24px rgba(99,102,241,0.3)' } : {}}
+                >
+                  Get Ava Custom
+                </motion.a>
+              </div>
+            </FadeUp>
+          ))}
+        </div>
+        <FadeUp delay={0.3}>
+          <p className="text-center text-xs text-slate-600 mt-6">
+            Configure your key in Settings after subscribing · Your key is encrypted end-to-end
           </p>
         </FadeUp>
       </div>

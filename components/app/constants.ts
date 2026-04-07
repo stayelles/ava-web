@@ -19,6 +19,8 @@ export const VOICE_QUOTA_FREE_MINUTES = 3    // min/mois pour les utilisateurs g
 export const GUMROAD_URL = 'https://woonixltd.gumroad.com/l/avam1'
 export const GUMROAD_QUARTERLY_URL = 'https://woonixltd.gumroad.com/l/avam1?quarterly=true&wanted=true'
 export const GUMROAD_BIANNUAL_URL = 'https://woonixltd.gumroad.com/l/avam1?biannually=true&wanted=true'
+export const GUMROAD_CUSTOM_URL = 'https://woonixltd.gumroad.com/l/avacustom'
+export const GUMROAD_CUSTOM_QUARTERLY_URL = 'https://woonixltd.gumroad.com/l/avacustom?quarterly=true&wanted=true'
 
 export const LANGUAGE_INSTRUCTIONS: Record<string, string> = {
   fr: 'Parle UNIQUEMENT en français. Sois naturelle, chaleureuse et concise.',

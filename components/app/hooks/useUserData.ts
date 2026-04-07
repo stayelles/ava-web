@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_HEADERS } from '../constants'
 import type { UserData, AvaPermissions } from '../types'
-import { resolvePermissions, isPro, voiceQuotaMinutes } from '../types'
+import { resolvePermissions, isPro, isCustomPlan, voiceQuotaMinutes } from '../types'
+import { encryptApiKey, decryptApiKey } from '../../../utils/cryptoApiKey'
 
 function nextMonthReset(): string {
   const now = new Date()
@@ -20,7 +21,7 @@ function applyVoiceReset(u: UserData): UserData {
 }
 
 const SESSION_KEY = 'ava_web_session'
-const SELECT_FIELDS = 'id,email,credits,free_daily_credits,subscription_source,subscription_expires_at,referral_code,telegram_id,user_name,voice_minutes_used,voice_quota_reset_at'
+const SELECT_FIELDS = 'id,email,credits,free_daily_credits,subscription_source,subscription_expires_at,referral_code,telegram_id,user_name,voice_minutes_used,voice_quota_reset_at,custom_plan_expires_at,gemini_api_key_enc,gemini_api_key_iv,gemini_key_hint'
 
 async function fetchMemory(userId: string): Promise<string> {
   try {
@@ -39,7 +40,8 @@ export function useUserData() {
   const [user, setUser] = useState<UserData | null>(null)
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginError, setLoginError] = useState('')
-  const [permissions, setPermissions] = useState<AvaPermissions>({ webSearch: false, imageUpload: false, unlimited: false })
+  const [permissions, setPermissions] = useState<AvaPermissions>({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false })
+  const [customApiKey, setCustomApiKey] = useState<string | null>(null)
 
   // Load saved session on mount + refresh memory + apply voice reset
   useEffect(() => {
@@ -83,10 +85,18 @@ export function useUserData() {
       const data = await res.json()
       if (Array.isArray(data) && data.length > 0) {
         const u = applyVoiceReset(data[0] as UserData)
-        setPermissions(resolvePermissions(u))
+        const perms = resolvePermissions(u)
+        setPermissions(perms)
         setUser(u)
         const { memorySummary: _ms, ...toStore } = u
         localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
+        // Déchiffrer la clé API Gemini si plan Custom actif
+        if (perms.canUseCustomApiKey && u.gemini_api_key_enc && u.gemini_api_key_iv) {
+          try {
+            const decrypted = await decryptApiKey(u.gemini_api_key_enc, u.gemini_api_key_iv, pin, u.id)
+            setCustomApiKey(decrypted)
+          } catch {}
+        }
         // Fetch memory async — inject into user state without blocking login
         fetchMemory(u.id).then(memorySummary => {
           if (memorySummary) setUser(prev => prev ? { ...prev, memorySummary } : prev)
@@ -103,7 +113,8 @@ export function useUserData() {
 
   const logout = useCallback(() => {
     setUser(null)
-    setPermissions({ webSearch: false, imageUpload: false, unlimited: false })
+    setPermissions({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false })
+    setCustomApiKey(null)
     localStorage.removeItem(SESSION_KEY)
   }, [])
 
@@ -191,9 +202,50 @@ export function useUserData() {
     }).catch(() => {})
   }, [user])
 
+  const saveApiKey = useCallback(async (apiKey: string, pin: string): Promise<{ ok: boolean; error?: string }> => {
+    if (!user) return { ok: false, error: 'Non connecté' }
+    try {
+      const { enc, iv, hint } = await encryptApiKey(apiKey, pin, user.id)
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${user.id}`, {
+        method: 'PATCH',
+        headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
+        body: JSON.stringify({ gemini_api_key_enc: enc, gemini_api_key_iv: iv, gemini_key_hint: hint }),
+      })
+      if (res.ok || res.status === 204) {
+        // Déchiffrer immédiatement pour activer la session courante
+        try {
+          const decrypted = await decryptApiKey(enc, iv, pin, user.id)
+          setCustomApiKey(decrypted)
+        } catch {}
+        setUser(u => u ? { ...u, gemini_key_hint: hint, gemini_api_key_enc: enc, gemini_api_key_iv: iv } : u)
+        return { ok: true }
+      }
+      return { ok: false, error: 'Erreur serveur' }
+    } catch {
+      return { ok: false, error: 'Erreur de chiffrement' }
+    }
+  }, [user])
+
+  const removeApiKey = useCallback(async (): Promise<{ ok: boolean }> => {
+    if (!user) return { ok: false }
+    try {
+      await fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${user.id}`, {
+        method: 'PATCH',
+        headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
+        body: JSON.stringify({ gemini_api_key_enc: null, gemini_api_key_iv: null, gemini_key_hint: null }),
+      })
+      setCustomApiKey(null)
+      setUser(u => u ? { ...u, gemini_key_hint: null, gemini_api_key_enc: null, gemini_api_key_iv: null } : u)
+      return { ok: true }
+    } catch {
+      return { ok: false }
+    }
+  }, [user])
+
   return {
     user, setUser, permissions,
     loginLoading, loginError, login, logout,
     refreshUser, updatePin, decrementCredits, trackVoiceTime,
+    customApiKey, saveApiKey, removeApiKey,
   }
 }
