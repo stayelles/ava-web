@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Crown, Check, Zap, Globe, Monitor, Infinity, ImageIcon, Brain, Bell, Layers, Key, Smartphone } from 'lucide-react'
+import { Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, Layers, Key, Smartphone, Mic, MessageSquare, Star } from 'lucide-react'
 import { GUMROAD_URL, GUMROAD_QUARTERLY_URL, GUMROAD_BIANNUAL_URL, GUMROAD_CUSTOM_URL, GUMROAD_CUSTOM_QUARTERLY_URL } from '../constants'
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
@@ -11,26 +11,28 @@ interface Props {
 }
 
 const FREE_FEATURES = [
-  '3 crédits vocaux offerts par jour',
-  'Voix ultra-réaliste',
-  'Mémoire conversationnelle',
-  '4 langues : FR, EN, DE, TR',
+  { icon: Mic, text: '3 min de voix par mois' },
+  { icon: MessageSquare, text: '10 messages texte par jour' },
+  { icon: Brain, text: 'Mémoire conversationnelle' },
+  { icon: Globe, text: '4 langues : FR, EN, DE, TR' },
 ]
 
 const PRO_FEATURES = [
-  { icon: Infinity, text: 'Conversations vocales illimitées (sans limite de crédits)' },
+  { icon: Mic, text: '250 min de voix par mois (partagées web, mobile & desktop)' },
+  { icon: MessageSquare, text: '300 messages texte par jour' },
   { icon: Globe, text: 'Recherche web Google en temps réel' },
   { icon: ImageIcon, text: 'Analyse d\'images pendant les appels (jusqu\'à 6)' },
   { icon: Monitor, text: 'Contrôle à distance Mac/PC (via Ava Mobile)' },
   { icon: Brain, text: 'Vision écran en temps réel (via Ava Mobile)' },
   { icon: Bell, text: 'Rappels intelligents avec notifications push (mobile)' },
-  { icon: Layers, text: 'Intégrations MCP : Notion, GitHub, et plus (mobile)' },
-  { icon: Zap, text: 'Accès prioritaire aux nouvelles fonctionnalités' },
+  { icon: Layers, text: 'Intégrations MCP : Notion, GitHub, et plus' },
+  { icon: Star, text: 'Accès prioritaire aux nouvelles fonctionnalités' },
 ]
 
 const CUSTOM_FEATURES = [
   { icon: Crown, text: 'Toutes les fonctionnalités Pro incluses (recherche web, images, contrôle distant, MCP…)' },
-  { icon: Infinity, text: 'Voix vraiment illimitée — aucun compteur de minutes, jamais' },
+  { icon: Mic, text: 'Voix vraiment illimitée — aucun compteur de minutes, jamais' },
+  { icon: MessageSquare, text: 'Messages texte illimités' },
   { icon: Key, text: 'Votre propre clé API Gemini (Google AI Studio)' },
   { icon: Zap, text: 'Accès instantané aux derniers modèles Gemini' },
 ]
@@ -277,10 +279,10 @@ export function SubscriptionTab({ user }: Props) {
             </p>
           </div>
           <div className="px-4 py-2.5 flex flex-wrap gap-x-4 gap-y-1.5">
-            {FREE_FEATURES.map(f => (
-              <span key={f} className="flex items-center gap-1.5 text-xs" style={{ color: '#64748b' }}>
-                <Check size={11} style={{ color: '#475569' }} />
-                {f}
+            {FREE_FEATURES.map(({ icon: Icon, text }) => (
+              <span key={text} className="flex items-center gap-1.5 text-xs" style={{ color: '#64748b' }}>
+                <Icon size={11} style={{ color: '#475569' }} />
+                {text}
               </span>
             ))}
           </div>

@@ -710,6 +710,7 @@ const PLANS = [
 
 const PLAN_FEATURES = [
   "250 min of voice per month (shared across web, mobile & desktop)",
+  "300 text messages per day",
   "Google real-time web search",
   "Image sharing & analysis during calls",
   "Remote Mac/PC control from anywhere",
@@ -736,6 +737,7 @@ const CUSTOM_PLANS = [
 const CUSTOM_FEATURES = [
   "Everything in Pro — web search, images, remote control, MCP...",
   "Truly unlimited voice — no minute counter, ever",
+  "Unlimited text messages",
   "Your own Gemini API key (Google AI Studio)",
   "Instant access to the latest Gemini models",
   "Key encrypted end-to-end with your PIN",
