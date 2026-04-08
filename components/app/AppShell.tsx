@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Sidebar } from './Sidebar'
 import { BottomTabs } from './BottomTabs'
 import { VoiceTab } from './tabs/VoiceTab'
@@ -26,11 +26,31 @@ interface Props {
   onIncrementTextMessages: () => Promise<{ blocked: boolean }>
 }
 
-const DEFAULT_SETTINGS: AppSettings = { language: 'fr', webSearch: false }
+const SUPPORTED_LANGUAGES: AppSettings['language'][] = ['fr', 'en', 'tr', 'de', 'es']
+const LANG_STORAGE_KEY = 'ava_language'
+
+const DEFAULT_SETTINGS: AppSettings = { language: 'en', webSearch: false }
 
 export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits, onTrackVoiceTime, customApiKey, onSaveApiKey, onRemoveApiKey, onIncrementTextMessages }: Props) {
   const [activeTab, setActiveTab] = useState<AppTab>('voice')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
+
+  // Detect browser language on mount (after hydration to avoid SSR mismatch)
+  useEffect(() => {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY) as AppSettings['language'] | null
+    if (saved && SUPPORTED_LANGUAGES.includes(saved)) {
+      setSettings(s => ({ ...s, language: saved }))
+      return
+    }
+    const browserLang = navigator.language.slice(0, 2).toLowerCase() as AppSettings['language']
+    const detected = SUPPORTED_LANGUAGES.includes(browserLang) ? browserLang : 'en'
+    setSettings(s => ({ ...s, language: detected }))
+  }, [])
+
+  const handleSettingsChange = useCallback((s: AppSettings) => {
+    setSettings(s)
+    localStorage.setItem(LANG_STORAGE_KEY, s.language)
+  }, [])
 
   const handleSessionEnd = useCallback(() => {
     onRefresh()
@@ -105,7 +125,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
           {activeTab === 'settings' && (
             <SettingsTab
               settings={settings}
-              onSettingsChange={setSettings}
+              onSettingsChange={handleSettingsChange}
               isPro={isPro(user)}
               onGoToSubscription={handleGoToSubscription}
               canUseCustomApiKey={permissions.canUseCustomApiKey}
