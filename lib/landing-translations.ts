@@ -17,6 +17,7 @@ export const T = {
     features: { en: 'Features',   fr: 'Fonctionnalités', de: 'Funktionen', tr: 'Özellikler', es: 'Características' } as TL,
     pricing:  { en: 'Pricing',    fr: 'Tarifs',           de: 'Preise',     tr: 'Fiyatlar',   es: 'Precios' } as TL,
     download: { en: 'Download',   fr: 'Télécharger',      de: 'Download',   tr: 'İndir',      es: 'Descargar' } as TL,
+    blog:     { en: 'Blog',       fr: 'Blog',              de: 'Blog',       tr: 'Blog',       es: 'Blog' } as TL,
     cta:      { en: 'Start For Free', fr: 'Commencer gratuitement', de: 'Kostenlos starten', tr: 'Ücretsiz Başla', es: 'Empezar gratis' } as TL,
   },
   hero: {

@@ -161,6 +161,7 @@ function Navbar() {
     { name: tl(T.nav.features), link: "#features" },
     { name: tl(T.nav.pricing),  link: "#pricing" },
     { name: tl(T.nav.download), link: "#download" },
+    { name: tl(T.nav.blog),     link: "/blog" },
   ];
 
   return (
@@ -1092,6 +1093,7 @@ function Footer() {
             <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-4">{tl(T.footer.legal)}</p>
             <ul className="space-y-2.5">
               {[
+                [tl(T.nav.blog), "/blog"],
                 [tl(T.footer.terms), "/cgu"],
                 [tl(T.footer.privacy), "/confidentialite"],
                 [tl(T.footer.refund), "/remboursement"],
