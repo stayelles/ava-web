@@ -1,0 +1,77 @@
+# ─── Security Headers ─────────────────────────────────────────────────────────
+<IfModule mod_headers.c>
+  # Prevent clickjacking
+  Header always set X-Frame-Options "SAMEORIGIN"
+
+  # Prevent MIME type sniffing
+  Header always set X-Content-Type-Options "nosniff"
+
+  # Control referrer info sent to other sites
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+  # Disable browser features not needed
+  Header always set Permissions-Policy "camera=(), microphone=(self), geolocation=()"
+
+  # Force HTTPS (HSTS) - enable after confirming SSL works
+  # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+  # Basic XSS protection for older browsers
+  Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# ─── HTTPS Redirect ────────────────────────────────────────────────────────────
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Redirect HTTP → HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # Redirect www → non-www (or reverse — pick one)
+  RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+  RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# ─── Clean URLs (Next.js trailingSlash static export) ──────────────────────────
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Serve index.html for directory requests (already handled by trailingSlash)
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME}/index.html -f
+  RewriteRule ^(.+)$ $1/index.html [L]
+
+  # 404 fallback
+  ErrorDocument 404 /404.html
+</IfModule>
+
+# ─── Compression (gzip) ────────────────────────────────────────────────────────
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript
+  AddOutputFilterByType DEFLATE application/javascript application/json
+  AddOutputFilterByType DEFLATE image/svg+xml font/woff font/woff2
+</IfModule>
+
+# ─── Browser Caching ───────────────────────────────────────────────────────────
+<IfModule mod_expires.c>
+  ExpiresActive On
+
+  # Static Next.js assets (hashed filenames — cache aggressively)
+  <FilesMatch "\.(js|css|woff2?|png|jpg|jpeg|gif|svg|ico|webp)$">
+    ExpiresDefault "access plus 1 year"
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # HTML — never cache (content changes on deploy)
+  <FilesMatch "\.html$">
+    ExpiresDefault "access plus 0 seconds"
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# ─── Block sensitive files ─────────────────────────────────────────────────────
+<FilesMatch "(\.env|\.git|package\.json|package-lock\.json)">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
