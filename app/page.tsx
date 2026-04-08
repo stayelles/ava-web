@@ -709,15 +709,17 @@ const PLANS = [
 ];
 
 const PLAN_FEATURES = [
-  "250 min of voice per month (shared across web, mobile & desktop)",
+  "250 min of voice per month (web, mobile & desktop)",
   "300 text messages per day",
-  "Google real-time web search",
-  "Image sharing & analysis during calls",
-  "Remote Mac/PC control from anywhere",
-  "Real-time screen vision & analysis",
-  "Smart push reminders & scheduling",
-  "MCP integrations (Notion, GitHub...)",
-  "Persistent conversation memory",
+  "∞ Unlimited Google real-time web search",
+  "∞ Unlimited image sharing & analysis (up to 6 per call)",
+  "∞ Unlimited remote Mac/PC control",
+  "∞ Unlimited real-time screen vision & analysis",
+  "∞ Unlimited AI auto-improvement (up to 15 steps)",
+  "∞ Unlimited smart push reminders & scheduling",
+  "∞ Unlimited MCP integrations (Notion, GitHub, Brave...)",
+  "∞ Unlimited conversation memory",
+  "Multi-language support: FR, EN, DE, TR",
   "Priority support",
 ];
 
@@ -735,9 +737,10 @@ const CUSTOM_PLANS = [
 ];
 
 const CUSTOM_FEATURES = [
-  "Everything in Pro — web search, images, remote control, MCP...",
-  "Truly unlimited voice — no minute counter, ever",
-  "Unlimited text messages",
+  "Everything in Pro, all limits removed",
+  "∞ Truly unlimited voice — no minute counter, ever",
+  "∞ Unlimited text messages",
+  "∞ Unlimited AI auto-improvement — no step limit",
   "Your own Gemini API key (Google AI Studio)",
   "Instant access to the latest Gemini models",
   "Key encrypted end-to-end with your PIN",

@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, Layers, Key, Smartphone, Mic, MessageSquare, Star } from 'lucide-react'
+import { Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock } from 'lucide-react'
 import { GUMROAD_URL, GUMROAD_QUARTERLY_URL, GUMROAD_BIANNUAL_URL, GUMROAD_CUSTOM_URL, GUMROAD_CUSTOM_QUARTERLY_URL } from '../constants'
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
@@ -18,23 +18,27 @@ const FREE_FEATURES = [
 ]
 
 const PRO_FEATURES = [
-  { icon: Mic, text: '250 min de voix par mois (partagées web, mobile & desktop)' },
+  { icon: Mic, text: '250 min de voix par mois (web, mobile & desktop)' },
   { icon: MessageSquare, text: '300 messages texte par jour' },
-  { icon: Globe, text: 'Recherche web Google en temps réel' },
-  { icon: ImageIcon, text: 'Analyse d\'images pendant les appels (jusqu\'à 6)' },
-  { icon: Monitor, text: 'Contrôle à distance Mac/PC (via Ava Mobile)' },
-  { icon: Brain, text: 'Vision écran en temps réel (via Ava Mobile)' },
-  { icon: Bell, text: 'Rappels intelligents avec notifications push (mobile)' },
-  { icon: Layers, text: 'Intégrations MCP : Notion, GitHub, et plus' },
-  { icon: Star, text: 'Accès prioritaire aux nouvelles fonctionnalités' },
+  { icon: Globe, text: '∞ Recherche web Google en temps réel — illimitée' },
+  { icon: ImageIcon, text: '∞ Analyse d\'images illimitée (jusqu\'à 6 par appel)' },
+  { icon: Monitor, text: '∞ Contrôle à distance Mac/PC — illimité' },
+  { icon: Brain, text: '∞ Vision écran en temps réel — illimitée' },
+  { icon: Cpu, text: '∞ Auto-amélioration IA (jusqu\'à 15 étapes par session)' },
+  { icon: Bell, text: '∞ Rappels push intelligents illimités' },
+  { icon: Layers, text: '∞ Intégrations MCP illimitées (Notion, GitHub, Brave...)' },
+  { icon: Zap, text: '∞ Mémoire conversationnelle illimitée' },
+  { icon: Star, text: 'Support prioritaire' },
 ]
 
 const CUSTOM_FEATURES = [
-  { icon: Crown, text: 'Toutes les fonctionnalités Pro incluses (recherche web, images, contrôle distant, MCP…)' },
-  { icon: Mic, text: 'Voix vraiment illimitée — aucun compteur de minutes, jamais' },
-  { icon: MessageSquare, text: 'Messages texte illimités' },
+  { icon: Crown, text: 'Tout Pro sans limites — toutes fonctionnalités déverrouillées' },
+  { icon: Mic, text: '∞ Voix vraiment illimitée — aucun compteur de minutes' },
+  { icon: MessageSquare, text: '∞ Messages texte illimités' },
+  { icon: Cpu, text: '∞ Auto-amélioration IA illimitée — aucune limite d\'étapes' },
   { icon: Key, text: 'Votre propre clé API Gemini (Google AI Studio)' },
   { icon: Zap, text: 'Accès instantané aux derniers modèles Gemini' },
+  { icon: Lock, text: 'Clé chiffrée de bout en bout avec votre PIN' },
 ]
 
 const PLANS = [
