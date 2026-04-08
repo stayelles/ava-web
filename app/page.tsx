@@ -78,26 +78,75 @@ function DotGrid({ className }: { className?: string }) {
 
 // ─── Language switcher ────────────────────────────────────────────────────────
 
-function LangSwitcher({ compact = false }: { compact?: boolean }) {
+function LangSwitcher() {
   const { lang, setLang } = useLang();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = LANG_FLAGS.find(l => l.code === lang) ?? LANG_FLAGS[0];
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
+  }, [open]);
+
   return (
-    <div className={cn("flex items-center gap-1", compact ? "gap-0.5" : "gap-1")}>
-      {LANG_FLAGS.map(({ code, flag, label }) => (
-        <button
-          key={code}
-          onClick={() => setLang(code)}
-          title={label}
-          className={cn(
-            "flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-bold transition-all select-none",
-            lang === code
-              ? "bg-white/10 text-white"
-              : "text-white/30 hover:text-white/60 hover:bg-white/05"
-          )}
-        >
-          <span className="text-base leading-none">{flag}</span>
-          {!compact && <span className="hidden sm:inline text-[10px]">{label}</span>}
-        </button>
-      ))}
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-sm font-semibold transition-all select-none"
+        style={{
+          background: open ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.10)',
+          color: '#e2e8f0',
+        }}
+      >
+        <span className="text-base leading-none">{current.flag}</span>
+        <span className="text-[11px] font-bold tracking-wide">{current.label}</span>
+        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }} className="flex items-center">
+          <ChevronDown size={12} style={{ color: '#64748b' }} />
+        </motion.span>
+      </button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="absolute right-0 mt-1.5 w-36 rounded-2xl overflow-hidden z-50"
+            style={{
+              background: 'rgba(15,20,35,0.97)',
+              border: '1px solid rgba(255,255,255,0.10)',
+              boxShadow: '0 16px 48px rgba(0,0,0,0.5)',
+              backdropFilter: 'blur(16px)',
+            }}
+          >
+            {LANG_FLAGS.map(({ code, flag, label }) => (
+              <button
+                key={code}
+                onClick={() => { setLang(code); setOpen(false); }}
+                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-left transition-colors"
+                style={{
+                  background: lang === code ? 'rgba(225,29,72,0.12)' : 'transparent',
+                  color: lang === code ? '#f43f5e' : '#94a3b8',
+                }}
+                onMouseEnter={e => { if (lang !== code) (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; }}
+                onMouseLeave={e => { if (lang !== code) (e.currentTarget as HTMLElement).style.background = 'transparent'; }}
+              >
+                <span className="text-base leading-none">{flag}</span>
+                <span className="text-xs font-semibold flex-1">{label === 'EN' ? 'English' : label === 'FR' ? 'Français' : label === 'DE' ? 'Deutsch' : label === 'TR' ? 'Türkçe' : 'Español'}</span>
+                {lang === code && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 flex-shrink-0" />
+                )}
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -144,8 +193,8 @@ function Navbar() {
               {item.name}
             </a>
           ))}
-          <div className="pt-2 pb-1">
-            <LangSwitcher compact />
+          <div className="pt-1 pb-1">
+            <LangSwitcher />
           </div>
           <NavbarButton href="/app" variant="primary" className="w-full mt-2">
             {tl(T.nav.cta)}
