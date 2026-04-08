@@ -22,6 +22,7 @@ const LANGUAGES = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'tr', label: 'Türkçe', flag: '🇹🇷' },
   { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'es', label: 'Español', flag: '🇪🇸' },
 ]
 
 export function SettingsTab({

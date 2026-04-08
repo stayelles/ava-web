@@ -33,7 +33,7 @@ export type SessionState = 'idle' | 'connecting' | 'connected' | 'error'
 export type AppTab = 'voice' | 'chat' | 'profile' | 'subscription' | 'referral' | 'settings'
 
 export interface AppSettings {
-  language: 'fr' | 'en' | 'tr' | 'de'
+  language: 'fr' | 'en' | 'tr' | 'de' | 'es'
   webSearch: boolean
 }
 

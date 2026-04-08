@@ -719,7 +719,7 @@ const PLAN_FEATURES = [
   "∞ Unlimited smart push reminders & scheduling",
   "∞ Unlimited MCP integrations (Notion, GitHub, Brave...)",
   "∞ Unlimited conversation memory",
-  "Multi-language support: FR, EN, DE, TR",
+  "Multi-language support: FR, EN, DE, TR, ES",
   "Priority support",
 ];
 
@@ -737,13 +737,21 @@ const CUSTOM_PLANS = [
 ];
 
 const CUSTOM_FEATURES = [
-  "Everything in Pro, all limits removed",
   "∞ Truly unlimited voice — no minute counter, ever",
   "∞ Unlimited text messages",
+  "∞ Unlimited Google real-time web search",
+  "∞ Unlimited image sharing & analysis (up to 6 per call)",
+  "∞ Unlimited remote Mac/PC control",
+  "∞ Unlimited real-time screen vision & analysis",
   "∞ Unlimited AI auto-improvement — no step limit",
+  "∞ Unlimited smart push reminders & scheduling",
+  "∞ Unlimited MCP integrations (Notion, GitHub, Brave...)",
+  "∞ Unlimited conversation memory",
   "Your own Gemini API key (Google AI Studio)",
   "Instant access to the latest Gemini models",
   "Key encrypted end-to-end with your PIN",
+  "Multi-language support: FR, EN, DE, TR, ES",
+  "Priority support",
 ];
 
 function Pricing() {

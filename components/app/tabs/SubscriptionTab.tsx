@@ -14,7 +14,7 @@ const FREE_FEATURES = [
   { icon: Mic, text: '3 min de voix par mois' },
   { icon: MessageSquare, text: '10 messages texte par jour' },
   { icon: Brain, text: 'Mémoire conversationnelle' },
-  { icon: Globe, text: '4 langues : FR, EN, DE, TR' },
+  { icon: Globe, text: '5 langues : FR, EN, DE, TR, ES' },
 ]
 
 const PRO_FEATURES = [
@@ -32,13 +32,20 @@ const PRO_FEATURES = [
 ]
 
 const CUSTOM_FEATURES = [
-  { icon: Crown, text: 'Tout Pro sans limites — toutes fonctionnalités déverrouillées' },
   { icon: Mic, text: '∞ Voix vraiment illimitée — aucun compteur de minutes' },
   { icon: MessageSquare, text: '∞ Messages texte illimités' },
+  { icon: Globe, text: '∞ Recherche web Google en temps réel — illimitée' },
+  { icon: ImageIcon, text: '∞ Analyse d\'images illimitée (jusqu\'à 6 par appel)' },
+  { icon: Monitor, text: '∞ Contrôle à distance Mac/PC — illimité' },
+  { icon: Brain, text: '∞ Vision écran en temps réel — illimitée' },
   { icon: Cpu, text: '∞ Auto-amélioration IA illimitée — aucune limite d\'étapes' },
+  { icon: Bell, text: '∞ Rappels push intelligents illimités' },
+  { icon: Layers, text: '∞ Intégrations MCP illimitées (Notion, GitHub, Brave...)' },
+  { icon: Zap, text: '∞ Mémoire conversationnelle illimitée' },
   { icon: Key, text: 'Votre propre clé API Gemini (Google AI Studio)' },
-  { icon: Zap, text: 'Accès instantané aux derniers modèles Gemini' },
+  { icon: Star, text: 'Accès instantané aux derniers modèles Gemini' },
   { icon: Lock, text: 'Clé chiffrée de bout en bout avec votre PIN' },
+  { icon: Crown, text: 'Support prioritaire' },
 ]
 
 const PLANS = [
