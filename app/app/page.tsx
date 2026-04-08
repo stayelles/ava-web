@@ -1,6 +1,7 @@
 'use client'
 
 import { useUserData } from '@/components/app/hooks/useUserData'
+import { useConfig } from '@/components/app/hooks/useConfig'
 import { LoginScreen } from '@/components/app/LoginScreen'
 import { AppShell } from '@/components/app/AppShell'
 
@@ -10,6 +11,9 @@ export default function AvaWebApp() {
     refreshUser, updatePin, permissions, decrementCredits, trackVoiceTime,
     customApiKey, saveApiKey, removeApiKey, incrementTextMessages,
   } = useUserData()
+
+  // Fetch shared Gemini key from Edge Function — never baked into bundle
+  const sharedGeminiKey = useConfig(user?.id)
 
   if (!user) {
     return (
@@ -31,6 +35,7 @@ export default function AvaWebApp() {
       onDecrementCredits={decrementCredits}
       onTrackVoiceTime={trackVoiceTime}
       customApiKey={customApiKey}
+      sharedGeminiKey={sharedGeminiKey}
       onSaveApiKey={saveApiKey}
       onRemoveApiKey={removeApiKey}
       onIncrementTextMessages={incrementTextMessages}

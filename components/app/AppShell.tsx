@@ -21,6 +21,7 @@ interface Props {
   onDecrementCredits: () => Promise<void>
   onTrackVoiceTime: (seconds: number) => Promise<void>
   customApiKey?: string | null
+  sharedGeminiKey?: string | null
   onSaveApiKey?: (key: string, pin: string) => Promise<{ ok: boolean; error?: string }>
   onRemoveApiKey?: () => Promise<{ ok: boolean }>
   onIncrementTextMessages: () => Promise<{ blocked: boolean }>
@@ -31,7 +32,7 @@ const LANG_STORAGE_KEY = 'ava_language'
 
 const DEFAULT_SETTINGS: AppSettings = { language: 'en', webSearch: false }
 
-export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits, onTrackVoiceTime, customApiKey, onSaveApiKey, onRemoveApiKey, onIncrementTextMessages }: Props) {
+export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits, onTrackVoiceTime, customApiKey, sharedGeminiKey, onSaveApiKey, onRemoveApiKey, onIncrementTextMessages }: Props) {
   const [activeTab, setActiveTab] = useState<AppTab>('voice')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
 
@@ -102,6 +103,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               onGoToSubscription={handleGoToSubscription}
               onVoiceDone={onTrackVoiceTime}
               customApiKey={customApiKey}
+              sharedApiKey={sharedGeminiKey}
             />
           )}
           {activeTab === 'chat' && (
@@ -111,6 +113,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               language={settings.language}
               webSearch={settings.webSearch}
               onIncrementTextMessages={onIncrementTextMessages}
+              sharedApiKey={sharedGeminiKey}
             />
           )}
           {activeTab === 'profile' && (

@@ -20,11 +20,12 @@ interface Props {
   language: string
   webSearch: boolean
   onIncrementTextMessages: () => Promise<{ blocked: boolean }>
+  sharedApiKey?: string | null
 }
 
 const GEMINI_TEXT_MODEL = 'gemini-2.0-flash'
 
-export function ChatTab({ user, permissions, language, webSearch, onIncrementTextMessages }: Props) {
+export function ChatTab({ user, permissions, language, webSearch, onIncrementTextMessages, sharedApiKey }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -99,7 +100,7 @@ export function ChatTab({ user, permissions, language, webSearch, onIncrementTex
 
       for (let step = 0; step < 10; step++) {
         const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${process.env.NEXT_PUBLIC_GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${sharedApiKey ?? process.env.NEXT_PUBLIC_GEMINI_API_KEY}`,
           { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
         )
         const data = await res.json()

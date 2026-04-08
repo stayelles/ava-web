@@ -20,6 +20,7 @@ interface Props {
   onGoToSubscription?: () => void
   onVoiceDone?: (durationSeconds: number) => void
   customApiKey?: string | null
+  sharedApiKey?: string | null
 }
 
 const MAX_IMAGES = 6
@@ -27,7 +28,7 @@ const MAX_IMAGES = 6
 export function VoiceTab({
   user, language, webSearch, permissions,
   onSessionEnd, onTurnComplete, onGoToSubscription, onVoiceDone,
-  customApiKey,
+  customApiKey, sharedApiKey,
 }: Props) {
   const callDurationRef = useRef(0)
 
@@ -46,7 +47,7 @@ export function VoiceTab({
     userName: user.user_name ?? undefined,
     onSessionEnd: handleSessionEnd,
     onTurnComplete,
-    apiKey: customApiKey ?? undefined,
+    apiKey: customApiKey ?? sharedApiKey ?? undefined,
   })
 
   const [transcriptOpen, setTranscriptOpen] = useState(false)
