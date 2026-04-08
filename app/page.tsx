@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, createContext, useContext } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import {
   Mic2, Monitor, Brain, Bell, Zap, Check, Apple, Smartphone,
@@ -25,6 +25,21 @@ import {
   Navbar as ResizableNavbar, NavBody, NavItems, MobileNav, NavbarLogo,
   NavbarButton, MobileNavHeader, MobileNavToggle, MobileNavMenu,
 } from "@/components/ui/resizable-navbar";
+import {
+  type Lang, type TL,
+  T, LANG_FLAGS, SUPPORTED_LANGS, LANG_STORAGE_KEY,
+} from "@/lib/landing-translations";
+
+// ─── Language context ──────────────────────────────────────────────────────────
+
+const LangCtx = createContext<{ lang: Lang; setLang: (l: Lang) => void }>({
+  lang: 'en', setLang: () => {},
+});
+const useLang = () => useContext(LangCtx);
+function useTl() {
+  const { lang } = useLang();
+  return (obj: TL): string => obj[lang] ?? obj.en;
+}
 
 // ─── Pre-computed waveform heights (no Math.random in render) ────────────────
 const WAVE_BARS_HERO = Array.from({ length: 24 }, (_, i) =>
@@ -61,16 +76,43 @@ function DotGrid({ className }: { className?: string }) {
   );
 }
 
+// ─── Language switcher ────────────────────────────────────────────────────────
+
+function LangSwitcher({ compact = false }: { compact?: boolean }) {
+  const { lang, setLang } = useLang();
+  return (
+    <div className={cn("flex items-center gap-1", compact ? "gap-0.5" : "gap-1")}>
+      {LANG_FLAGS.map(({ code, flag, label }) => (
+        <button
+          key={code}
+          onClick={() => setLang(code)}
+          title={label}
+          className={cn(
+            "flex items-center gap-1 rounded-lg px-1.5 py-1 text-xs font-bold transition-all select-none",
+            lang === code
+              ? "bg-white/10 text-white"
+              : "text-white/30 hover:text-white/60 hover:bg-white/05"
+          )}
+        >
+          <span className="text-base leading-none">{flag}</span>
+          {!compact && <span className="hidden sm:inline text-[10px]">{label}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 
-const NAV_ITEMS = [
-  { name: "Features", link: "#features" },
-  { name: "Pricing", link: "#pricing" },
-  { name: "Download", link: "#download" },
-];
-
 function Navbar() {
+  const tl = useTl();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const NAV_ITEMS = [
+    { name: tl(T.nav.features), link: "#features" },
+    { name: tl(T.nav.pricing),  link: "#pricing" },
+    { name: tl(T.nav.download), link: "#download" },
+  ];
 
   return (
     <ResizableNavbar>
@@ -78,9 +120,12 @@ function Navbar() {
       <NavBody>
         <NavbarLogo />
         <NavItems items={NAV_ITEMS} />
-        <NavbarButton href="/app" variant="primary">
-          Start For Free
-        </NavbarButton>
+        <div className="flex items-center gap-3">
+          <LangSwitcher />
+          <NavbarButton href="/app" variant="primary">
+            {tl(T.nav.cta)}
+          </NavbarButton>
+        </div>
       </NavBody>
 
       {/* Mobile */}
@@ -99,8 +144,11 @@ function Navbar() {
               {item.name}
             </a>
           ))}
+          <div className="pt-2 pb-1">
+            <LangSwitcher compact />
+          </div>
           <NavbarButton href="/app" variant="primary" className="w-full mt-2">
-            Start For Free
+            {tl(T.nav.cta)}
           </NavbarButton>
         </MobileNavMenu>
       </MobileNav>
@@ -153,15 +201,14 @@ function PhoneScreen() {
 // ─── Hero ─────────────────────────────────────────────────────────────────────
 
 function Hero() {
+  const tl = useTl();
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center pt-28 pb-20 overflow-hidden bg-[#020617]">
-      {/* Grid background */}
       <div className="pointer-events-none absolute inset-0 select-none"
         style={{
           backgroundImage: "linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px)",
           backgroundSize: "40px 40px",
         }} />
-      {/* Spotlight — teinte rose pour matcher nos couleurs */}
       <Spotlight className="-top-40 left-0 md:-top-20 md:left-60" fill="#f43f5e" />
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(225,29,72,0.10) 0%, transparent 65%)" }} />
@@ -175,10 +222,10 @@ function Hero() {
             {[...Array(5)].map((_, i) => <Star key={i} size={11} className="text-amber-400 fill-amber-400" />)}
             <span className="text-white/70 text-xs font-bold ml-1">4.8</span>
             <span className="text-white/25 text-xs mx-0.5">·</span>
-            <span className="text-white/45 text-xs">2 400+ users</span>
+            <span className="text-white/45 text-xs">{tl(T.hero.users)}</span>
           </div>
           <Badge className="border-rose-500/30 text-rose-400 bg-rose-500/10 text-[10px] tracking-widest uppercase">
-            Your AI Voice Companion
+            {tl(T.hero.badge)}
           </Badge>
         </motion.div>
 
@@ -186,11 +233,11 @@ function Hero() {
         <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.65, delay: 0.1 }}
           className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.05] mb-6">
-          Your AI companion
+          {tl(T.hero.h1)}
           <br />
           <span className="relative inline-block">
             <span className="bg-gradient-to-r from-rose-400 via-rose-500 to-pink-500 bg-clip-text text-transparent">
-              always by your side
+              {tl(T.hero.h2)}
             </span>
             <svg className="absolute -bottom-1.5 left-0 w-full overflow-visible" viewBox="0 0 400 10" fill="none" aria-hidden>
               <motion.path d="M 4 7 Q 100 2 200 7 Q 300 12 396 7"
@@ -205,14 +252,13 @@ function Hero() {
         <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
           className="text-slate-400 text-lg sm:text-xl leading-relaxed max-w-xl mb-9">
-          Ava listens, acts, and remembers. Control your Mac, set reminders, and have real conversations — all with your voice.
+          {tl(T.hero.subtitle)}
         </motion.p>
 
         {/* CTA buttons */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.3 }}
           className="flex flex-wrap items-center justify-center gap-3 mb-20">
-          {/* Mobile */}
           <motion.a href="https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-sm shadow-2xl shadow-rose-500/35 transition-colors">
@@ -223,7 +269,6 @@ function Hero() {
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white font-bold text-sm transition-all">
             <SiGoogleplay size={15} /> Google Play
           </motion.a>
-          {/* Desktop */}
           <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-arm64.dmg"
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             className="inline-flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition-all">
@@ -248,10 +293,8 @@ function Hero() {
         <motion.div initial={{ opacity: 0, y: 48 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.9, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="relative">
-          {/* Glow */}
           <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 w-72 h-20 rounded-full blur-3xl bg-rose-500/15 pointer-events-none" />
 
-          {/* Left pill */}
           <motion.div animate={{ y: [0, -7, 0] }} transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
             className="absolute -left-4 top-20 hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 border border-white/10 shadow-xl shadow-black/40 z-10">
             <div className="w-7 h-7 rounded-lg bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center">
@@ -263,7 +306,6 @@ function Hero() {
             </div>
           </motion.div>
 
-          {/* Right pill */}
           <motion.div animate={{ y: [0, -9, 0] }} transition={{ duration: 3.8, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
             className="absolute -right-4 top-28 hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 border border-white/10 shadow-xl shadow-black/40 z-10">
             <div className="w-7 h-7 rounded-lg bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center">
@@ -275,7 +317,6 @@ function Hero() {
             </div>
           </motion.div>
 
-          {/* Bottom-left pill */}
           <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 4.1, repeat: Infinity, ease: "easeInOut", delay: 1.1 }}
             className="absolute -left-2 bottom-28 hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-900 border border-white/10 shadow-xl shadow-black/40 z-10">
             <div className="w-7 h-7 rounded-lg bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
@@ -296,47 +337,7 @@ function Hero() {
   );
 }
 
-
 // ─── What makes Ava different ─────────────────────────────────────────────────
-
-const DIFFS = [
-  {
-    icon: Mic2, color: "rose",
-    title: "Ultra-realistic voice",
-    desc: "The most natural AI voice you've ever heard. Talk like you'd talk to a friend.",
-    visual: (
-      <div className="flex items-end gap-0.5 h-8 w-full">
-        {Array.from({ length: 28 }, (_, i) => Math.abs(Math.sin(i * 0.55) * 18 + 6)).map((h, i) => (
-          <div key={i} className="flex-1 rounded-full bg-rose-500/50" style={{ height: h }} />
-        ))}
-      </div>
-    ),
-  },
-  {
-    icon: Monitor, color: "indigo",
-    title: "Remote Mac control",
-    desc: "Send commands from your phone. Ava opens apps, runs scripts, and manages files on your Mac — instantly.",
-    visual: (
-      <div className="rounded-xl bg-black/50 border border-white/[0.08] px-3 py-2.5 text-left font-mono text-[10px] space-y-1">
-        <p className="text-emerald-400">$ open -a "Spotify"</p>
-        <p className="text-white/30">Launching...</p>
-        <p className="text-emerald-400">✓ Done in 0.4s</p>
-      </div>
-    ),
-  },
-  {
-    icon: Brain, color: "violet",
-    title: "Persistent memory",
-    desc: "Ava remembers your preferences, habits, and past conversations. Every session picks up where you left off.",
-    visual: (
-      <div className="flex flex-wrap gap-1.5">
-        {["Développeur", "Paris", "Préfère FR", "MacBook M3"].map(t => (
-          <span key={t} className="px-2 py-0.5 rounded-full bg-violet-500/12 border border-violet-500/20 text-[10px] text-violet-300">{t}</span>
-        ))}
-      </div>
-    ),
-  },
-];
 
 const DIFF_COLORS: Record<string, string> = {
   rose: "bg-rose-500/10 border-rose-500/20 text-rose-400",
@@ -344,37 +345,68 @@ const DIFF_COLORS: Record<string, string> = {
   violet: "bg-violet-500/10 border-violet-500/20 text-violet-400",
 };
 
+const DIFF_ICONS = [Mic2, Monitor, Brain];
+const DIFF_COLORS_KEYS = ["rose", "indigo", "violet"];
+const DIFF_VISUALS = [
+  (
+    <div className="flex items-end gap-0.5 h-8 w-full">
+      {Array.from({ length: 28 }, (_, i) => Math.abs(Math.sin(i * 0.55) * 18 + 6)).map((h, i) => (
+        <div key={i} className="flex-1 rounded-full bg-rose-500/50" style={{ height: h }} />
+      ))}
+    </div>
+  ),
+  (
+    <div className="rounded-xl bg-black/50 border border-white/[0.08] px-3 py-2.5 text-left font-mono text-[10px] space-y-1">
+      <p className="text-emerald-400">$ open -a &quot;Spotify&quot;</p>
+      <p className="text-white/30">Launching...</p>
+      <p className="text-emerald-400">✓ Done in 0.4s</p>
+    </div>
+  ),
+  (
+    <div className="flex flex-wrap gap-1.5">
+      {["Développeur", "Paris", "Préfère FR", "MacBook M3"].map(t => (
+        <span key={t} className="px-2 py-0.5 rounded-full bg-violet-500/12 border border-violet-500/20 text-[10px] text-violet-300">{t}</span>
+      ))}
+    </div>
+  ),
+];
+
 function Differentiators() {
+  const tl = useTl();
   return (
     <section className="relative py-24 sm:py-32 overflow-hidden">
       <DotGrid className="opacity-30" />
       <div className="relative max-w-6xl mx-auto px-6">
         <FadeUp className="text-center mb-16">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">What makes Ava different</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">{tl(T.diff.label)}</p>
           <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-            AI that actually{" "}
-            <span className="text-rose-400 italic">does things</span>
+            {tl(T.diff.h1)}{" "}
+            <span className="text-rose-400 italic">{tl(T.diff.h2)}</span>
           </h2>
           <p className="text-slate-400 text-lg mt-4 max-w-lg mx-auto leading-relaxed">
-            Not just a chatbot. Ava understands you, acts on your behalf, and gets smarter every day.
+            {tl(T.diff.subtitle)}
           </p>
         </FadeUp>
         <div className="grid md:grid-cols-3 gap-5">
-          {DIFFS.map((d, i) => (
-            <FadeUp key={d.title} delay={i * 0.1}>
-              <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300 }}
-                className="rounded-2xl bg-white/[0.04] border border-white/10 p-6 flex flex-col gap-4 h-full">
-                <div className={cn("w-11 h-11 rounded-xl border flex items-center justify-center flex-shrink-0", DIFF_COLORS[d.color])}>
-                  <d.icon size={20} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-white font-bold text-lg mb-2">{d.title}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">{d.desc}</p>
-                </div>
-                <div className="pt-3 border-t border-white/[0.06]">{d.visual}</div>
-              </motion.div>
-            </FadeUp>
-          ))}
+          {T.diff.cards.map((card, i) => {
+            const Icon = DIFF_ICONS[i];
+            const colorKey = DIFF_COLORS_KEYS[i];
+            return (
+              <FadeUp key={i} delay={i * 0.1}>
+                <motion.div whileHover={{ y: -4 }} transition={{ type: "spring", stiffness: 300 }}
+                  className="rounded-2xl bg-white/[0.04] border border-white/10 p-6 flex flex-col gap-4 h-full">
+                  <div className={cn("w-11 h-11 rounded-xl border flex items-center justify-center flex-shrink-0", DIFF_COLORS[colorKey])}>
+                    <Icon size={20} />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-white font-bold text-lg mb-2">{tl(card.title)}</h3>
+                    <p className="text-slate-400 text-sm leading-relaxed">{tl(card.desc)}</p>
+                  </div>
+                  <div className="pt-3 border-t border-white/[0.06]">{DIFF_VISUALS[i]}</div>
+                </motion.div>
+              </FadeUp>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -384,22 +416,23 @@ function Differentiators() {
 // ─── Feature Bento ────────────────────────────────────────────────────────────
 
 function FeatureBento() {
+  const tl = useTl();
   return (
     <section id="features" className="relative py-24 sm:py-32 overflow-hidden">
       <DotGrid className="opacity-20" />
       <div className="relative max-w-6xl mx-auto px-6">
         <FadeUp className="text-center mb-16">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">Powerful features</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">{tl(T.feat.label)}</p>
           <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-            Built to boost
+            {tl(T.feat.h1)}
             <br />
-            <span className="text-rose-400">your workflow</span>
+            <span className="text-rose-400">{tl(T.feat.h2)}</span>
           </h2>
         </FadeUp>
 
-        {/* Row 1 — Voice (3) + Remote+Memory stack (2) */}
+        {/* Row 1 */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-4">
-          {/* Voice — wide */}
+          {/* Voice */}
           <FadeUp className="lg:col-span-3" delay={0.05}>
             <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 200 }}
               className="rounded-3xl overflow-hidden min-h-[300px] relative h-full"
@@ -412,13 +445,11 @@ function FeatureBento() {
                     <Mic2 size={18} className="text-rose-400" />
                   </div>
                   <div>
-                    <p className="text-white font-bold leading-none">Ultra-realistic Voice</p>
-                    <p className="text-rose-400/60 text-xs mt-0.5">Ultra-realistic AI voice</p>
+                    <p className="text-white font-bold leading-none">{tl(T.feat.voiceTitle)}</p>
+                    <p className="text-rose-400/60 text-xs mt-0.5">{tl(T.feat.voiceSub)}</p>
                   </div>
                 </div>
-                <p className="text-white/50 text-sm leading-relaxed mb-8 max-w-sm">
-                  Experience the most natural AI conversation. Ava speaks with emotion, understands context, and responds in real-time with zero latency.
-                </p>
+                <p className="text-white/50 text-sm leading-relaxed mb-8 max-w-sm">{tl(T.feat.voiceDesc)}</p>
                 <div className="mt-auto">
                   <div className="flex items-end gap-0.5 h-14">
                     {WAVE_BARS_FEAT.map((h, i) => (
@@ -429,7 +460,7 @@ function FeatureBento() {
                       />
                     ))}
                   </div>
-                  <p className="text-rose-400/50 text-[10px] mt-2 font-mono tracking-wide">● LIVE · Ava is speaking...</p>
+                  <p className="text-rose-400/50 text-[10px] mt-2 font-mono tracking-wide">{tl(T.feat.voiceLive)}</p>
                 </div>
               </div>
             </motion.div>
@@ -437,7 +468,6 @@ function FeatureBento() {
 
           {/* Right stack */}
           <div className="lg:col-span-2 flex flex-col gap-4">
-            {/* Remote */}
             <FadeUp delay={0.1}>
               <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 200 }}
                 className="rounded-3xl overflow-hidden relative"
@@ -449,10 +479,10 @@ function FeatureBento() {
                     <div className="w-8 h-8 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
                       <Monitor size={14} className="text-indigo-400" />
                     </div>
-                    <p className="text-white font-bold text-sm">Remote Mac Control</p>
+                    <p className="text-white font-bold text-sm">{tl(T.feat.remoteTitle)}</p>
                   </div>
                   <div className="rounded-xl bg-black/50 border border-white/[0.07] px-3 py-2.5 font-mono text-[10px] space-y-1">
-                    <p className="text-emerald-400">$ open -a "Final Cut Pro"</p>
+                    <p className="text-emerald-400">$ open -a &quot;Final Cut Pro&quot;</p>
                     <p className="text-white/30">Launching app...</p>
                     <p className="text-emerald-400">✓ Opened successfully</p>
                   </div>
@@ -460,7 +490,6 @@ function FeatureBento() {
               </motion.div>
             </FadeUp>
 
-            {/* Memory */}
             <FadeUp delay={0.14}>
               <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 200 }}
                 className="rounded-3xl overflow-hidden relative flex-1"
@@ -472,7 +501,7 @@ function FeatureBento() {
                     <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
                       <Brain size={14} className="text-emerald-400" />
                     </div>
-                    <p className="text-white font-bold text-sm">Persistent Memory</p>
+                    <p className="text-white font-bold text-sm">{tl(T.feat.memoryTitle)}</p>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {["Préfère le français", "Dev / Maker", "MacBook M3", "Paris"].map(t => (
@@ -485,7 +514,7 @@ function FeatureBento() {
           </div>
         </div>
 
-        {/* Row 2 — Reminders (2) + MCP (2) + Privacy (1) */}
+        {/* Row 2 */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
           <FadeUp className="lg:col-span-2" delay={0.18}>
             <motion.div whileHover={{ y: -3 }} transition={{ type: "spring", stiffness: 200 }}
@@ -496,9 +525,9 @@ function FeatureBento() {
                   <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
                     <Bell size={14} className="text-amber-400" />
                   </div>
-                  <p className="text-white font-bold text-sm">Smart Reminders</p>
+                  <p className="text-white font-bold text-sm">{tl(T.feat.remindersTitle)}</p>
                 </div>
-                <p className="text-white/45 text-xs leading-relaxed mb-4">Just say it. Ava schedules and sends push notifications at the right time.</p>
+                <p className="text-white/45 text-xs leading-relaxed mb-4">{tl(T.feat.remindersDesc)}</p>
                 <div className="space-y-2">
                   {["Appel médecin — demain 9h", "Deploy avant 18h", "Call team — vendredi"].map(r => (
                     <div key={r} className="flex items-center gap-2 bg-white/[0.04] rounded-lg px-3 py-1.5">
@@ -520,9 +549,9 @@ function FeatureBento() {
                   <div className="w-8 h-8 rounded-lg bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
                     <Layers size={14} className="text-violet-400" />
                   </div>
-                  <p className="text-white font-bold text-sm">MCP Integrations</p>
+                  <p className="text-white font-bold text-sm">{tl(T.feat.mcpTitle)}</p>
                 </div>
-                <p className="text-white/45 text-xs leading-relaxed mb-4">Connect Notion, GitHub, Google Calendar and more via MCP servers.</p>
+                <p className="text-white/45 text-xs leading-relaxed mb-4">{tl(T.feat.mcpDesc)}</p>
                 <div className="flex flex-wrap gap-2">
                   {["Notion", "GitHub", "Calendar", "Slack", "Brave"].map(t => (
                     <span key={t} className="px-2.5 py-1 rounded-lg bg-white/[0.06] border border-white/10 text-white/55 text-[11px] font-medium">{t}</span>
@@ -540,8 +569,8 @@ function FeatureBento() {
                 <div className="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/30 flex items-center justify-center mb-3">
                   <Shield size={14} className="text-sky-400" />
                 </div>
-                <p className="text-white font-bold text-sm mb-2">Privacy First</p>
-                <p className="text-white/45 text-xs leading-relaxed">Your data stays yours. No training on your conversations. Ever.</p>
+                <p className="text-white font-bold text-sm mb-2">{tl(T.feat.privacyTitle)}</p>
+                <p className="text-white/45 text-xs leading-relaxed">{tl(T.feat.privacyDesc)}</p>
               </div>
             </motion.div>
           </FadeUp>
@@ -565,14 +594,15 @@ const INTEG = [
 ];
 
 function Integrations() {
+  const tl = useTl();
   return (
     <section className="py-20 border-y border-white/[0.06]" style={{ background: "rgba(255,255,255,0.012)" }}>
       <div className="max-w-6xl mx-auto px-6">
         <FadeUp className="text-center mb-12">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-3">Works everywhere</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white/25 mb-3">{tl(T.integ.label)}</p>
           <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            Integrations with your{" "}
-            <span className="text-rose-400">favorite tools</span>
+            {tl(T.integ.h1)}{" "}
+            <span className="text-rose-400">{tl(T.integ.h2)}</span>
           </h2>
         </FadeUp>
         <FadeUp delay={0.1}>
@@ -602,15 +632,16 @@ const TESTIMONIALS = [
 ];
 
 function Testimonials() {
+  const tl = useTl();
   return (
     <section className="relative py-24 sm:py-32 overflow-hidden">
       <DotGrid className="opacity-25" />
       <div className="relative max-w-6xl mx-auto px-6">
         <FadeUp className="text-center mb-16">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">Testimonials</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">{tl(T.testimonials.label)}</p>
           <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-            What our users
-            <br />are saying
+            {tl(T.testimonials.h1)}
+            <br />{tl(T.testimonials.h2)}
           </h2>
         </FadeUp>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -621,7 +652,7 @@ function Testimonials() {
                 <div className="flex gap-0.5">
                   {[...Array(t.stars)].map((_, j) => <Star key={j} size={11} className="text-amber-400 fill-amber-400" />)}
                 </div>
-                <p className="text-slate-400 text-sm leading-relaxed flex-1">"{t.text}"</p>
+                <p className="text-slate-400 text-sm leading-relaxed flex-1">&quot;{t.text}&quot;</p>
                 <div className="border-t border-white/[0.06] pt-3">
                   <p className="text-white font-semibold text-sm">{t.name}</p>
                   <p className="text-white/30 text-xs">{t.role}</p>
@@ -638,6 +669,8 @@ function Testimonials() {
 // ─── Showcase ─────────────────────────────────────────────────────────────────
 
 function Showcase() {
+  const tl = useTl();
+  const SHOWCASE_ICONS = [Mic2, Brain, Zap];
   return (
     <section className="relative py-24 sm:py-32 overflow-hidden">
       <div className="absolute inset-0"
@@ -649,32 +682,29 @@ function Showcase() {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <FadeUp>
             <Badge className="border-indigo-500/30 text-indigo-400 bg-indigo-500/10 text-[10px] tracking-widest uppercase mb-6">
-              All in one app
+              {tl(T.showcase.badge)}
             </Badge>
             <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white mb-6 leading-tight">
-              A clear and intuitive
+              {tl(T.showcase.h1)}
               <br />
-              <span className="text-indigo-400">AI experience</span>
+              <span className="text-indigo-400">{tl(T.showcase.h2)}</span>
             </h2>
-            <p className="text-slate-400 text-lg leading-relaxed mb-8">
-              Clean interface, powerful features. Ava handles the complexity so you can focus on what matters most.
-            </p>
+            <p className="text-slate-400 text-lg leading-relaxed mb-8">{tl(T.showcase.subtitle)}</p>
             <div className="space-y-4">
-              {[
-                { icon: Mic2, label: "Voice-first interface", desc: "Tap and speak — no typing needed" },
-                { icon: Brain, label: "Context-aware AI", desc: "Understands what you mean, not just what you say" },
-                { icon: Zap, label: "Instant responses", desc: "Real-time streaming, zero wait time" },
-              ].map(item => (
-                <div key={item.label} className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <item.icon size={14} className="text-indigo-400" />
+              {T.showcase.items.map((item, i) => {
+                const Icon = SHOWCASE_ICONS[i];
+                return (
+                  <div key={i} className="flex items-start gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/15 border border-indigo-500/25 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Icon size={14} className="text-indigo-400" />
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold text-sm">{tl(item.label)}</p>
+                      <p className="text-white/35 text-xs mt-0.5">{tl(item.desc)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-white font-semibold text-sm">{item.label}</p>
-                    <p className="text-white/35 text-xs mt-0.5">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </FadeUp>
           <FadeUp delay={0.15} className="flex justify-center">
@@ -694,89 +724,43 @@ function Showcase() {
 // ─── Pricing ──────────────────────────────────────────────────────────────────
 
 const PLANS = [
-  {
-    label: "1 month", price: "39.90€", per: "/month", href: "https://woonixltd.gumroad.com/l/avam1",
-    popular: false, note: null,
-  },
-  {
-    label: "3 months", price: "99.99€", per: "/quarter", href: "https://woonixltd.gumroad.com/l/avam1?quarterly=true&wanted=true",
-    popular: true, note: "≈ 33.33€/month",
-  },
-  {
-    label: "6 months", price: "189.99€", per: "/ 6 months", href: "https://woonixltd.gumroad.com/l/avam1?biannually=true&wanted=true",
-    popular: false, note: "≈ 31.67€/month",
-  },
-];
-
-const PLAN_FEATURES = [
-  "250 min of voice per month (web, mobile & desktop)",
-  "300 text messages per day",
-  "∞ Unlimited Google real-time web search",
-  "∞ Unlimited image sharing & analysis (up to 6 per call)",
-  "∞ Unlimited remote Mac/PC control",
-  "∞ Unlimited real-time screen vision & analysis",
-  "∞ Unlimited AI auto-improvement (up to 15 steps)",
-  "∞ Unlimited smart push reminders & scheduling",
-  "∞ Unlimited MCP integrations (Notion, GitHub, Brave...)",
-  "∞ Unlimited conversation memory",
-  "Multi-language support: FR, EN, DE, TR, ES",
-  "Priority support",
+  { labelKey: '1 month' as const, price: "39.90€", perKey: '/month' as const, href: "https://woonixltd.gumroad.com/l/avam1", popular: false, noteKey: null },
+  { labelKey: '3 months' as const, price: "99.99€", perKey: '/quarter' as const, href: "https://woonixltd.gumroad.com/l/avam1?quarterly=true&wanted=true", popular: true, noteKey: '≈ 33.33€/month' as const },
+  { labelKey: '6 months' as const, price: "189.99€", perKey: '/ 6 months' as const, href: "https://woonixltd.gumroad.com/l/avam1?biannually=true&wanted=true", popular: false, noteKey: '≈ 31.67€/month' as const },
 ];
 
 const CUSTOM_PLANS = [
-  {
-    label: "1 month", price: "14.99€", per: "/month",
-    href: "https://woonixltd.gumroad.com/l/avacustom",
-    popular: false, note: null, badge: null,
-  },
-  {
-    label: "3 months", price: "29.99€", per: "/quarter",
-    href: "https://woonixltd.gumroad.com/l/avacustom?quarterly=true&wanted=true",
-    popular: true, note: "≈ 9.99€/month", badge: "2 months + 1 FREE",
-  },
-];
-
-const CUSTOM_FEATURES = [
-  "∞ Truly unlimited voice — no minute counter, ever",
-  "∞ Unlimited text messages",
-  "∞ Unlimited Google real-time web search",
-  "∞ Unlimited image sharing & analysis (up to 6 per call)",
-  "∞ Unlimited remote Mac/PC control",
-  "∞ Unlimited real-time screen vision & analysis",
-  "∞ Unlimited AI auto-improvement — no step limit",
-  "∞ Unlimited smart push reminders & scheduling",
-  "∞ Unlimited MCP integrations (Notion, GitHub, Brave...)",
-  "∞ Unlimited conversation memory",
-  "Your own Gemini API key (Google AI Studio)",
-  "Instant access to the latest Gemini models",
-  "Key encrypted end-to-end with your PIN",
-  "Multi-language support: FR, EN, DE, TR, ES",
-  "Priority support",
+  { labelKey: '1 month' as const, price: "14.99€", perKey: '/month' as const, href: "https://woonixltd.gumroad.com/l/avacustom", popular: false, noteKey: null, badge: null },
+  { labelKey: '3 months' as const, price: "29.99€", perKey: '/quarter' as const, href: "https://woonixltd.gumroad.com/l/avacustom?quarterly=true&wanted=true", popular: true, noteKey: '≈ 9.99€/month' as const, badge: 'badge2free' as const },
 ];
 
 function Pricing() {
+  const tl = useTl();
+  const { lang } = useLang();
+  const planFeatures = T.planFeatures[lang];
+  const customFeatures = T.customFeatures[lang];
+
   return (
     <section id="pricing" className="relative py-24 sm:py-32 overflow-hidden">
       <DotGrid className="opacity-30" />
       <div className="relative max-w-5xl mx-auto px-6">
         <FadeUp className="text-center mb-16">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">Pricing</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">{tl(T.pricing.label)}</p>
           <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">
-            Try free for 7 days
+            {tl(T.pricing.h)}
           </h2>
           <p className="text-slate-400 text-lg mt-4 max-w-lg mx-auto">
-            Start today at <span className="text-white font-bold">0€</span> — no charge until day 8. Cancel anytime.
+            {tl(T.pricing.subtitle).split('0€')[0]}<span className="text-white font-bold">0€</span>{tl(T.pricing.subtitle).split('0€')[1]}
           </p>
-          {/* Free trial badge */}
           <div className="inline-flex items-center gap-2 mt-5 px-5 py-2 rounded-full text-sm font-semibold"
             style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', color: '#34d399' }}>
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
-            7-day free trial included on all plans
+            {tl(T.pricing.trialBadge)}
           </div>
         </FadeUp>
         <div className="grid md:grid-cols-3 gap-5">
           {PLANS.map((plan, i) => (
-            <FadeUp key={plan.label} delay={i * 0.08}>
+            <FadeUp key={plan.labelKey} delay={i * 0.08}>
               <div className={cn(
                 "relative rounded-3xl border p-8 flex flex-col h-full",
                 plan.popular ? "bg-rose-500/[0.07] border-rose-500/30" : "bg-white/[0.03] border-white/10"
@@ -785,28 +769,29 @@ function Pricing() {
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="px-4 py-1 rounded-full bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-500/30 whitespace-nowrap">
-                      Most Popular
+                      {tl(T.pricing.mostPopular)}
                     </span>
                   </div>
                 )}
-                {/* Today 0€ */}
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#34d399' }}>
-                    Today — 0€
+                    {tl(T.pricing.todayZero)}
                   </span>
-                  <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wider">{plan.label}</span>
+                  <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wider">
+                    {tl(T.pricing.planLabels[plan.labelKey])}
+                  </span>
                 </div>
                 <div className="flex items-end gap-1 mb-0.5">
                   <span className="text-4xl font-black text-white">{plan.price}</span>
-                  <span className="text-white/35 text-sm mb-1.5">{plan.per}</span>
+                  <span className="text-white/35 text-sm mb-1.5">{tl(T.pricing.per[plan.perKey])}</span>
                 </div>
-                <p className="text-white/25 text-xs mb-2">after 7-day free trial</p>
-                {plan.note
-                  ? <p className="text-white/20 text-xs mb-6">{plan.note}</p>
+                <p className="text-white/25 text-xs mb-2">{tl(T.pricing.afterTrial)}</p>
+                {plan.noteKey
+                  ? <p className="text-white/20 text-xs mb-6">{tl(T.pricing.planNotes[plan.noteKey])}</p>
                   : <div className="mb-6" />
                 }
                 <ul className="space-y-3 mb-8 flex-1">
-                  {PLAN_FEATURES.map(f => (
+                  {planFeatures.map(f => (
                     <li key={f} className="flex items-center gap-2.5 text-sm text-slate-400">
                       <div className="w-4 h-4 rounded-full bg-rose-500/20 flex items-center justify-center flex-shrink-0">
                         <Check size={9} className="text-rose-400" />
@@ -823,16 +808,14 @@ function Pricing() {
                       ? "bg-rose-500 hover:bg-rose-400 text-white shadow-lg shadow-rose-500/25"
                       : "bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white"
                   )}>
-                  Start Free Trial
+                  {tl(T.pricing.cta)}
                 </motion.a>
               </div>
             </FadeUp>
           ))}
         </div>
         <FadeUp delay={0.3}>
-          <p className="text-center text-xs text-slate-600 mt-8">
-            No credit card required for first 7 days · Cancel before day 8 and pay nothing
-          </p>
+          <p className="text-center text-xs text-slate-600 mt-8">{tl(T.pricing.noCard)}</p>
         </FadeUp>
 
         {/* ── Ava Custom ── */}
@@ -841,9 +824,9 @@ function Pricing() {
             <div className="flex-1 h-px bg-white/[0.05]" />
             <div className="text-center">
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#818cf8' }}>Ava Custom</p>
-              <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Bring your own API key</h3>
+              <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{tl(T.pricing.customH)}</h3>
               <p className="text-slate-400 text-sm mt-2 max-w-sm mx-auto">
-                Already have a <span className="text-white">Google AI Studio</span> account? Use your own Gemini quota — unlimited, no cap on Ava's side.
+                {tl(T.pricing.customSub)}
               </p>
             </div>
             <div className="flex-1 h-px bg-white/[0.05]" />
@@ -851,7 +834,7 @@ function Pricing() {
         </FadeUp>
         <div className="grid sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
           {CUSTOM_PLANS.map((plan, i) => (
-            <FadeUp key={plan.label} delay={0.12 + i * 0.08}>
+            <FadeUp key={plan.labelKey + i} delay={0.12 + i * 0.08}>
               <div className={cn(
                 "relative rounded-3xl border p-8 flex flex-col h-full",
                 plan.popular ? "border-indigo-500/30" : "bg-white/[0.03] border-white/10"
@@ -863,31 +846,31 @@ function Pricing() {
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="px-4 py-1 rounded-full text-white text-xs font-bold shadow-lg whitespace-nowrap"
                       style={{ background: '#6366f1', boxShadow: '0 4px 20px rgba(99,102,241,0.35)' }}>
-                      Most Popular
+                      {tl(T.pricing.mostPopular)}
                     </span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 mb-4">
                   <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#818cf8' }}>
-                    {plan.label}
+                    {tl(T.pricing.planLabels[plan.labelKey])}
                   </span>
                   {plan.badge && (
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
                       style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.25)' }}>
-                      {plan.badge}
+                      {tl(T.pricing.badge2free)}
                     </span>
                   )}
                 </div>
                 <div className="flex items-end gap-1 mb-0.5">
                   <span className="text-4xl font-black text-white">{plan.price}</span>
-                  <span className="text-white/35 text-sm mb-1.5">{plan.per}</span>
+                  <span className="text-white/35 text-sm mb-1.5">{tl(T.pricing.per[plan.perKey])}</span>
                 </div>
-                {plan.note
-                  ? <p className="text-white/20 text-xs mb-6">{plan.note}</p>
+                {plan.noteKey
+                  ? <p className="text-white/20 text-xs mb-6">{tl(T.pricing.planNotes[plan.noteKey])}</p>
                   : <div className="mb-6" />
                 }
                 <ul className="space-y-3 mb-8 flex-1">
-                  {CUSTOM_FEATURES.map(f => (
+                  {customFeatures.map(f => (
                     <li key={f} className="flex items-center gap-2.5 text-sm text-slate-400">
                       <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
                         style={{ background: 'rgba(99,102,241,0.2)' }}>
@@ -901,22 +884,18 @@ function Pricing() {
                   whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   className={cn(
                     "block text-center py-3.5 rounded-2xl font-bold text-sm transition-all text-white",
-                    plan.popular
-                      ? "hover:opacity-90"
-                      : "bg-white/[0.07] hover:bg-white/[0.12] border border-white/10"
+                    plan.popular ? "hover:opacity-90" : "bg-white/[0.07] hover:bg-white/[0.12] border border-white/10"
                   )}
                   style={plan.popular ? { background: '#6366f1', boxShadow: '0 0 24px rgba(99,102,241,0.3)' } : {}}
                 >
-                  Get Ava Custom
+                  {tl(T.pricing.customCta)}
                 </motion.a>
               </div>
             </FadeUp>
           ))}
         </div>
         <FadeUp delay={0.3}>
-          <p className="text-center text-xs text-slate-600 mt-6">
-            Configure your key in Settings after subscribing · Your key is encrypted end-to-end
-          </p>
+          <p className="text-center text-xs text-slate-600 mt-6">{tl(T.pricing.customNote)}</p>
         </FadeUp>
       </div>
     </section>
@@ -925,34 +904,27 @@ function Pricing() {
 
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
 
-const FAQS = [
-  { q: "What is Ava?", a: "Ava is an AI voice companion. She can control your Mac remotely, set smart reminders, remember your preferences, and hold natural voice conversations." },
-  { q: "Which devices does Ava support?", a: "Ava is available on iOS, Android, Mac (Apple Silicon & Intel), and Windows. All platforms sync seamlessly through your account." },
-  { q: "How does remote Mac control work?", a: "Install Ava Desktop on your Mac and link it to your phone. Then send voice commands from anywhere — Ava executes them on your computer in seconds." },
-  { q: "Is my data private?", a: "Yes. Ava does not train on your conversations. Your memory data is stored encrypted and is never shared with third parties." },
-  { q: "Can I try Ava for free?", a: "Yes! You get 5 free daily conversation credits with no credit card required. Subscribe to Ava Pro for unlimited access to all features." },
-];
-
 function FAQ() {
+  const tl = useTl();
   const [open, setOpen] = useState<number | null>(null);
   return (
     <section className="relative py-24 sm:py-32 overflow-hidden">
       <DotGrid className="opacity-20" />
       <div className="relative max-w-2xl mx-auto px-6">
         <FadeUp className="text-center mb-16">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">FAQ</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">{tl(T.faq.label)}</p>
           <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-            Frequently asked
-            <br />questions
+            {tl(T.faq.h1)}
+            <br />{tl(T.faq.h2)}
           </h2>
         </FadeUp>
         <div className="space-y-2">
-          {FAQS.map((faq, i) => (
+          {T.faq.items.map((faq, i) => (
             <FadeUp key={i} delay={i * 0.06}>
               <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
                 <button onClick={() => setOpen(open === i ? null : i)}
                   className="w-full flex items-center justify-between px-5 py-4 text-left gap-4">
-                  <span className="text-white font-semibold text-sm">{faq.q}</span>
+                  <span className="text-white font-semibold text-sm">{tl(faq.q)}</span>
                   <motion.div animate={{ rotate: open === i ? 180 : 0 }} transition={{ duration: 0.22 }} className="flex-shrink-0">
                     <ChevronDown size={15} className="text-white/35" />
                   </motion.div>
@@ -962,7 +934,7 @@ function FAQ() {
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
                       exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }}>
                       <p className="px-5 pb-5 text-slate-400 text-sm leading-relaxed border-t border-white/[0.06] pt-4">
-                        {faq.a}
+                        {tl(faq.a)}
                       </p>
                     </motion.div>
                   )}
@@ -979,6 +951,7 @@ function FAQ() {
 // ─── Final CTA ────────────────────────────────────────────────────────────────
 
 function FinalCTA() {
+  const tl = useTl();
   return (
     <section id="download" className="relative py-24 sm:py-32 overflow-hidden">
       <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #1c0510 0%, #280a1c 50%, #1c0510 100%)" }} />
@@ -989,17 +962,16 @@ function FinalCTA() {
         <FadeUp>
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500/12 border border-rose-500/22 mb-8">
             <Sparkles size={13} className="text-rose-400" />
-            <span className="text-rose-400 text-xs font-bold">Start for free today — no credit card</span>
+            <span className="text-rose-400 text-xs font-bold">{tl(T.finalCta.badge)}</span>
           </div>
           <h2 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white mb-6 leading-[1.04]">
-            Supercharge your
+            {tl(T.finalCta.h1)}
             <br />
-            <span className="text-rose-400">daily productivity</span>
+            <span className="text-rose-400">{tl(T.finalCta.h2)}</span>
           </h2>
           <p className="text-slate-400 text-xl mb-12 max-w-xl mx-auto leading-relaxed">
-            5 free daily credits, no card required. Join 2,400+ users already talking to Ava.
+            {tl(T.finalCta.subtitle)}
           </p>
-          {/* Mobile */}
           <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
             <motion.a href="https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
@@ -1012,30 +984,23 @@ function FinalCTA() {
               <SiGoogleplay size={18} /> Google Play
             </motion.a>
           </div>
-          {/* Desktop */}
           <div className="flex flex-wrap items-center justify-center gap-3">
             <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-arm64.dmg"
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
-              <div className="flex items-center gap-2 font-bold text-sm">
-                <SiApple size={15} /> Mac — Apple Silicon
-              </div>
+              <div className="flex items-center gap-2 font-bold text-sm"><SiApple size={15} /> Mac — Apple Silicon</div>
               <span className="text-white/35 text-[10px] font-medium">M1 / M2 / M3 / M4</span>
             </motion.a>
             <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-x64.dmg"
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
-              <div className="flex items-center gap-2 font-bold text-sm">
-                <Cpu size={15} /> Mac — Intel
-              </div>
+              <div className="flex items-center gap-2 font-bold text-sm"><Cpu size={15} /> Mac — Intel</div>
               <span className="text-white/35 text-[10px] font-medium">x86_64</span>
             </motion.a>
             <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/AvaSetup.exe"
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
-              <div className="flex items-center gap-2 font-bold text-sm">
-                <WindowsIcon size={15} /> Windows
-              </div>
+              <div className="flex items-center gap-2 font-bold text-sm"><WindowsIcon size={15} /> Windows</div>
               <span className="text-white/35 text-[10px] font-medium">10 / 11</span>
             </motion.a>
           </div>
@@ -1048,6 +1013,7 @@ function FinalCTA() {
 // ─── Footer ───────────────────────────────────────────────────────────────────
 
 function Footer() {
+  const tl = useTl();
   return (
     <footer className="border-t border-white/[0.06] py-14">
       <div className="max-w-6xl mx-auto px-6">
@@ -1057,12 +1023,10 @@ function Footer() {
               <img src="/logo.png" alt="Ava" className="w-8 h-8 rounded-full object-cover shadow-md shadow-rose-500/20" style={{ objectPosition: "center 45%" }} />
               <span className="font-black text-white">Ava</span>
             </div>
-            <p className="text-white/25 text-sm leading-relaxed max-w-xs">
-              Your AI companion, always by your side.
-            </p>
+            <p className="text-white/25 text-sm leading-relaxed max-w-xs">{tl(T.footer.tagline)}</p>
           </div>
           <div>
-            <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-4">Download</p>
+            <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-4">{tl(T.footer.download)}</p>
             <ul className="space-y-2.5">
               {[
                 ["iOS App", "https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"],
@@ -1076,23 +1040,23 @@ function Footer() {
             </ul>
           </div>
           <div>
-            <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-4">Legal</p>
+            <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-4">{tl(T.footer.legal)}</p>
             <ul className="space-y-2.5">
               {[
-                ["Terms of Service", "/cgu"],
-                ["Privacy Policy", "/confidentialite"],
-                ["Support", "/support"],
-                ["Delete Account", "/supprimer-compte"],
+                [tl(T.footer.terms), "/cgu"],
+                [tl(T.footer.privacy), "/confidentialite"],
+                [tl(T.footer.support), "/support"],
+                [tl(T.footer.delete), "/supprimer-compte"],
               ].map(([l, h]) => (
                 <li key={l}><a href={h} className="text-white/35 hover:text-white text-sm transition-colors">{l}</a></li>
               ))}
             </ul>
           </div>
           <div>
-            <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-4">Community</p>
+            <p className="text-white/45 text-[10px] font-bold uppercase tracking-widest mb-4">{tl(T.footer.community)}</p>
             <ul className="space-y-2.5">
               {[
-                ["WhatsApp Channel", "https://whatsapp.com/channel/0029VbCsZ3A6WaKv6TLkxO0r"],
+                [tl(T.testimonials.label) === 'Testimonials' ? "WhatsApp Channel" : "WhatsApp Channel", "https://whatsapp.com/channel/0029VbCsZ3A6WaKv6TLkxO0r"],
                 ["Twitter / X", "https://x.com/woonixltd"],
               ].map(([l, h]) => (
                 <li key={l}><a href={h} className="text-white/35 hover:text-white text-sm transition-colors">{l}</a></li>
@@ -1101,8 +1065,8 @@ function Footer() {
           </div>
         </div>
         <div className="border-t border-white/[0.06] pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-white/18 text-xs">© 2026 Ava. All rights reserved.</p>
-          <p className="text-white/18 text-xs">Woonix ltd · Made with ♥</p>
+          <p className="text-white/18 text-xs">{tl(T.footer.copyright)}</p>
+          <p className="text-white/18 text-xs">{tl(T.footer.madeWith)}</p>
         </div>
       </div>
     </footer>
@@ -1112,19 +1076,35 @@ function Footer() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Page() {
+  const [lang, setLang] = useState<Lang>('en');
+
+  useEffect(() => {
+    const saved = localStorage.getItem(LANG_STORAGE_KEY) as Lang | null;
+    if (saved && SUPPORTED_LANGS.includes(saved)) { setLang(saved); return; }
+    const detected = (navigator.language || '').slice(0, 2).toLowerCase() as Lang;
+    setLang(SUPPORTED_LANGS.includes(detected) ? detected : 'en');
+  }, []);
+
+  const handleSetLang = (l: Lang) => {
+    setLang(l);
+    localStorage.setItem(LANG_STORAGE_KEY, l);
+  };
+
   return (
-    <main className="bg-[#020617] min-h-screen">
-      <Navbar />
-      <Hero />
-<Differentiators />
-      <FeatureBento />
-      <Integrations />
-      <Testimonials />
-      <Showcase />
-      <Pricing />
-      <FAQ />
-      <FinalCTA />
-      <Footer />
-    </main>
+    <LangCtx.Provider value={{ lang, setLang: handleSetLang }}>
+      <main className="bg-[#020617] min-h-screen">
+        <Navbar />
+        <Hero />
+        <Differentiators />
+        <FeatureBento />
+        <Integrations />
+        <Testimonials />
+        <Showcase />
+        <Pricing />
+        <FAQ />
+        <FinalCTA />
+        <Footer />
+      </main>
+    </LangCtx.Provider>
   );
 }
