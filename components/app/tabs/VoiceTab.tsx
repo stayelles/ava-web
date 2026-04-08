@@ -44,9 +44,11 @@ export function VoiceTab({
     language,
     webSearch: webSearch && permissions.webSearch,
     memorySummary: user.memorySummary,
-    userName: user.user_name ?? undefined,
+    userName: user.first_name ?? undefined,
+    userId: user.id,
     onSessionEnd: handleSessionEnd,
     onTurnComplete,
+    onMemoryUpdated: () => { /* memory saved — refreshUser re-fetches it via onSessionEnd */ },
     apiKey: customApiKey ?? sharedApiKey ?? undefined,
   })
 

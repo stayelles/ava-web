@@ -80,7 +80,7 @@ export function ChatTab({ user, permissions, language, webSearch, onIncrementTex
       language,
       webSearch,
       user.memorySummary,
-      user.user_name ?? undefined,
+      user.first_name ?? undefined,
     )
 
     try {

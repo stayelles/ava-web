@@ -2,7 +2,48 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { GEMINI_MODEL, GEMINI_VOICE, WS_BASE, SYSTEM_INSTRUCTION } from '../constants'
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants'
 import type { TranscriptItem, SessionState } from '../types'
+
+// ─── Memory synthesis ────────────────────────────────────────────────────────
+async function generateAndSaveMemory(
+  userId: string,
+  apiKey: string,
+  transcript: TranscriptItem[],
+  existingMemory?: string,
+): Promise<string | null> {
+  const useful = transcript.filter(t => t.text?.trim())
+  if (useful.length === 0) return null
+
+  const text = useful.map(t => `${t.role === 'user' ? 'Utilisateur' : 'Ava'}: ${t.text}`).join('\n')
+  const truncated = text.length > 3000 ? text.slice(-3000) : text
+
+  const prompt = `Tu es un assistant qui gère la mémoire d'un chatbot nommé Ava.\n\n${existingMemory ? `MÉMOIRE EXISTANTE sur cet utilisateur :\n${existingMemory}\n\n` : ''}NOUVELLE CONVERSATION :\n${truncated}\n\nTÂCHE : Génère un résumé CUMULATIF et DÉTAILLÉ (maximum 800 mots) de tout ce qu'Ava sait sur cet utilisateur. Fusionne les nouvelles informations avec la mémoire existante. Inclus :\n- Prénom, âge, situation\n- Centres d'intérêt, passions\n- Projets, objectifs (études, travail, voyage)\n- Relations importantes mentionnées\n- Préférences de langue\n- Tout fait personnel important\n- LANGUE DE FIN : Détecte la langue utilisée dans les 5 derniers échanges et note-la OBLIGATOIREMENT sous la forme exacte : "Dernière langue utilisée : [français|anglais|allemand|etc.]"\n\nRéponds UNIQUEMENT avec le résumé, sans introduction ni explication.`
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }) },
+    )
+    const data = await res.json()
+    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+    if (!summary) return null
+
+    // Upsert into ava_user_memory
+    await fetch(`${SUPABASE_URL}/rest/v1/ava_user_memory`, {
+      method: 'POST',
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates',
+      },
+      body: JSON.stringify({ user_id: userId, summary }),
+    })
+    return summary
+  } catch { return null }
+}
 
 function resampleTo16k(input: Float32Array, fromRate: number): Float32Array {
   if (fromRate === 16000) return input
@@ -35,13 +76,16 @@ export interface GeminiLiveOptions {
   webSearch: boolean
   memorySummary?: string
   userName?: string
+  userId?: string
   onSessionEnd?: () => void
   onTurnComplete?: () => void
+  onMemoryUpdated?: (summary: string) => void
   apiKey?: string
 }
 
 export function useGeminiLive({
-  language, webSearch, memorySummary, userName, onSessionEnd, onTurnComplete, apiKey,
+  language, webSearch, memorySummary, userName, userId,
+  onSessionEnd, onTurnComplete, onMemoryUpdated, apiKey,
 }: GeminiLiveOptions) {
   const [sessionState, setSessionState] = useState<SessionState>('idle')
   const [transcript, setTranscript] = useState<TranscriptItem[]>([])
@@ -50,6 +94,7 @@ export function useGeminiLive({
   const [isMuted, setIsMuted] = useState(false)
   const [volumeLevel, setVolumeLevel] = useState(0)
 
+  const transcriptRef = useRef<TranscriptItem[]>([])
   const wsRef = useRef<WebSocket | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const processorRef = useRef<ScriptProcessorNode | null>(null)
@@ -62,6 +107,7 @@ export function useGeminiLive({
   const isClosingRef = useRef(false)
 
   useEffect(() => { isMutedRef.current = isMuted }, [isMuted])
+  useEffect(() => { transcriptRef.current = transcript }, [transcript])
 
   // PCM playback from Gemini (24000 Hz output)
   const playPCMChunk = useCallback((base64: string) => {
@@ -172,8 +218,11 @@ export function useGeminiLive({
     }))
   }, [])
 
+  const apiKeyRef = useRef(apiKey)
+  useEffect(() => { apiKeyRef.current = apiKey }, [apiKey])
+
   const startSession = useCallback(async () => {
-    const effectiveKey = apiKey || process.env.NEXT_PUBLIC_GEMINI_API_KEY
+    const effectiveKey = apiKeyRef.current
     if (!effectiveKey) {
       setStatusText('Clé API manquante — contactez le support')
       setSessionState('error')
@@ -183,6 +232,7 @@ export function useGeminiLive({
     setSessionState('connecting')
     setStatusText('Connexion...')
     setTranscript([])
+    transcriptRef.current = []
     setIsAvaSpeaking(false)
     isClosingRef.current = false
 
@@ -291,6 +341,14 @@ export function useGeminiLive({
         setSessionState('idle')
         setIsAvaSpeaking(false)
         setStatusText('Session terminée — appuyez pour recommencer')
+        // Synthèse mémoire en arrière-plan
+        const snap = [...transcriptRef.current]
+        const key = apiKeyRef.current
+        if (userId && key && snap.length > 0) {
+          generateAndSaveMemory(userId, key, snap, memorySummary).then(summary => {
+            if (summary) onMemoryUpdated?.(summary)
+          })
+        }
         onSessionEnd?.()
       }
     }

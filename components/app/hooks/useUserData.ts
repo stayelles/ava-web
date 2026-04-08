@@ -21,7 +21,7 @@ function applyVoiceReset(u: UserData): UserData {
 }
 
 const SESSION_KEY = 'ava_web_session'
-const SELECT_FIELDS = 'id,email,credits,free_daily_credits,subscription_source,subscription_expires_at,subscription_tier,referral_code,telegram_id,user_name,voice_minutes_used,voice_quota_reset_at,custom_plan_expires_at,gemini_api_key_enc,gemini_api_key_iv,gemini_key_hint,text_messages_used,text_quota_reset_at'
+const SELECT_FIELDS = 'id,email,credits,free_daily_credits,subscription_source,subscription_expires_at,subscription_tier,referral_code,telegram_id,first_name,last_name,voice_minutes_used,voice_quota_reset_at,custom_plan_expires_at,gemini_api_key_enc,gemini_api_key_iv,gemini_key_hint,text_messages_used,text_quota_reset_at'
 
 async function fetchMemory(userId: string): Promise<string> {
   try {
@@ -131,6 +131,10 @@ export function useUserData() {
         setUser(u)
         setPermissions(resolvePermissions(u))
         localStorage.setItem(SESSION_KEY, JSON.stringify(data[0]))
+        // Re-fetch memory so the next session benefits from the updated summary
+        fetchMemory(u.id).then(memorySummary => {
+          if (memorySummary) setUser(prev => prev ? { ...prev, memorySummary } : prev)
+        })
       }
     } catch {}
   }, [user])

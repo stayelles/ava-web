@@ -24,7 +24,7 @@ export function useConfig(userId: string | null | undefined) {
     })
       .then(r => r.json())
       .then(data => { if (data.geminiApiKey) setGeminiApiKey(data.geminiApiKey) })
-      .catch(() => { /* fallback to env var if Edge Function unreachable */ })
+      .catch(() => {})
   }, [userId])
 
   return geminiApiKey

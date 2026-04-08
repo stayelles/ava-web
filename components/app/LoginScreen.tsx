@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ArrowRight, Lock } from 'lucide-react'
+import { ArrowRight, Lock, Eye, EyeOff } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 
@@ -15,6 +15,7 @@ interface Props {
 export function LoginScreen({ onLogin, loading, error }: Props) {
   const [identifier, setIdentifier] = useState('')
   const [pin, setPin] = useState('')
+  const [showPin, setShowPin] = useState(false)
 
   const handleSubmit = () => {
     if (!loading) onLogin(identifier, pin)
@@ -100,67 +101,91 @@ export function LoginScreen({ onLogin, loading, error }: Props) {
 
           {/* Form */}
           <div className="space-y-3">
-            {[
-              {
-                label: 'Email ou identifiant',
-                value: identifier,
-                setter: setIdentifier,
-                type: 'text',
-                placeholder: 'votre@email.com ou 62402485',
-                delay: 0.15,
-              },
-              {
-                label: 'Code PIN',
-                value: pin,
-                setter: setPin,
-                type: 'password',
-                placeholder: '••••••',
-                delay: 0.2,
-                inputMode: 'numeric' as const,
-                maxLen: 6,
-                letterSpacing: '0.3em',
-              },
-            ].map((field) => (
-              <motion.div
-                key={field.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: field.delay, duration: 0.4 }}
-              >
-                <label
-                  className="block text-[11px] font-bold mb-1.5 uppercase tracking-widest"
-                  style={{ color: '#475569' }}
-                >
-                  {field.label}
-                </label>
+            {/* Email / identifiant */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15, duration: 0.4 }}
+            >
+              <label className="block text-[11px] font-bold mb-1.5 uppercase tracking-widest" style={{ color: '#475569' }}>
+                Email ou identifiant
+              </label>
+              <input
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                onKeyDown={handleKey}
+                placeholder="votre@email.com ou 62402485"
+                style={{
+                  width: '100%',
+                  padding: '13px 16px',
+                  borderRadius: 14,
+                  background: 'rgba(255,255,255,0.05)',
+                  border: '1px solid rgba(255,255,255,0.09)',
+                  color: '#f8fafc',
+                  fontSize: 15,
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                }}
+                onFocus={(e) => (e.target.style.borderColor = 'rgba(225,29,72,0.5)')}
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.09)')}
+              />
+            </motion.div>
+
+            {/* PIN avec toggle affichage */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.4 }}
+            >
+              <label className="block text-[11px] font-bold mb-1.5 uppercase tracking-widest" style={{ color: '#475569' }}>
+                Code PIN
+              </label>
+              <div style={{ position: 'relative' }}>
                 <input
-                  type={field.type}
-                  value={field.value}
-                  onChange={(e) => {
-                    let val = e.target.value
-                    if (field.maxLen) val = val.replace(/\D/g, '').slice(0, field.maxLen)
-                    field.setter(val)
-                  }}
+                  type={showPin ? 'text' : 'password'}
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
                   onKeyDown={handleKey}
-                  placeholder={field.placeholder}
-                  inputMode={field.inputMode}
+                  placeholder="••••••"
+                  inputMode="numeric"
                   style={{
                     width: '100%',
-                    padding: '13px 16px',
+                    padding: '13px 44px 13px 16px',
                     borderRadius: 14,
                     background: 'rgba(255,255,255,0.05)',
                     border: '1px solid rgba(255,255,255,0.09)',
                     color: '#f8fafc',
                     fontSize: 15,
                     outline: 'none',
-                    letterSpacing: field.letterSpacing,
+                    letterSpacing: showPin ? '0.1em' : '0.3em',
                     transition: 'border-color 0.2s',
                   }}
                   onFocus={(e) => (e.target.style.borderColor = 'rgba(225,29,72,0.5)')}
                   onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.09)')}
                 />
-              </motion.div>
-            ))}
+                <button
+                  type="button"
+                  onClick={() => setShowPin(v => !v)}
+                  style={{
+                    position: 'absolute',
+                    right: 14,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                    color: 'rgba(255,255,255,0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                  tabIndex={-1}
+                >
+                  {showPin ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              </div>
+            </motion.div>
 
             {/* Error */}
             {error && (

@@ -10,7 +10,8 @@ export interface UserData {
   text_quota_reset_at?: string | null
   referral_code: string | null
   telegram_id: string | null
-  user_name?: string | null
+  first_name?: string | null
+  last_name?: string | null
   voice_minutes_used?: number
   voice_quota_reset_at?: string | null
   // Plan Custom
