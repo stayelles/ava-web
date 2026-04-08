@@ -13,10 +13,13 @@ export default function PrivacyPage() {
         <p>
           Le responsable du traitement de vos données personnelles est{' '}
           <strong style={{ color: '#f1f5f9' }}>Woonix LTD</strong>, société enregistrée
-          en Angleterre et au Pays de Galles. Pour toute question relative à cette politique
-          ou pour exercer vos droits, contactez notre responsable protection des données
-          (DPO) à :{' '}
-          <a href="mailto:contact@call-ava.com" style={{ color: '#e11d48' }}>contact@call-ava.com</a>.
+          en Angleterre et au Pays de Galles.
+        </p>
+        <p className="mt-2">
+          <strong style={{ color: '#f1f5f9' }}>Woonix LTD</strong><br />
+          71-75 Shelton Street, Covent Garden<br />
+          London, WC2H 9JQ, United Kingdom<br />
+          E-mail (DPO) : <a href="mailto:contact@call-ava.com" style={{ color: '#e11d48' }}>contact@call-ava.com</a>
         </p>
       </LegalSection>
 
@@ -140,10 +143,11 @@ export default function PrivacyPage() {
             non les données de paiement directes
           </li>
           <li>
-            <strong style={{ color: '#f1f5f9' }}>Gumroad</strong> : traitement des
-            paiements web (abonnements Pro/Custom via le site). Gumroad est un
-            sous-traitant indépendant soumis à sa propre politique de confidentialité.
-            Nous ne stockons pas vos données de carte bancaire.
+            <strong style={{ color: '#f1f5f9' }}>Prestataires de paiement web</strong> :
+            traitement des paiements web (abonnements Pro/Custom via le site). Ces
+            prestataires sont des sous-traitants indépendants soumis à leurs propres
+            politiques de confidentialité et certifiés PCI-DSS. Nous ne stockons pas
+            vos données de carte bancaire.
           </li>
           <li>
             <strong style={{ color: '#f1f5f9' }}>Apple / Google</strong> : distribution
@@ -195,7 +199,7 @@ export default function PrivacyPage() {
         <ul className="list-disc list-inside space-y-1 mt-2">
           <li>Apple (App Store — iOS)</li>
           <li>Google (Play Store — Android)</li>
-          <li>Gumroad (paiements web)</li>
+          <li>Prestataires de paiement web agréés (paiements via call-ava.com)</li>
         </ul>
         <p className="mt-2">
           Nous conservons uniquement les métadonnées de transaction nécessaires (montant,
@@ -357,14 +361,14 @@ export default function PrivacyPage() {
 
       <LegalSection n={17} title="Contact">
         <p>
-          Pour toute question relative à cette politique ou pour exercer vos droits :{' '}
-          <a href="mailto:contact@call-ava.com" style={{ color: '#e11d48' }}>contact@call-ava.com</a>
-          {' '}— <a href="/support" style={{ color: '#e11d48' }}>call-ava.com/support</a>
+          Pour toute question relative à cette politique ou pour exercer vos droits :
         </p>
         <p className="mt-2">
-          <strong style={{ color: '#f1f5f9' }}>Woonix LTD</strong> — Responsable du
-          traitement des données personnelles. Société enregistrée en Angleterre et
-          au Pays de Galles.
+          <strong style={{ color: '#f1f5f9' }}>Woonix LTD</strong><br />
+          71-75 Shelton Street, Covent Garden<br />
+          London, WC2H 9JQ, United Kingdom<br />
+          E-mail : <a href="mailto:contact@call-ava.com" style={{ color: '#e11d48' }}>contact@call-ava.com</a>
+          {' '}— <a href="/support" style={{ color: '#e11d48' }}>call-ava.com/support</a>
         </p>
       </LegalSection>
     </LegalLayout>

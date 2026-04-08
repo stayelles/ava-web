@@ -1094,6 +1094,7 @@ function Footer() {
               {[
                 [tl(T.footer.terms), "/cgu"],
                 [tl(T.footer.privacy), "/confidentialite"],
+                [tl(T.footer.refund), "/remboursement"],
                 [tl(T.footer.support), "/support"],
                 [tl(T.footer.delete), "/supprimer-compte"],
               ].map(([l, h]) => (
@@ -1113,9 +1114,12 @@ function Footer() {
             </ul>
           </div>
         </div>
-        <div className="border-t border-white/[0.06] pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <p className="text-white/18 text-xs">{tl(T.footer.copyright)}</p>
-          <p className="text-white/18 text-xs">{tl(T.footer.madeWith)}</p>
+        <div className="border-t border-white/[0.06] pt-6 space-y-4">
+          <p className="text-white/20 text-[11px] leading-relaxed">{tl(T.footer.legalNotice)}</p>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+            <p className="text-white/18 text-xs">{tl(T.footer.copyright)}</p>
+            <p className="text-white/18 text-xs">{tl(T.footer.madeWith)}</p>
+          </div>
         </div>
       </div>
     </footer>

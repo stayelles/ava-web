@@ -285,10 +285,18 @@ export const T = {
     community: { en: 'Community', fr: 'Communauté', de: 'Community', tr: 'Topluluk', es: 'Comunidad' } as TL,
     terms:     { en: 'Terms of Service', fr: 'Conditions d\'utilisation', de: 'Nutzungsbedingungen', tr: 'Kullanım Şartları', es: 'Términos de servicio' } as TL,
     privacy:   { en: 'Privacy Policy', fr: 'Politique de confidentialité', de: 'Datenschutzrichtlinie', tr: 'Gizlilik Politikası', es: 'Política de privacidad' } as TL,
+    refund:    { en: 'Refund Policy', fr: 'Politique de remboursement', de: 'Rückerstattungsrichtlinie', tr: 'İade Politikası', es: 'Política de reembolso' } as TL,
     support:   { en: 'Support', fr: 'Support', de: 'Support', tr: 'Destek', es: 'Soporte' } as TL,
     delete:    { en: 'Delete Account', fr: 'Supprimer mon compte', de: 'Konto löschen', tr: 'Hesabı sil', es: 'Eliminar cuenta' } as TL,
     copyright: { en: '© 2026 Ava. All rights reserved.', fr: '© 2026 Ava. Tous droits réservés.', de: '© 2026 Ava. Alle Rechte vorbehalten.', tr: '© 2026 Ava. Tüm hakları saklıdır.', es: '© 2026 Ava. Todos los derechos reservados.' } as TL,
     madeWith:  { en: 'Woonix ltd · Made with ♥', fr: 'Woonix ltd · Fait avec ♥', de: 'Woonix ltd · Gemacht mit ♥', tr: 'Woonix ltd · ♥ ile yapılmıştır', es: 'Woonix ltd · Hecho con ♥' } as TL,
+    legalNotice: {
+      en: 'Ava is a service by Woonix LTD, a company registered in England and Wales — 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, United Kingdom. Woonix LTD is a software provider, not a payment service provider. Payments are processed by authorised third-party payment processors. Contact: contact@call-ava.com',
+      fr: 'Ava est un service de Woonix LTD, société enregistrée en Angleterre et au Pays de Galles — 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, Royaume-Uni. Woonix LTD est un éditeur de logiciels et non un prestataire de services de paiement. Les paiements sont traités par des prestataires agréés. Contact : contact@call-ava.com',
+      de: 'Ava ist ein Dienst von Woonix LTD, eingetragen in England und Wales — 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, Vereinigtes Königreich. Woonix LTD ist ein Softwareanbieter, kein Zahlungsdienstleister. Zahlungen werden von autorisierten Drittanbietern verarbeitet. Kontakt: contact@call-ava.com',
+      tr: 'Ava, İngiltere ve Galler\'de kayıtlı Woonix LTD tarafından sunulan bir hizmettir — 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, Birleşik Krallık. Woonix LTD bir yazılım sağlayıcısıdır, ödeme hizmeti sağlayıcısı değildir. Ödemeler yetkili üçüncü taraf ödeme işlemcileri tarafından işlenir. İletişim: contact@call-ava.com',
+      es: 'Ava es un servicio de Woonix LTD, empresa registrada en Inglaterra y Gales — 71-75 Shelton Street, Covent Garden, London, WC2H 9JQ, Reino Unido. Woonix LTD es un proveedor de software, no un proveedor de servicios de pago. Los pagos son procesados por proveedores de pago autorizados. Contacto: contact@call-ava.com',
+    } as TL,
   },
   planFeatures: {
     en: [

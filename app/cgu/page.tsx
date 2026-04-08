@@ -96,7 +96,6 @@ export default function CGUPage() {
           <li>
             <strong style={{ color: '#f1f5f9' }}>Plan Pro</strong> : 250 minutes de voix/mois,
             300 messages texte/jour, fonctionnalités avancées illimitées — facturation mensuelle
-            via RevenueCat (iOS/Android) ou Gumroad (web)
           </li>
           <li>
             <strong style={{ color: '#f1f5f9' }}>Plan Custom</strong> : quotas illimités via votre
@@ -104,11 +103,16 @@ export default function CGUPage() {
           </li>
         </ul>
         <p className="mt-2">
-          Les paiements sont traités par des prestataires tiers sécurisés (Apple, Google,
-          Gumroad). Les abonnements se renouvellent automatiquement sauf résiliation
-          avant la date de renouvellement. Les crédits achetés ne sont pas remboursables.
-          Woonix LTD se réserve le droit de modifier les tarifs avec un préavis minimum
-          de 30 jours communiqué par e-mail.
+          Les paiements sont traités par des prestataires de paiement tiers agréés (Apple,
+          Google et nos partenaires de paiement web). Woonix LTD n&apos;est pas un prestataire
+          de services de paiement et ne stocke pas vos données bancaires. Les abonnements
+          se renouvellent automatiquement sauf résiliation avant la date de renouvellement.
+          Les crédits achetés ne sont pas remboursables. Woonix LTD se réserve le droit de
+          modifier les tarifs avec un préavis minimum de 30 jours communiqué par e-mail.
+        </p>
+        <p className="mt-2">
+          Notre politique de remboursement complète est disponible à{' '}
+          <a href="/remboursement" style={{ color: '#e11d48' }}>call-ava.com/remboursement</a>.
         </p>
       </LegalSection>
 
@@ -353,8 +357,10 @@ export default function CGUPage() {
           <a href="/support" style={{ color: '#e11d48' }}>call-ava.com/support</a>.
         </p>
         <p className="mt-2">
-          <strong style={{ color: '#f1f5f9' }}>Woonix LTD</strong> — Société enregistrée
-          en Angleterre et au Pays de Galles.
+          <strong style={{ color: '#f1f5f9' }}>Woonix LTD</strong><br />
+          71-75 Shelton Street, Covent Garden<br />
+          London, WC2H 9JQ, United Kingdom<br />
+          E-mail : <a href="mailto:contact@call-ava.com" style={{ color: '#e11d48' }}>contact@call-ava.com</a>
         </p>
       </LegalSection>
     </LegalLayout>
