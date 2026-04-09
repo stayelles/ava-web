@@ -74,17 +74,19 @@ export function useUserData() {
     setLoginLoading(true)
     setLoginError('')
     try {
-      const isNumeric = /^\d+$/.test(identifier.trim())
-      const filter = isNumeric
-        ? `telegram_id=eq.${identifier.trim()}`
-        : `email=eq.${encodeURIComponent(identifier.trim())}`
-      const url = `${SUPABASE_URL}/rest/v1/ava_users?${filter}&pin=eq.${pin}&select=${SELECT_FIELDS}`
-      const res = await fetch(url, {
-        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ identifier: identifier.trim(), pin }),
       })
-      const data = await res.json()
-      if (Array.isArray(data) && data.length > 0) {
-        const u = applyVoiceReset(data[0] as UserData)
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        setLoginError((err as any).error ?? 'Identifiant ou PIN incorrect')
+        return
+      }
+      const result = await res.json()
+      if (result.user) {
+        const u = applyVoiceReset(result.user as UserData)
         const perms = resolvePermissions(u)
         setPermissions(perms)
         setUser(u)
@@ -101,8 +103,6 @@ export function useUserData() {
         fetchMemory(u.id).then(memorySummary => {
           if (memorySummary) setUser(prev => prev ? { ...prev, memorySummary } : prev)
         })
-      } else {
-        setLoginError('Identifiant ou PIN incorrect')
       }
     } catch {
       setLoginError('Erreur de connexion. Réessayez.')

@@ -23,7 +23,7 @@ interface Props {
   sharedApiKey?: string | null
 }
 
-const GEMINI_TEXT_MODEL = 'gemini-2.0-flash'
+const GEMINI_TEXT_MODEL = 'gemini-3-flash-preview'
 
 export function ChatTab({ user, permissions, language, webSearch, onIncrementTextMessages, sharedApiKey }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
