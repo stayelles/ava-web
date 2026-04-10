@@ -38,30 +38,15 @@ export function usePaddle(onCheckoutComplete?: () => void): UsePaddleReturn {
   useEffect(() => {
     if (PADDLE_CLIENT_TOKEN.startsWith('TODO')) return
 
-    // Intercept fetch to log Paddle 400 responses
-    const origFetch = window.fetch
-    window.fetch = async (...args: Parameters<typeof fetch>) => {
-      const res = await origFetch(...args)
-      const url = typeof args[0] === 'string' ? args[0] : (args[0] as Request).url
-      if (!res.ok && url.includes('paddle.com')) {
-        res.clone().json().then((body: unknown) => {
-          console.error('[Paddle 400 body]', JSON.stringify(body, null, 2))
-        }).catch(() => res.clone().text().then((t: string) => console.error('[Paddle 400 text]', t)))
-      }
-      return res
-    }
-
     function initPaddle() {
       const p = window.Paddle as any
       if (!p) return
-      // Sandbox mode must be set BEFORE Initialize
       if (PADDLE_CLIENT_TOKEN.startsWith('test_')) {
         p.Environment.set('sandbox')
       }
       p.Initialize({
         token: PADDLE_CLIENT_TOKEN,
         eventCallback: (event: PaddleEvent) => {
-          console.log('[Paddle event]', event.name, event.data)
           if (event.name === 'checkout.completed') {
             onSuccessRef.current?.()
             onCheckoutComplete?.()
@@ -69,7 +54,6 @@ export function usePaddle(onCheckoutComplete?: () => void): UsePaddleReturn {
         },
       })
       readyRef.current = true
-      console.log('[Paddle] Initialized with token:', PADDLE_CLIENT_TOKEN.slice(0, 10) + '...')
     }
 
     // Already loaded (e.g. hot-reload) — re-initialize
@@ -90,7 +74,6 @@ export function usePaddle(onCheckoutComplete?: () => void): UsePaddleReturn {
       console.warn('[usePaddle] Paddle not loaded yet')
       return
     }
-    console.log('[Paddle] openCheckout priceId:', priceId)
     onSuccessRef.current = onSuccess
     window.Paddle.Checkout.open({
       items: [{ priceId, quantity: 1 }],
