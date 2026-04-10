@@ -5,6 +5,7 @@ export interface UserData {
   free_daily_credits: number
   subscription_source: string | null
   subscription_expires_at: string | null
+  subscription_plan?: string | null    // 'pro_starter' | 'pro_plus' | 'custom_starter' | 'custom_pro'
   subscription_tier?: string | null   // RevenueCat: 'free' | 'starter' | 'pro' | 'ultra'
   text_messages_used?: number
   text_quota_reset_at?: string | null
@@ -39,12 +40,17 @@ export interface AppSettings {
 }
 
 export interface AvaPermissions {
-  webSearch: boolean     // Google Search toggle available
-  imageUpload: boolean   // Can send images during call
-  unlimited: boolean     // No credit deduction
-  canUseCustomApiKey: boolean  // Plan Custom — clé API Gemini personnelle
-  /** Messages texte par jour. -1 = illimité. */
-  dailyTextMessages: number
+  webSearch: boolean
+  imageUpload: boolean
+  unlimited: boolean
+  canUseCustomApiKey: boolean
+  dailyTextMessages: number    // -1 = illimité
+  voiceMonthlyMinutes: number  // -1 = illimité
+  dailyWebSearches: number     // -1 = illimité
+  memoryWordLimit: number      // -1 = illimité (mots max dans le résumé mémoire)
+  agentDailyLimit: number      // -1 = illimité, 0 = bloqué (tâches agent IA/jour)
+  mcpDailyLimit: number        // -1 = illimité, 0 = bloqué (appels MCP/jour)
+  desktopDailyLimit: number    // -1 = illimité, 0 = bloqué (contrôles desktop/jour)
 }
 
 export const FREE_PERMISSIONS: AvaPermissions = {
@@ -53,45 +59,105 @@ export const FREE_PERMISSIONS: AvaPermissions = {
   unlimited: false,
   canUseCustomApiKey: false,
   dailyTextMessages: 10,
+  voiceMonthlyMinutes: 3,
+  dailyWebSearches: 0,
+  memoryWordLimit: 150,
+  agentDailyLimit: 0,
+  mcpDailyLimit: 0,
+  desktopDailyLimit: 0,
 }
 
-export const PRO_PERMISSIONS: AvaPermissions = {
+export const PRO_STARTER_PERMISSIONS: AvaPermissions = {
   webSearch: true,
   imageUpload: true,
   unlimited: true,
   canUseCustomApiKey: false,
-  dailyTextMessages: 300,
+  dailyTextMessages: 250,
+  voiceMonthlyMinutes: 200,
+  dailyWebSearches: 50,
+  memoryWordLimit: 350,
+  agentDailyLimit: 3,
+  mcpDailyLimit: 30,
+  desktopDailyLimit: 5,
+}
+
+export const PRO_PLUS_PERMISSIONS: AvaPermissions = {
+  webSearch: true,
+  imageUpload: true,
+  unlimited: true,
+  canUseCustomApiKey: false,
+  dailyTextMessages: 600,
+  voiceMonthlyMinutes: 450,
+  dailyWebSearches: -1,
+  memoryWordLimit: 650,
+  agentDailyLimit: 10,
+  mcpDailyLimit: 60,
+  desktopDailyLimit: 15,
+}
+
+export const CUSTOM_PERMISSIONS: AvaPermissions = {
+  webSearch: true,
+  imageUpload: true,
+  unlimited: true,
+  canUseCustomApiKey: true,
+  dailyTextMessages: -1,
+  voiceMonthlyMinutes: -1,
+  dailyWebSearches: -1,
+  memoryWordLimit: -1,
+  agentDailyLimit: -1,
+  mcpDailyLimit: -1,
+  desktopDailyLimit: -1,
+}
+
+/** subscription_plan → permissions */
+function paddlePlanPermissions(plan: string | null | undefined): AvaPermissions {
+  if (plan === 'pro_plus') return PRO_PLUS_PERMISSIONS
+  if (plan === 'custom_starter' || plan === 'custom_pro') return CUSTOM_PERMISSIONS
+  return PRO_STARTER_PERMISSIONS // pro_starter ou inconnu
 }
 
 export function isPro(user: UserData): boolean {
-  if (user.subscription_source !== 'gumroad') return false
+  const source = user.subscription_source
+  if (source !== 'gumroad' && source !== 'paddle') return false
   if (!user.subscription_expires_at) return false
-  return new Date(user.subscription_expires_at) > new Date()
+  if (new Date(user.subscription_expires_at) <= new Date()) return false
+  // Les plans Custom Paddle ne sont pas des plans Pro (ont leur propre section)
+  const plan = user.subscription_plan
+  if (plan === 'custom_starter' || plan === 'custom_pro') return false
+  return true
 }
 
 export function isCustomPlan(user: UserData): boolean {
-  if (!user.custom_plan_expires_at) return false
-  return new Date(user.custom_plan_expires_at) > new Date()
+  // Gumroad custom
+  if (user.custom_plan_expires_at && new Date(user.custom_plan_expires_at) > new Date()) return true
+  // Paddle custom
+  if (user.subscription_source === 'paddle' &&
+      user.subscription_expires_at &&
+      new Date(user.subscription_expires_at) > new Date() &&
+      (user.subscription_plan === 'custom_starter' || user.subscription_plan === 'custom_pro')) return true
+  return false
 }
 
 export function resolvePermissions(user: UserData): AvaPermissions {
-  const base = isPro(user) ? PRO_PERMISSIONS : FREE_PERMISSIONS
-  const custom = isCustomPlan(user)
-  return {
-    ...base,
-    canUseCustomApiKey: custom,
-    dailyTextMessages: custom ? -1 : base.dailyTextMessages,
+  if (isCustomPlan(user)) return CUSTOM_PERMISSIONS
+  if (isPro(user)) {
+    if (user.subscription_source === 'paddle') return paddlePlanPermissions(user.subscription_plan)
+    return PRO_PLUS_PERMISSIONS // Gumroad = accès max
   }
+  return FREE_PERMISSIONS
 }
 
 export function totalCredits(user: UserData): number {
   return (user.credits ?? 0) + (user.free_daily_credits ?? 0)
 }
 
-import { VOICE_QUOTA_PRO_MINUTES, VOICE_QUOTA_FREE_MINUTES } from './constants'
+import { VOICE_QUOTA_FREE_MINUTES } from './constants'
 
 export function voiceQuotaMinutes(user: UserData): number {
-  return isPro(user) ? VOICE_QUOTA_PRO_MINUTES : VOICE_QUOTA_FREE_MINUTES
+  const perms = resolvePermissions(user)
+  if (perms.voiceMonthlyMinutes === -1) return 999 // illimité → on affiche 999
+  if (perms.voiceMonthlyMinutes > 0) return perms.voiceMonthlyMinutes
+  return VOICE_QUOTA_FREE_MINUTES
 }
 
 export function voiceMinutesUsed(user: UserData): number {

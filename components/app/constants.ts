@@ -16,6 +16,19 @@ export const WS_BASE =
 export const VOICE_QUOTA_PRO_MINUTES = 250   // min/mois pour les abonnés Pro
 export const VOICE_QUOTA_FREE_MINUTES = 3    // min/mois pour les utilisateurs gratuits
 
+// ── Paddle Billing ────────────────────────────────────────────────────────────
+// Client token — Paddle Dashboard > Developer Tools > Authentication > Client-side tokens
+export const PADDLE_CLIENT_TOKEN = 'live_3f4f6ba16c07c4dfd3064cf21fd'
+
+// ── Ava Pro plans ─────────────────────────────────────────────────────────────
+export const PADDLE_PRICE_PRO_STARTER = 'pri_01knq7394vkf1g4vf67dvk4fn4'  // 39,99€/mois — Pro Starter
+export const PADDLE_PRICE_PRO_PLUS    = 'pri_01kntmcp2prvxb8ys46cs0rprm'  // 99,99€/mois — Pro Plus (TODO: créer nouveau prix mensuel dans Paddle)
+
+// ── Ava Custom plans ──────────────────────────────────────────────────────────
+export const PADDLE_PRICE_CUSTOM_STARTER = 'pri_01kntn3ymketw85ga6fr03q6f5'  // 14,99€/mois — Custom Starter
+export const PADDLE_PRICE_CUSTOM_PRO     = 'pri_01kntnb5pnck8pc5vcb31z0en7'  // 29,99€/mois — Custom Pro
+
+// ── Gumroad (legacy / fallback) ───────────────────────────────────────────────
 export const GUMROAD_URL = 'https://woonixltd.gumroad.com/l/avam1'
 export const GUMROAD_QUARTERLY_URL = 'https://woonixltd.gumroad.com/l/avam1?quarterly=true&wanted=true'
 export const GUMROAD_BIANNUAL_URL = 'https://woonixltd.gumroad.com/l/avam1?biannually=true&wanted=true'

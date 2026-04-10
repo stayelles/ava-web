@@ -120,7 +120,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
             <ProfileTab user={user} onUpdatePin={onUpdatePin} onRefresh={onRefresh} />
           )}
           {activeTab === 'subscription' && (
-            <SubscriptionTab user={user} />
+            <SubscriptionTab user={user} onRefresh={onRefresh} />
           )}
           {activeTab === 'referral' && (
             <ReferralTab user={user} />

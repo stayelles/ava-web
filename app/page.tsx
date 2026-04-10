@@ -29,6 +29,11 @@ import {
   type Lang, type TL,
   T, LANG_FLAGS, SUPPORTED_LANGS, LANG_STORAGE_KEY,
 } from "@/lib/landing-translations";
+import {
+  PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_PRO_PLUS,
+  PADDLE_PRICE_CUSTOM_STARTER, PADDLE_PRICE_CUSTOM_PRO,
+} from "@/components/app/constants";
+import { usePaddle } from "@/components/app/hooks/usePaddle";
 
 // ─── Language context ──────────────────────────────────────────────────────────
 
@@ -773,183 +778,412 @@ function Showcase() {
 
 // ─── Pricing ──────────────────────────────────────────────────────────────────
 
-const PLANS = [
-  { labelKey: '1 month' as const, price: "39.90€", perKey: '/month' as const, href: "https://woonixltd.gumroad.com/l/avam1", popular: false, noteKey: null },
-  { labelKey: '3 months' as const, price: "99.99€", perKey: '/quarter' as const, href: "https://woonixltd.gumroad.com/l/avam1?quarterly=true&wanted=true", popular: true, noteKey: '≈ 33.33€/month' as const },
-  { labelKey: '6 months' as const, price: "189.99€", perKey: '/ 6 months' as const, href: "https://woonixltd.gumroad.com/l/avam1?biannually=true&wanted=true", popular: false, noteKey: '≈ 31.67€/month' as const },
-];
+interface PlanDef {
+  id: string
+  name: string
+  priceEur: string
+  priceUsd: string
+  priceId: string | null
+  popular: boolean
+  badge: string | null
+  accent: string
+  accentBg: string
+  accentBorder: string
+}
 
-const CUSTOM_PLANS = [
-  { labelKey: '1 month' as const, price: "14.99€", perKey: '/month' as const, href: "https://woonixltd.gumroad.com/l/avacustom", popular: false, noteKey: null, badge: null },
-  { labelKey: '3 months' as const, price: "29.99€", perKey: '/quarter' as const, href: "https://woonixltd.gumroad.com/l/avacustom?quarterly=true&wanted=true", popular: true, noteKey: '≈ 9.99€/month' as const, badge: 'badge2free' as const },
-];
+// 'ul' = illimité/unlimited, false = unavailable, true = check, number = value
+// Unit type: 'pd' per day, 'pm' per month, 'w' words, 'steps' AI steps
+type FV = false | true | number | 'ul'
+type FUnit = 'pd' | 'pm' | 'w' | 'steps' | ''
 
 function Pricing() {
-  const tl = useTl();
-  const { lang } = useLang();
-  const planFeatures = T.planFeatures[lang];
-  const customFeatures = T.customFeatures[lang];
+  const tl = useTl()
+  const { openCheckout } = usePaddle()
+
+  // ── Currency detection ──────────────────────────────────────────────────────
+  const [isEuro, setIsEuro] = useState(true)
+  useEffect(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+      setIsEuro(tz.startsWith('Europe/') || tz === 'Atlantic/Azores' || tz === 'Africa/Tunis' || tz === 'Africa/Ceuta')
+    } catch {}
+  }, [])
+
+  const plans: PlanDef[] = [
+    {
+      id: 'free',
+      name: tl({ fr: 'Gratuit', en: 'Free', de: 'Kostenlos', tr: 'Ücretsiz', es: 'Gratis' }),
+      priceEur: '0€', priceUsd: '$0',
+      priceId: null, popular: false, badge: null,
+      accent: '#64748b', accentBg: 'rgba(100,116,139,0.05)', accentBorder: 'rgba(100,116,139,0.12)',
+    },
+    {
+      id: 'pro_starter',
+      name: 'Pro Starter',
+      priceEur: '39,99€', priceUsd: '$42.99',
+      priceId: PADDLE_PRICE_PRO_STARTER, popular: true,
+      badge: tl(T.pricing.mostPopular),
+      accent: '#f43f5e', accentBg: 'rgba(244,63,94,0.08)', accentBorder: 'rgba(244,63,94,0.32)',
+    },
+    {
+      id: 'pro_plus',
+      name: 'Pro Plus',
+      priceEur: '99,99€', priceUsd: '$107.99',
+      priceId: PADDLE_PRICE_PRO_PLUS, popular: false, badge: null,
+      accent: '#fb7185', accentBg: 'rgba(251,113,133,0.05)', accentBorder: 'rgba(251,113,133,0.18)',
+    },
+    {
+      id: 'custom_starter',
+      name: 'Custom Starter',
+      priceEur: '14,99€', priceUsd: '$15.99',
+      priceId: PADDLE_PRICE_CUSTOM_STARTER, popular: false, badge: null,
+      accent: '#818cf8', accentBg: 'rgba(129,140,248,0.06)', accentBorder: 'rgba(129,140,248,0.22)',
+    },
+    {
+      id: 'custom_pro',
+      name: 'Custom Pro',
+      priceEur: '29,99€', priceUsd: '$31.99',
+      priceId: PADDLE_PRICE_CUSTOM_PRO, popular: false, badge: null,
+      accent: '#a78bfa', accentBg: 'rgba(167,139,250,0.08)', accentBorder: 'rgba(167,139,250,0.28)',
+    },
+  ]
+
+  // ── Feature rows ─────────────────────────────────────────────────────────────
+  // vals order: [Free, Pro Starter, Pro Plus, Custom Starter, Custom Pro]
+  const features: { label: string; sub?: string; vals: FV[]; unit: FUnit }[] = [
+    {
+      label: tl({ fr: 'Minutes de voix / mois', en: 'Voice minutes / month', de: 'Sprachminuten / Monat', tr: 'Ses dakikası / ay', es: 'Minutos de voz / mes' }),
+      vals: [3, 200, 450, 'ul', 'ul'], unit: 'pm',
+    },
+    {
+      label: tl({ fr: 'Messages texte / jour', en: 'Text messages / day', de: 'Textnachrichten / Tag', tr: 'Metin mesajı / gün', es: 'Mensajes de texto / día' }),
+      vals: [10, 250, 600, 'ul', 'ul'], unit: 'pd',
+    },
+    {
+      label: tl({ fr: 'Recherche web Google en temps réel', en: 'Real-time Google web search', de: 'Google-Websuche in Echtzeit', tr: 'Gerçek zamanlı Google araması', es: 'Búsqueda web Google en tiempo real' }),
+      vals: [false, 50, 'ul', 'ul', 'ul'], unit: 'pd',
+    },
+    {
+      label: tl({ fr: 'Analyse d\'images (jusqu\'à 6 par appel)', en: 'Image analysis (up to 6 per call)', de: 'Bildanalyse (bis zu 6 pro Anruf)', tr: 'Görsel analizi (arama başına 6\'ya kadar)', es: 'Análisis de imágenes (hasta 6 por llamada)' }),
+      vals: [false, true, true, true, true], unit: '',
+    },
+    {
+      label: tl({ fr: 'Vision écran en temps réel', en: 'Real-time screen vision', de: 'Echtzeit-Bildschirmvision', tr: 'Gerçek zamanlı ekran görüşü', es: 'Visión de pantalla en tiempo real' }),
+      vals: [true, true, true, true, true], unit: '',
+    },
+    {
+      label: tl({ fr: 'Agent IA autonome / jour', en: 'Autonomous AI agent / day', de: 'Autonomer KI-Agent / Tag', tr: 'Özerk YZ ajanı / gün', es: 'Agente IA autónomo / día' }),
+      sub: tl({ fr: 'tâches multisteps sur votre Mac/PC', en: 'multi-step tasks on your Mac/PC', de: 'Mehrschrittaufgaben auf Ihrem Mac/PC', tr: 'Mac/PC\'nizde çok adımlı görevler', es: 'tareas multistep en tu Mac/PC' }),
+      vals: [false, 3, 10, 'ul', 'ul'], unit: 'pd',
+    },
+    {
+      label: tl({ fr: 'Rappels push intelligents', en: 'Smart push reminders', de: 'Smarte Push-Erinnerungen', tr: 'Akıllı push hatırlatıcılar', es: 'Recordatorios push inteligentes' }),
+      vals: [false, true, true, true, true], unit: '',
+    },
+    {
+      label: tl({ fr: 'Intégrations MCP (Notion, GitHub, Brave…)', en: 'MCP integrations (Notion, GitHub, Brave…)', de: 'MCP-Integrationen (Notion, GitHub…)', tr: 'MCP entegrasyonları (Notion, GitHub…)', es: 'Integraciones MCP (Notion, GitHub…)' }),
+      vals: [false, 30, 60, 'ul', 'ul'], unit: 'pd',
+    },
+    {
+      label: tl({ fr: 'Contrôle Desktop Mac / PC à distance', en: 'Remote Mac / PC desktop control', de: 'Mac/PC-Fernsteuerung', tr: 'Mac/PC uzaktan masaüstü kontrolü', es: 'Control remoto Mac / PC' }),
+      vals: [false, 5, 15, 'ul', 'ul'], unit: 'pd',
+    },
+    {
+      label: tl({ fr: 'Mémoire conversationnelle', en: 'Conversational memory', de: 'Gesprächsgedächtnis', tr: 'Konuşma hafızası', es: 'Memoria conversacional' }),
+      sub: tl({ fr: 'mots max stockés', en: 'max words stored', de: 'max. gespeicherte Wörter', tr: 'maks. saklanan kelime', es: 'palabras máx. almacenadas' }),
+      vals: [150, 350, 650, 'ul', 'ul'], unit: 'w',
+    },
+    {
+      label: tl({ fr: 'Clé API Gemini personnelle (Google AI Studio)', en: 'Personal Gemini API key (Google AI Studio)', de: 'Eigener Gemini-API-Schlüssel (Google AI Studio)', tr: 'Kişisel Gemini API anahtarı (Google AI Studio)', es: 'Clave API Gemini personal (Google AI Studio)' }),
+      vals: [false, false, false, true, true], unit: '',
+    },
+    {
+      label: tl({ fr: 'Accès instantané aux derniers modèles Gemini', en: 'Instant access to latest Gemini models', de: 'Sofortiger Zugang zu neuesten Gemini-Modellen', tr: 'En son Gemini modellerine anında erişim', es: 'Acceso instantáneo a los últimos modelos Gemini' }),
+      vals: [true, true, true, true, true], unit: '',
+    },
+    {
+      label: tl({ fr: 'Clé chiffrée de bout en bout avec PIN', en: 'End-to-end encrypted key with PIN', de: 'Ende-zu-Ende verschlüsselter Schlüssel mit PIN', tr: 'PIN ile uçtan uca şifreli anahtar', es: 'Clave cifrada de extremo a extremo con PIN' }),
+      vals: [false, false, false, true, true], unit: '',
+    },
+    {
+      label: tl({ fr: 'Support multilingue (FR, EN, DE, TR, ES)', en: 'Multilingual support (FR, EN, DE, TR, ES)', de: 'Mehrsprachiger Support (FR, EN, DE, TR, ES)', tr: 'Çok dilli destek (FR, EN, DE, TR, ES)', es: 'Soporte multilingüe (FR, EN, DE, TR, ES)' }),
+      vals: [true, true, true, true, true], unit: '',
+    },
+    {
+      label: tl({ fr: 'Support prioritaire', en: 'Priority support', de: 'Prioritätssupport', tr: 'Öncelikli destek', es: 'Soporte prioritario' }),
+      vals: [false, true, true, true, true], unit: '',
+    },
+  ]
+
+  const ulWord = tl({ fr: 'Illimité', en: 'Unlimited', de: 'Unbegrenzt', tr: 'Sınırsız', es: 'Ilimitado' })
+  const pdSuffix = tl({ fr: '/j', en: '/d', de: '/T', tr: '/g', es: '/d' })
+  const pmSuffix = tl({ fr: '/mois', en: '/mo', de: '/Mon.', tr: '/ay', es: '/mes' })
+  const wSuffix = tl({ fr: ' mots', en: ' words', de: ' Wörter', tr: ' kelime', es: ' pal.' })
+
+  function renderVal(val: FV, unit: FUnit, plan: PlanDef) {
+    if (val === 'ul') return (
+      <span className="font-bold text-xs" style={{ color: plan.accent }}>{ulWord}</span>
+    )
+    if (val === true) return (
+      <div className="w-5 h-5 rounded-full flex items-center justify-center mx-auto flex-shrink-0"
+        style={{ background: `${plan.accent}22` }}>
+        <Check size={10} style={{ color: plan.accent }} />
+      </div>
+    )
+    if (val === false) return <span className="text-white/15">—</span>
+    // Numeric value
+    const suffix = unit === 'pd' ? pdSuffix : unit === 'pm' ? pmSuffix : unit === 'w' ? wSuffix : ''
+    return (
+      <span className="font-semibold text-xs text-white/80">{val}{suffix}</span>
+    )
+  }
+
+  const perMonth = tl({ fr: '/mois', en: '/mo', de: '/Mon.', tr: '/ay', es: '/mes' })
+  const trialLabel = tl({ fr: 'Aujourd\'hui : 0€', en: 'Today: $0', de: 'Heute: 0€', tr: 'Bugün: 0€', es: 'Hoy: 0€' })
+  const afterLabel = tl(T.pricing.afterTrial)
+
+  const [activeMobilePlan, setActiveMobilePlan] = useState(1) // default Pro Starter
 
   return (
     <section id="pricing" className="relative py-24 sm:py-32 overflow-hidden">
       <DotGrid className="opacity-30" />
-      <div className="relative max-w-5xl mx-auto px-6">
-        <FadeUp className="text-center mb-16">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">{tl(T.pricing.label)}</p>
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
+
+        {/* ── Header ── */}
+        <FadeUp className="text-center mb-14">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">
+            {tl(T.pricing.label)}
+          </p>
           <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">
             {tl(T.pricing.h)}
           </h2>
-          <p className="text-slate-400 text-lg mt-4 max-w-lg mx-auto">
-            {tl(T.pricing.subtitle).split('0€')[0]}<span className="text-white font-bold">0€</span>{tl(T.pricing.subtitle).split('0€')[1]}
+          <p className="text-slate-400 text-lg mt-4 max-w-xl mx-auto">
+            {tl(T.pricing.subtitle)}
           </p>
-          <div className="inline-flex items-center gap-2 mt-5 px-5 py-2 rounded-full text-sm font-semibold"
-            style={{ background: 'rgba(52,211,153,0.08)', border: '1px solid rgba(52,211,153,0.2)', color: '#34d399' }}>
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse inline-block" />
-            {tl(T.pricing.trialBadge)}
+          {/* Single minimal trial badge — inspired by Stripe/Linear style */}
+          <div className="flex justify-center mt-6">
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold"
+              style={{ background: 'rgba(8,16,26,0.85)', border: '1px solid rgba(255,255,255,0.10)', color: '#34d399' }}>
+              <Sparkles size={13} className="text-emerald-400" />
+              {tl({ fr: '3 jours d\'essai gratuit · Annulez à tout moment', en: '3-day free trial · Cancel anytime', de: '3 Tage gratis testen · Jederzeit kündbar', tr: '3 günlük ücretsiz deneme · İstediğiniz zaman iptal', es: '3 días de prueba gratis · Cancela cuando quieras' })}
+            </div>
           </div>
-        </FadeUp>
-        <div className="grid md:grid-cols-3 gap-5">
-          {PLANS.map((plan, i) => (
-            <FadeUp key={plan.labelKey} delay={i * 0.08}>
-              <div className={cn(
-                "relative rounded-3xl border p-8 flex flex-col h-full",
-                plan.popular ? "bg-rose-500/[0.07] border-rose-500/30" : "bg-white/[0.03] border-white/10"
-              )}>
-                {plan.popular && <BorderBeam size={200} duration={8} colorFrom="#e11d48" colorTo="#f43f5e" />}
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-4 py-1 rounded-full bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-500/30 whitespace-nowrap">
-                      {tl(T.pricing.mostPopular)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#34d399' }}>
-                    {tl(T.pricing.todayZero)}
-                  </span>
-                  <span className="text-[10px] text-white/20 font-semibold uppercase tracking-wider">
-                    {tl(T.pricing.planLabels[plan.labelKey])}
-                  </span>
-                </div>
-                <div className="flex items-end gap-1 mb-0.5">
-                  <span className="text-4xl font-black text-white">{plan.price}</span>
-                  <span className="text-white/35 text-sm mb-1.5">{tl(T.pricing.per[plan.perKey])}</span>
-                </div>
-                <p className="text-white/25 text-xs mb-2">{tl(T.pricing.afterTrial)}</p>
-                {plan.noteKey
-                  ? <p className="text-white/20 text-xs mb-6">{tl(T.pricing.planNotes[plan.noteKey])}</p>
-                  : <div className="mb-6" />
-                }
-                <ul className="space-y-3 mb-8 flex-1">
-                  {planFeatures.map(f => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-slate-400">
-                      <div className="w-4 h-4 rounded-full bg-rose-500/20 flex items-center justify-center flex-shrink-0">
-                        <Check size={9} className="text-rose-400" />
-                      </div>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <motion.a href={plan.href} data-gumroad-overlay-checkout="true"
-                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                  className={cn(
-                    "block text-center py-3.5 rounded-2xl font-bold text-sm transition-all",
-                    plan.popular
-                      ? "bg-rose-500 hover:bg-rose-400 text-white shadow-lg shadow-rose-500/25"
-                      : "bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white"
-                  )}>
-                  {tl(T.pricing.cta)}
-                </motion.a>
-              </div>
-            </FadeUp>
-          ))}
-        </div>
-        <FadeUp delay={0.3}>
-          <p className="text-center text-xs text-slate-600 mt-8">{tl(T.pricing.noCard)}</p>
         </FadeUp>
 
-        {/* ── Ava Custom ── */}
-        <FadeUp delay={0.1} className="mt-20">
-          <div className="flex items-center gap-4 mb-10">
-            <div className="flex-1 h-px bg-white/[0.05]" />
-            <div className="text-center">
-              <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#818cf8' }}>Ava Custom</p>
-              <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{tl(T.pricing.customH)}</h3>
-              <p className="text-slate-400 text-sm mt-2 max-w-sm mx-auto">
-                {tl(T.pricing.customSub)}
-              </p>
+        {/* ══════════════════════════════════════════════
+            DESKTOP — comparison table (md and above)
+        ══════════════════════════════════════════════ */}
+        <FadeUp delay={0.08} className="hidden md:block">
+          {/* pt-5 gives room for the popular badge that sticks above the grid */}
+          <div className="overflow-x-auto -mx-4 sm:mx-0 pb-4 pt-5">
+            <div style={{ minWidth: 720 }} className="px-4 sm:px-0">
+
+              {/* Plan headers */}
+              <div className="grid gap-x-1.5" style={{ gridTemplateColumns: '180px repeat(5, 1fr)' }}>
+                <div className="flex items-end pb-3">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/20">
+                    {tl({ fr: 'Fonctionnalité', en: 'Feature', de: 'Funktion', tr: 'Özellik', es: 'Función' })}
+                  </span>
+                </div>
+                {plans.map((plan) => (
+                  <div
+                    key={plan.id}
+                    className="relative rounded-t-2xl px-2 pt-7 pb-3 text-center"
+                    style={{ background: plan.accentBg, border: `1px solid ${plan.accentBorder}`, borderBottom: 'none' }}
+                  >
+                    {plan.badge && (
+                      <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                        <span className="inline-block px-3 py-1 rounded-full text-white text-[9px] font-extrabold tracking-wide"
+                          style={{ background: plan.accent, boxShadow: `0 2px 16px ${plan.accent}70` }}>
+                          {plan.badge}
+                        </span>
+                      </div>
+                    )}
+                    <p className="text-[10px] font-extrabold uppercase tracking-wide mb-1" style={{ color: plan.accent }}>
+                      {plan.name}
+                    </p>
+                    {plan.priceId ? (
+                      <>
+                        <p className="text-[10px] font-bold mb-0.5" style={{ color: '#34d399' }}>{trialLabel}</p>
+                        <p className="text-lg font-black text-white leading-none">
+                          {isEuro ? plan.priceEur : plan.priceUsd}
+                          <span className="text-[10px] text-white/30 font-normal ml-0.5">{perMonth}</span>
+                        </p>
+                        <p className="text-[9px] text-white/25 mt-0.5">{afterLabel}</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-2xl font-black text-white leading-none">0€</p>
+                        <p className="text-[9px] text-white/25 mt-0.5">
+                          {tl({ fr: 'pour toujours', en: 'forever free', de: 'kostenlos', tr: 'sonsuza dek', es: 'para siempre' })}
+                        </p>
+                        <p className="text-[9px] text-white/20 mt-0.5">
+                          {tl({ fr: 'sans carte', en: 'no credit card', de: 'ohne Kreditkarte', tr: 'kartsız', es: 'sin tarjeta' })}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Feature rows */}
+              {features.map((feat, fi) => (
+                <div key={fi} className="grid gap-x-1.5" style={{ gridTemplateColumns: '180px repeat(5, 1fr)' }}>
+                  <div className="py-2.5 pr-3 flex flex-col justify-center"
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                    <span className="text-xs text-slate-300 leading-snug">{feat.label}</span>
+                    {feat.sub && <span className="text-[9px] text-white/25 mt-0.5">{feat.sub}</span>}
+                  </div>
+                  {plans.map((plan, pi) => (
+                    <div key={plan.id} className="py-2.5 text-center flex items-center justify-center"
+                      style={{
+                        background: plan.accentBg,
+                        borderLeft: `1px solid ${plan.accentBorder}`,
+                        borderRight: `1px solid ${plan.accentBorder}`,
+                        borderBottom: fi < features.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                      }}>
+                      {renderVal(feat.vals[pi], feat.unit, plan)}
+                    </div>
+                  ))}
+                </div>
+              ))}
+
+              {/* CTA row */}
+              <div className="grid gap-x-1.5" style={{ gridTemplateColumns: '180px repeat(5, 1fr)' }}>
+                <div />
+                {plans.map((plan) => (
+                  <div key={plan.id} className="rounded-b-2xl px-2 py-3"
+                    style={{ background: plan.accentBg, border: `1px solid ${plan.accentBorder}`, borderTop: 'none' }}>
+                    {plan.priceId ? (
+                      <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+                        onClick={() => openCheckout(plan.priceId!)}
+                        className="w-full py-2.5 rounded-xl text-[11px] font-extrabold text-white transition-all"
+                        style={plan.popular
+                          ? { background: plan.accent, boxShadow: `0 0 20px ${plan.accent}50` }
+                          : { border: `1px solid ${plan.accent}55`, color: plan.accent, background: `${plan.accent}0a` }
+                        }>
+                        {tl(T.pricing.cta)}
+                      </motion.button>
+                    ) : (
+                      <a href="/app" className="block w-full py-2.5 rounded-xl text-[11px] font-bold text-center transition-all"
+                        style={{ border: '1px solid rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.45)' }}>
+                        {tl({ fr: 'Commencer', en: 'Get started', de: 'Loslegen', tr: 'Başla', es: 'Empezar' })}
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+
             </div>
-            <div className="flex-1 h-px bg-white/[0.05]" />
           </div>
         </FadeUp>
-        <div className="grid sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
-          {CUSTOM_PLANS.map((plan, i) => (
-            <FadeUp key={plan.labelKey + i} delay={0.12 + i * 0.08}>
-              <div className={cn(
-                "relative rounded-3xl border p-8 flex flex-col h-full",
-                plan.popular ? "border-indigo-500/30" : "bg-white/[0.03] border-white/10"
-              )}
-                style={plan.popular ? { background: 'rgba(99,102,241,0.06)' } : {}}
-              >
-                {plan.popular && <BorderBeam size={200} duration={10} colorFrom="#6366f1" colorTo="#818cf8" />}
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-4 py-1 rounded-full text-white text-xs font-bold shadow-lg whitespace-nowrap"
-                      style={{ background: '#6366f1', boxShadow: '0 4px 20px rgba(99,102,241,0.35)' }}>
-                      {tl(T.pricing.mostPopular)}
-                    </span>
+
+        {/* ══════════════════════════════════════════════
+            MOBILE — plan selector + feature card
+        ══════════════════════════════════════════════ */}
+        <FadeUp delay={0.08} className="md:hidden">
+          {/* Plan tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
+            {plans.map((plan, pi) => (
+              <button key={plan.id} onClick={() => setActiveMobilePlan(pi)}
+                className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap"
+                style={activeMobilePlan === pi
+                  ? { background: plan.accent, color: '#fff', boxShadow: `0 0 12px ${plan.accent}50` }
+                  : { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.55)' }
+                }>
+                {plan.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Active plan card */}
+          {plans.map((plan, pi) => pi !== activeMobilePlan ? null : (
+            <motion.div key={plan.id}
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
+              className="mt-4 rounded-2xl overflow-hidden"
+              style={{ background: plan.accentBg, border: `1px solid ${plan.accentBorder}` }}>
+
+              {/* Card header */}
+              <div className="px-5 pt-6 pb-4" style={{ borderBottom: `1px solid ${plan.accentBorder}` }}>
+                {plan.badge && (
+                  <span className="inline-block px-3 py-1 rounded-full text-white text-[10px] font-extrabold mb-3"
+                    style={{ background: plan.accent, boxShadow: `0 2px 12px ${plan.accent}60` }}>
+                    {plan.badge}
+                  </span>
+                )}
+                <p className="text-[11px] font-extrabold uppercase tracking-wide mb-1" style={{ color: plan.accent }}>
+                  {plan.name}
+                </p>
+                {plan.priceId ? (
+                  <div>
+                    <p className="text-xs font-bold mb-0.5" style={{ color: '#34d399' }}>{trialLabel}</p>
+                    <p className="text-3xl font-black text-white">
+                      {isEuro ? plan.priceEur : plan.priceUsd}
+                      <span className="text-sm text-white/30 font-normal ml-1">{perMonth}</span>
+                    </p>
+                    <p className="text-xs text-white/30 mt-0.5">{afterLabel}</p>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-3xl font-black text-white">0€</p>
+                    <p className="text-xs text-white/30 mt-0.5">
+                      {tl({ fr: 'pour toujours · sans carte', en: 'forever free · no credit card', de: 'kostenlos · ohne Kreditkarte', tr: 'sonsuza dek · kartsız', es: 'para siempre · sin tarjeta' })}
+                    </p>
                   </div>
                 )}
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: '#818cf8' }}>
-                    {tl(T.pricing.planLabels[plan.labelKey])}
-                  </span>
-                  {plan.badge && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                      style={{ background: 'rgba(52,211,153,0.15)', color: '#34d399', border: '1px solid rgba(52,211,153,0.25)' }}>
-                      {tl(T.pricing.badge2free)}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-end gap-1 mb-0.5">
-                  <span className="text-4xl font-black text-white">{plan.price}</span>
-                  <span className="text-white/35 text-sm mb-1.5">{tl(T.pricing.per[plan.perKey])}</span>
-                </div>
-                {plan.noteKey
-                  ? <p className="text-white/20 text-xs mb-6">{tl(T.pricing.planNotes[plan.noteKey])}</p>
-                  : <div className="mb-6" />
-                }
-                <ul className="space-y-3 mb-8 flex-1">
-                  {customFeatures.map(f => (
-                    <li key={f} className="flex items-center gap-2.5 text-sm text-slate-400">
-                      <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ background: 'rgba(99,102,241,0.2)' }}>
-                        <Check size={9} style={{ color: '#818cf8' }} />
-                      </div>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <motion.a href={plan.href} data-gumroad-overlay-checkout="true"
-                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                  className={cn(
-                    "block text-center py-3.5 rounded-2xl font-bold text-sm transition-all text-white",
-                    plan.popular ? "hover:opacity-90" : "bg-white/[0.07] hover:bg-white/[0.12] border border-white/10"
-                  )}
-                  style={plan.popular ? { background: '#6366f1', boxShadow: '0 0 24px rgba(99,102,241,0.3)' } : {}}
-                >
-                  {tl(T.pricing.customCta)}
-                </motion.a>
               </div>
-            </FadeUp>
+
+              {/* Feature list — skip unavailable (false) for paid plans, show all for free */}
+              <ul className="px-5 py-3 space-y-0">
+                {features.map((feat, fi) => {
+                  const val = feat.vals[pi]
+                  if (val === false && pi > 0) return null // hide unavailable on paid plans
+                  return (
+                    <li key={fi} className="flex items-center justify-between py-2"
+                      style={{ borderBottom: fi < features.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                      <div className="flex-1 mr-3">
+                        <span className="text-xs text-slate-300 leading-snug">{feat.label}</span>
+                        {feat.sub && <p className="text-[9px] text-white/25">{feat.sub}</p>}
+                      </div>
+                      <div className="flex-shrink-0">
+                        {renderVal(val, feat.unit, plan)}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+
+              {/* CTA */}
+              <div className="px-5 pb-5 pt-3">
+                {plan.priceId ? (
+                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
+                    onClick={() => openCheckout(plan.priceId!)}
+                    className="w-full py-3.5 rounded-2xl text-sm font-extrabold text-white transition-all"
+                    style={plan.popular
+                      ? { background: plan.accent, boxShadow: `0 4px 24px ${plan.accent}50` }
+                      : { border: `1px solid ${plan.accent}55`, color: plan.accent, background: `${plan.accent}0a` }
+                    }>
+                    {tl(T.pricing.cta)}
+                  </motion.button>
+                ) : (
+                  <a href="/app" className="block w-full py-3.5 rounded-2xl text-sm font-bold text-center transition-all text-white/50 hover:text-white/70"
+                    style={{ border: '1px solid rgba(255,255,255,0.10)' }}>
+                    {tl({ fr: 'Commencer gratuitement', en: 'Get started free', de: 'Kostenlos starten', tr: 'Ücretsiz başla', es: 'Empezar gratis' })}
+                  </a>
+                )}
+              </div>
+            </motion.div>
           ))}
-        </div>
-        <FadeUp delay={0.3}>
-          <p className="text-center text-xs text-slate-600 mt-6">{tl(T.pricing.customNote)}</p>
         </FadeUp>
+
+        <FadeUp delay={0.3}>
+          <p className="text-center text-xs text-slate-600 mt-6 max-w-2xl mx-auto">{tl(T.pricing.noCard)}</p>
+          <p className="text-center text-xs text-slate-600 mt-1.5">{tl(T.pricing.customNote)}</p>
+        </FadeUp>
+
       </div>
     </section>
-  );
+  )
 }
 
 // ─── FAQ ──────────────────────────────────────────────────────────────────────

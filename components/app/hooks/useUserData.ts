@@ -40,7 +40,7 @@ export function useUserData() {
   const [user, setUser] = useState<UserData | null>(null)
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginError, setLoginError] = useState('')
-  const [permissions, setPermissions] = useState<AvaPermissions>({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false, dailyTextMessages: 10 })
+  const [permissions, setPermissions] = useState<AvaPermissions>({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false, dailyTextMessages: 10, voiceMonthlyMinutes: 3, dailyWebSearches: 0, memoryWordLimit: 150, agentDailyLimit: 0, mcpDailyLimit: 0, desktopDailyLimit: 0 })
   const [customApiKey, setCustomApiKey] = useState<string | null>(null)
 
   // Load saved session on mount + refresh memory + apply voice reset
@@ -113,7 +113,7 @@ export function useUserData() {
 
   const logout = useCallback(() => {
     setUser(null)
-    setPermissions({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false, dailyTextMessages: 10 })
+    setPermissions({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false, dailyTextMessages: 10, voiceMonthlyMinutes: 3, dailyWebSearches: 0, memoryWordLimit: 150, agentDailyLimit: 0, mcpDailyLimit: 0, desktopDailyLimit: 0 })
     setCustomApiKey(null)
     localStorage.removeItem(SESSION_KEY)
   }, [])

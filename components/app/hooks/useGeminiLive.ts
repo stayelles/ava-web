@@ -6,19 +6,33 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants'
 import type { TranscriptItem, SessionState } from '../types'
 
 // ─── Memory synthesis ────────────────────────────────────────────────────────
+function truncateToWords(text: string, maxWords: number): string {
+  if (maxWords <= 0) return ''
+  const words = text.split(/\s+/)
+  if (words.length <= maxWords) return text
+  return words.slice(0, maxWords).join(' ') + '…'
+}
+
 async function generateAndSaveMemory(
   userId: string,
   apiKey: string,
   transcript: TranscriptItem[],
   existingMemory?: string,
+  memoryWordLimit = 800,
 ): Promise<string | null> {
   const useful = transcript.filter(t => t.text?.trim())
   if (useful.length === 0) return null
 
+  const effectiveLimit = memoryWordLimit === -1 ? 800 : Math.max(50, memoryWordLimit)
   const text = useful.map(t => `${t.role === 'user' ? 'Utilisateur' : 'Ava'}: ${t.text}`).join('\n')
   const truncated = text.length > 3000 ? text.slice(-3000) : text
 
-  const prompt = `Tu es un assistant qui gère la mémoire d'un chatbot nommé Ava.\n\n${existingMemory ? `MÉMOIRE EXISTANTE sur cet utilisateur :\n${existingMemory}\n\n` : ''}NOUVELLE CONVERSATION :\n${truncated}\n\nTÂCHE : Génère un résumé CUMULATIF et DÉTAILLÉ (maximum 800 mots) de tout ce qu'Ava sait sur cet utilisateur. Fusionne les nouvelles informations avec la mémoire existante. Inclus :\n- Prénom, âge, situation\n- Centres d'intérêt, passions\n- Projets, objectifs (études, travail, voyage)\n- Relations importantes mentionnées\n- Préférences de langue\n- Tout fait personnel important\n- LANGUE DE FIN : Détecte la langue utilisée dans les 5 derniers échanges et note-la OBLIGATOIREMENT sous la forme exacte : "Dernière langue utilisée : [français|anglais|allemand|etc.]"\n\nRéponds UNIQUEMENT avec le résumé, sans introduction ni explication.`
+  // Truncate existing memory to fit within limit before merging
+  const trimmedExisting = existingMemory
+    ? truncateToWords(existingMemory, Math.floor(effectiveLimit * 0.6))
+    : undefined
+
+  const prompt = `Tu es un assistant qui gère la mémoire d'un chatbot nommé Ava.\n\n${trimmedExisting ? `MÉMOIRE EXISTANTE sur cet utilisateur :\n${trimmedExisting}\n\n` : ''}NOUVELLE CONVERSATION :\n${truncated}\n\nTÂCHE : Génère un résumé CUMULATIF et DÉTAILLÉ (maximum ${effectiveLimit} mots) de tout ce qu'Ava sait sur cet utilisateur. Fusionne les nouvelles informations avec la mémoire existante. Inclus :\n- Prénom, âge, situation\n- Centres d'intérêt, passions\n- Projets, objectifs (études, travail, voyage)\n- Relations importantes mentionnées\n- Préférences de langue\n- Tout fait personnel important\n- LANGUE DE FIN : Détecte la langue utilisée dans les 5 derniers échanges et note-la OBLIGATOIREMENT sous la forme exacte : "Dernière langue utilisée : [français|anglais|allemand|etc.]"\n\nRéponds UNIQUEMENT avec le résumé, sans introduction ni explication.`
 
   try {
     const res = await fetch(
@@ -27,8 +41,11 @@ async function generateAndSaveMemory(
         body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }) },
     )
     const data = await res.json()
-    const summary = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+    let summary = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
     if (!summary) return null
+
+    // Hard cap: enforce word limit regardless of what Gemini returned
+    summary = truncateToWords(summary, effectiveLimit)
 
     // Upsert into ava_user_memory
     await fetch(`${SUPABASE_URL}/rest/v1/ava_user_memory`, {
@@ -77,6 +94,7 @@ export interface GeminiLiveOptions {
   memorySummary?: string
   userName?: string
   userId?: string
+  memoryWordLimit?: number
   onSessionEnd?: () => void
   onTurnComplete?: () => void
   onMemoryUpdated?: (summary: string) => void
@@ -85,6 +103,7 @@ export interface GeminiLiveOptions {
 
 export function useGeminiLive({
   language, webSearch, memorySummary, userName, userId,
+  memoryWordLimit = 800,
   onSessionEnd, onTurnComplete, onMemoryUpdated, apiKey,
 }: GeminiLiveOptions) {
   const [sessionState, setSessionState] = useState<SessionState>('idle')
@@ -345,7 +364,7 @@ export function useGeminiLive({
         const snap = [...transcriptRef.current]
         const key = apiKeyRef.current
         if (userId && key && snap.length > 0) {
-          generateAndSaveMemory(userId, key, snap, memorySummary).then(summary => {
+          generateAndSaveMemory(userId, key, snap, memorySummary, memoryWordLimit).then(summary => {
             if (summary) onMemoryUpdated?.(summary)
           })
         }

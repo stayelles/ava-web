@@ -46,6 +46,7 @@ export function VoiceTab({
     memorySummary: user.memorySummary,
     userName: user.first_name ?? undefined,
     userId: user.id,
+    memoryWordLimit: permissions.memoryWordLimit,
     onSessionEnd: handleSessionEnd,
     onTurnComplete,
     onMemoryUpdated: () => { /* memory saved — refreshUser re-fetches it via onSessionEnd */ },
