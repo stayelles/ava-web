@@ -258,11 +258,31 @@ export const T = {
       {
         q: { en: 'Can I try Ava for free?', fr: 'Puis-je essayer Ava gratuitement ?', de: 'Kann ich Ava kostenlos testen?', tr: 'Ava\'yı ücretsiz deneyebilir miyim?', es: '¿Puedo probar Ava gratis?' } as TL,
         a: {
-          en: 'Yes! You get 5 free daily conversation credits with no credit card required. Subscribe to Ava Pro for unlimited access to all features.',
-          fr: 'Oui ! Vous bénéficiez de 5 crédits de conversation gratuits par jour sans carte de crédit requise. Abonnez-vous à Ava Pro pour un accès illimité à toutes les fonctionnalités.',
-          de: 'Ja! Sie erhalten täglich 5 kostenlose Gesprächsguthaben ohne Kreditkarte. Abonnieren Sie Ava Pro für unbegrenzten Zugang zu allen Funktionen.',
-          tr: 'Evet! Kredi kartı gerekmeden günlük 5 ücretsiz konuşma kredisi alırsınız. Tüm özelliklere sınırsız erişim için Ava Pro\'ya abone olun.',
-          es: '¡Sí! Recibes 5 créditos de conversación diarios sin necesidad de tarjeta de crédito. Suscríbete a Ava Pro para acceso ilimitado a todas las funciones.',
+          en: 'Yes! The Free plan is free forever — no credit card required. Paid plans include a 3-day free trial: you pay nothing today and can cancel before day 4 without any charge.',
+          fr: 'Oui ! Le plan Gratuit est gratuit pour toujours, sans carte de crédit. Les plans payants incluent un essai gratuit de 3 jours : vous ne payez rien aujourd\'hui et pouvez annuler avant le 4e jour sans frais.',
+          de: 'Ja! Der kostenlose Plan ist für immer kostenlos — keine Kreditkarte erforderlich. Bezahlte Pläne beinhalten eine 3-tägige Testphase: Sie zahlen heute nichts und können vor Tag 4 kostenlos kündigen.',
+          tr: 'Evet! Ücretsiz plan sonsuza kadar ücretsizdir — kredi kartı gerekmez. Ücretli planlar 3 günlük ücretsiz deneme içerir: bugün hiçbir şey ödemezsiniz ve 4. günden önce ücretsiz iptal edebilirsiniz.',
+          es: '¡Sí! El plan Gratuito es gratis para siempre, sin tarjeta de crédito. Los planes de pago incluyen una prueba gratuita de 3 días: no pagas nada hoy y puedes cancelar antes del día 4 sin cargo.',
+        } as TL,
+      },
+      {
+        q: { en: 'What are the differences between plans?', fr: 'Quelles sont les différences entre les plans ?', de: 'Was sind die Unterschiede zwischen den Plänen?', tr: 'Planlar arasındaki farklar neler?', es: '¿Cuáles son las diferencias entre los planes?' } as TL,
+        a: {
+          en: 'Free gives 3 voice minutes/month and 10 messages/day. Pro Starter (€39.99/mo) adds 200 voice minutes, 250 messages, web search, reminders, and MCP integrations. Pro Plus (€99.99/mo) raises limits significantly. Custom Starter and Custom Pro let you bring your own Gemini API key for truly unlimited use.',
+          fr: 'Le plan Gratuit offre 3 min de voix/mois et 10 messages/jour. Pro Starter (39,99€/mois) ajoute 200 min de voix, 250 messages, recherche web, rappels et intégrations MCP. Pro Plus (99,99€/mois) augmente considérablement les limites. Custom Starter et Custom Pro vous permettent d\'utiliser votre propre clé API Gemini pour une utilisation réellement illimitée.',
+          de: 'Kostenlos bietet 3 Sprachminuten/Monat und 10 Nachrichten/Tag. Pro Starter (39,99€/Mon.) fügt 200 Sprachminuten, 250 Nachrichten, Websuche, Erinnerungen und MCP-Integrationen hinzu. Pro Plus (99,99€/Mon.) erhöht die Limits erheblich. Custom Starter und Custom Pro ermöglichen Ihnen die Nutzung Ihres eigenen Gemini-API-Schlüssels für wirklich unbegrenzte Nutzung.',
+          tr: 'Ücretsiz plan ayda 3 dk ses ve günlük 10 mesaj sunar. Pro Starter (€39,99/ay) 200 dk ses, 250 mesaj, web arama, hatırlatıcılar ve MCP entegrasyonları ekler. Pro Plus (€99,99/ay) limitleri önemli ölçüde artırır. Custom Starter ve Custom Pro, gerçekten sınırsız kullanım için kendi Gemini API anahtarınızı kullanmanıza olanak tanır.',
+          es: 'El plan Gratuito ofrece 3 min de voz/mes y 10 mensajes/día. Pro Starter (39,99€/mes) añade 200 min de voz, 250 mensajes, búsqueda web, recordatorios e integraciones MCP. Pro Plus (99,99€/mes) aumenta considerablemente los límites. Custom Starter y Custom Pro permiten usar tu propia clave API Gemini para un uso verdaderamente ilimitado.',
+        } as TL,
+      },
+      {
+        q: { en: 'What is the Custom plan?', fr: 'Qu\'est-ce que le plan Custom ?', de: 'Was ist der Custom-Plan?', tr: 'Custom planı nedir?', es: '¿Qué es el plan Custom?' } as TL,
+        a: {
+          en: 'Custom plans let you connect your own Gemini API key from Google AI Studio. This means Ava uses your key directly — no monthly quotas, unlimited voice and messages, always the latest Gemini model. Your key is encrypted end-to-end with your PIN.',
+          fr: 'Les plans Custom vous permettent de connecter votre propre clé API Gemini depuis Google AI Studio. Ava utilise votre clé directement — pas de quota mensuel, voix et messages illimités, toujours le dernier modèle Gemini. Votre clé est chiffrée de bout en bout avec votre PIN.',
+          de: 'Custom-Pläne ermöglichen es Ihnen, Ihren eigenen Gemini-API-Schlüssel von Google AI Studio zu verbinden. Ava nutzt Ihren Schlüssel direkt — keine monatlichen Kontingente, unbegrenzte Sprache und Nachrichten, immer das neueste Gemini-Modell. Ihr Schlüssel wird Ende-zu-Ende mit Ihrem PIN verschlüsselt.',
+          tr: 'Custom planları Google AI Studio\'dan kendi Gemini API anahtarınızı bağlamanıza olanak tanır. Ava anahtarınızı doğrudan kullanır — aylık kota yok, sınırsız ses ve mesaj, her zaman en son Gemini modeli. Anahtarınız PIN\'inizle uçtan uca şifrelenir.',
+          es: 'Los planes Custom permiten conectar tu propia clave API Gemini desde Google AI Studio. Ava usa tu clave directamente — sin cuotas mensuales, voz y mensajes ilimitados, siempre el último modelo Gemini. Tu clave está cifrada de extremo a extremo con tu PIN.',
         } as TL,
       },
     ],

@@ -942,7 +942,7 @@ function Pricing() {
   const trialLabel = tl({ fr: 'Aujourd\'hui : 0€', en: 'Today: $0', de: 'Heute: 0€', tr: 'Bugün: 0€', es: 'Hoy: 0€' })
   const afterLabel = tl(T.pricing.afterTrial)
 
-  const [activeMobilePlan, setActiveMobilePlan] = useState(1) // default Pro Starter
+  const [expandedMobilePlan, setExpandedMobilePlan] = useState<number | null>(1) // default Pro Starter expanded
 
   return (
     <section id="pricing" className="relative py-24 sm:py-32 overflow-hidden">
@@ -1079,102 +1079,113 @@ function Pricing() {
         </FadeUp>
 
         {/* ══════════════════════════════════════════════
-            MOBILE — plan selector + feature card
+            MOBILE — vertical accordion cards (all plans visible)
         ══════════════════════════════════════════════ */}
-        <FadeUp delay={0.08} className="md:hidden">
-          {/* Plan tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-1 px-1">
-            {plans.map((plan, pi) => (
-              <button key={plan.id} onClick={() => setActiveMobilePlan(pi)}
-                className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap"
-                style={activeMobilePlan === pi
-                  ? { background: plan.accent, color: '#fff', boxShadow: `0 0 12px ${plan.accent}50` }
-                  : { background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.55)' }
-                }>
-                {plan.name}
-              </button>
-            ))}
-          </div>
+        <div className="md:hidden space-y-3">
+          {plans.map((plan, pi) => {
+            const isOpen = expandedMobilePlan === pi
+            return (
+              <FadeUp key={plan.id} delay={pi * 0.05}>
+                <div className="rounded-2xl overflow-hidden"
+                  style={{ background: plan.accentBg, border: `1px solid ${isOpen ? plan.accent : plan.accentBorder}`, transition: 'border-color 0.2s' }}>
 
-          {/* Active plan card */}
-          {plans.map((plan, pi) => pi !== activeMobilePlan ? null : (
-            <motion.div key={plan.id}
-              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}
-              className="mt-4 rounded-2xl overflow-hidden"
-              style={{ background: plan.accentBg, border: `1px solid ${plan.accentBorder}` }}>
-
-              {/* Card header */}
-              <div className="px-5 pt-6 pb-4" style={{ borderBottom: `1px solid ${plan.accentBorder}` }}>
-                {plan.badge && (
-                  <span className="inline-block px-3 py-1 rounded-full text-white text-[10px] font-extrabold mb-3"
-                    style={{ background: plan.accent, boxShadow: `0 2px 12px ${plan.accent}60` }}>
-                    {plan.badge}
-                  </span>
-                )}
-                <p className="text-[11px] font-extrabold uppercase tracking-wide mb-1" style={{ color: plan.accent }}>
-                  {plan.name}
-                </p>
-                {plan.priceId ? (
-                  <div>
-                    <p className="text-xs font-bold mb-0.5" style={{ color: '#34d399' }}>{trialLabel}</p>
-                    <p className="text-3xl font-black text-white">
-                      {isEuro ? plan.priceEur : plan.priceUsd}
-                      <span className="text-sm text-white/30 font-normal ml-1">{perMonth}</span>
-                    </p>
-                    <p className="text-xs text-white/30 mt-0.5">{afterLabel}</p>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="text-3xl font-black text-white">0€</p>
-                    <p className="text-xs text-white/30 mt-0.5">
-                      {tl({ fr: 'pour toujours · sans carte', en: 'forever free · no credit card', de: 'kostenlos · ohne Kreditkarte', tr: 'sonsuza dek · kartsız', es: 'para siempre · sin tarjeta' })}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Feature list — skip unavailable (false) for paid plans, show all for free */}
-              <ul className="px-5 py-3 space-y-0">
-                {features.map((feat, fi) => {
-                  const val = feat.vals[pi]
-                  if (val === false && pi > 0) return null // hide unavailable on paid plans
-                  return (
-                    <li key={fi} className="flex items-center justify-between py-2"
-                      style={{ borderBottom: fi < features.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
-                      <div className="flex-1 mr-3">
-                        <span className="text-xs text-slate-300 leading-snug">{feat.label}</span>
-                        {feat.sub && <p className="text-[9px] text-white/25">{feat.sub}</p>}
+                  {/* ── Always-visible header — tap to expand ── */}
+                  <button className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left"
+                    onClick={() => setExpandedMobilePlan(isOpen ? null : pi)}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Plan name + badge */}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wide" style={{ color: plan.accent }}>
+                            {plan.name}
+                          </span>
+                          {plan.badge && (
+                            <span className="inline-block px-2 py-0.5 rounded-full text-white text-[9px] font-extrabold"
+                              style={{ background: plan.accent }}>
+                              {plan.badge}
+                            </span>
+                          )}
+                        </div>
+                        {/* Price always visible */}
+                        {plan.priceId ? (
+                          <div className="flex items-baseline gap-1.5 mt-0.5">
+                            <span className="text-xl font-black text-white">
+                              {isEuro ? plan.priceEur : plan.priceUsd}
+                            </span>
+                            <span className="text-xs text-white/35">{perMonth}</span>
+                            <span className="text-[10px] font-semibold ml-1" style={{ color: '#34d399' }}>{trialLabel}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-baseline gap-1.5 mt-0.5">
+                            <span className="text-xl font-black text-white">0€</span>
+                            <span className="text-xs text-white/35">
+                              {tl({ fr: 'pour toujours', en: 'forever free', de: 'kostenlos', tr: 'sonsuza dek', es: 'para siempre' })}
+                            </span>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex-shrink-0">
-                        {renderVal(val, feat.unit, plan)}
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
+                    </div>
+                    <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.22 }} className="flex-shrink-0">
+                      <ChevronDown size={16} style={{ color: isOpen ? plan.accent : 'rgba(255,255,255,0.3)' }} />
+                    </motion.div>
+                  </button>
 
-              {/* CTA */}
-              <div className="px-5 pb-5 pt-3">
-                {plan.priceId ? (
-                  <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}
-                    onClick={() => openCheckout(plan.priceId!)}
-                    className="w-full py-3.5 rounded-2xl text-sm font-extrabold text-white transition-all"
-                    style={plan.popular
-                      ? { background: plan.accent, boxShadow: `0 4px 24px ${plan.accent}50` }
-                      : { border: `1px solid ${plan.accent}55`, color: plan.accent, background: `${plan.accent}0a` }
-                    }>
-                    {tl(T.pricing.cta)}
-                  </motion.button>
-                ) : (
-                  <a href="/app" className="block w-full py-3.5 rounded-2xl text-sm font-bold text-center transition-all text-white/50 hover:text-white/70"
-                    style={{ border: '1px solid rgba(255,255,255,0.10)' }}>
-                    {tl({ fr: 'Commencer gratuitement', en: 'Get started free', de: 'Kostenlos starten', tr: 'Ücretsiz başla', es: 'Empezar gratis' })}
-                  </a>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </FadeUp>
+                  {/* ── Accordion body — features + CTA ── */}
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}>
+                        <div style={{ borderTop: `1px solid ${plan.accentBorder}` }}>
+                          {/* Feature list */}
+                          <ul className="px-5 py-3 space-y-0">
+                            {features.map((feat, fi) => {
+                              const val = feat.vals[pi]
+                              if (val === false && pi > 0) return null
+                              return (
+                                <li key={fi} className="flex items-center justify-between py-2"
+                                  style={{ borderBottom: fi < features.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                                  <div className="flex-1 mr-3">
+                                    <span className="text-xs text-slate-300 leading-snug">{feat.label}</span>
+                                    {feat.sub && <p className="text-[9px] text-white/25">{feat.sub}</p>}
+                                  </div>
+                                  <div className="flex-shrink-0">
+                                    {renderVal(val, feat.unit, plan)}
+                                  </div>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                          {/* CTA */}
+                          <div className="px-5 pb-5 pt-2">
+                            {plan.priceId ? (
+                              <motion.button whileTap={{ scale: 0.97 }}
+                                onClick={() => openCheckout(plan.priceId!)}
+                                className="w-full py-3.5 rounded-2xl text-sm font-extrabold text-white transition-all"
+                                style={plan.popular
+                                  ? { background: plan.accent, boxShadow: `0 4px 24px ${plan.accent}50` }
+                                  : { border: `1px solid ${plan.accent}55`, color: plan.accent, background: `${plan.accent}0a` }
+                                }>
+                                {tl(T.pricing.cta)}
+                              </motion.button>
+                            ) : (
+                              <a href="/app" className="block w-full py-3.5 rounded-2xl text-sm font-bold text-center text-white/50"
+                                style={{ border: '1px solid rgba(255,255,255,0.10)' }}>
+                                {tl({ fr: 'Commencer gratuitement', en: 'Get started free', de: 'Kostenlos starten', tr: 'Ücretsiz başla', es: 'Empezar gratis' })}
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </FadeUp>
+            )
+          })}
+        </div>
 
         <FadeUp delay={0.3}>
           <p className="text-center text-xs text-slate-600 mt-6 max-w-2xl mx-auto">{tl(T.pricing.noCard)}</p>
