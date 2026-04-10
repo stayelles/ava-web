@@ -5,7 +5,7 @@ export interface UserData {
   free_daily_credits: number
   subscription_source: string | null
   subscription_expires_at: string | null
-  subscription_plan?: string | null    // 'pro_starter' | 'pro_plus' | 'custom_starter' | 'custom_pro'
+  subscription_plan?: string | null    // 'pro_starter' | 'pro_plus' | 'custom'
   subscription_tier?: string | null   // RevenueCat: 'free' | 'starter' | 'pro' | 'ultra'
   text_messages_used?: number
   text_quota_reset_at?: string | null
@@ -112,7 +112,7 @@ export const CUSTOM_PERMISSIONS: AvaPermissions = {
 /** subscription_plan → permissions */
 function paddlePlanPermissions(plan: string | null | undefined): AvaPermissions {
   if (plan === 'pro_plus') return PRO_PLUS_PERMISSIONS
-  if (plan === 'custom_starter' || plan === 'custom_pro') return CUSTOM_PERMISSIONS
+  if (plan === 'custom' || plan === 'custom_starter' || plan === 'custom_pro') return CUSTOM_PERMISSIONS
   return PRO_STARTER_PERMISSIONS // pro_starter ou inconnu
 }
 
@@ -123,7 +123,7 @@ export function isPro(user: UserData): boolean {
   if (new Date(user.subscription_expires_at) <= new Date()) return false
   // Les plans Custom Paddle ne sont pas des plans Pro (ont leur propre section)
   const plan = user.subscription_plan
-  if (plan === 'custom_starter' || plan === 'custom_pro') return false
+  if (plan === 'custom' || plan === 'custom_starter' || plan === 'custom_pro') return false
   return true
 }
 
@@ -134,7 +134,7 @@ export function isCustomPlan(user: UserData): boolean {
   if (user.subscription_source === 'paddle' &&
       user.subscription_expires_at &&
       new Date(user.subscription_expires_at) > new Date() &&
-      (user.subscription_plan === 'custom_starter' || user.subscription_plan === 'custom_pro')) return true
+      (user.subscription_plan === 'custom' || user.subscription_plan === 'custom_starter' || user.subscription_plan === 'custom_pro')) return true
   return false
 }
 

@@ -23,12 +23,6 @@ interface PaddleCheckoutOptions {
   items: Array<{ priceId: string; quantity: number }>
   customData?: Record<string, string>
   customer?: { email?: string }
-  settings?: {
-    displayMode?: 'overlay' | 'inline'
-    theme?: 'light' | 'dark'
-    locale?: string
-    successUrl?: string
-  }
 }
 
 interface UsePaddleReturn {
@@ -84,11 +78,6 @@ export function usePaddle(onCheckoutComplete?: () => void): UsePaddleReturn {
     window.Paddle.Checkout.open({
       items: [{ priceId, quantity: 1 }],
       ...(email ? { customData: { email }, customer: { email } } : {}),
-      settings: {
-        displayMode: 'overlay',
-        theme: 'dark',
-        locale: 'fr',
-      },
     })
   }, [])
 

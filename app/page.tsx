@@ -31,7 +31,7 @@ import {
 } from "@/lib/landing-translations";
 import {
   PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_PRO_PLUS,
-  PADDLE_PRICE_CUSTOM_STARTER, PADDLE_PRICE_CUSTOM_PRO,
+  PADDLE_PRICE_CUSTOM,
 } from "@/components/app/constants";
 import { usePaddle } from "@/components/app/hooks/usePaddle";
 
@@ -833,85 +833,78 @@ function Pricing() {
       accent: '#fb7185', accentBg: 'rgba(251,113,133,0.05)', accentBorder: 'rgba(251,113,133,0.18)',
     },
     {
-      id: 'custom_starter',
-      name: 'Custom Starter',
+      id: 'custom',
+      name: 'Custom',
       priceEur: '14,99€', priceUsd: '$15.99',
-      priceId: PADDLE_PRICE_CUSTOM_STARTER, popular: false, badge: null,
+      priceId: PADDLE_PRICE_CUSTOM, popular: false, badge: null,
       accent: '#818cf8', accentBg: 'rgba(129,140,248,0.06)', accentBorder: 'rgba(129,140,248,0.22)',
-    },
-    {
-      id: 'custom_pro',
-      name: 'Custom Pro',
-      priceEur: '29,99€', priceUsd: '$31.99',
-      priceId: PADDLE_PRICE_CUSTOM_PRO, popular: false, badge: null,
-      accent: '#a78bfa', accentBg: 'rgba(167,139,250,0.08)', accentBorder: 'rgba(167,139,250,0.28)',
     },
   ]
 
   // ── Feature rows ─────────────────────────────────────────────────────────────
-  // vals order: [Free, Pro Starter, Pro Plus, Custom Starter, Custom Pro]
+  // vals order: [Free, Pro Starter, Pro Plus, Custom]
   const features: { label: string; sub?: string; vals: FV[]; unit: FUnit }[] = [
     {
       label: tl({ fr: 'Minutes de voix / mois', en: 'Voice minutes / month', de: 'Sprachminuten / Monat', tr: 'Ses dakikası / ay', es: 'Minutos de voz / mes' }),
-      vals: [3, 200, 450, 'ul', 'ul'], unit: 'pm',
+      vals: [3, 200, 450, 'ul'], unit: 'pm',
     },
     {
       label: tl({ fr: 'Messages texte / jour', en: 'Text messages / day', de: 'Textnachrichten / Tag', tr: 'Metin mesajı / gün', es: 'Mensajes de texto / día' }),
-      vals: [10, 250, 600, 'ul', 'ul'], unit: 'pd',
+      vals: [10, 250, 600, 'ul'], unit: 'pd',
     },
     {
       label: tl({ fr: 'Recherche web Google en temps réel', en: 'Real-time Google web search', de: 'Google-Websuche in Echtzeit', tr: 'Gerçek zamanlı Google araması', es: 'Búsqueda web Google en tiempo real' }),
-      vals: [false, 50, 'ul', 'ul', 'ul'], unit: 'pd',
+      vals: [false, 50, 'ul', 'ul'], unit: 'pd',
     },
     {
       label: tl({ fr: 'Analyse d\'images (jusqu\'à 6 par appel)', en: 'Image analysis (up to 6 per call)', de: 'Bildanalyse (bis zu 6 pro Anruf)', tr: 'Görsel analizi (arama başına 6\'ya kadar)', es: 'Análisis de imágenes (hasta 6 por llamada)' }),
-      vals: [false, true, true, true, true], unit: '',
+      vals: [false, true, true, true], unit: '',
     },
     {
       label: tl({ fr: 'Vision écran en temps réel', en: 'Real-time screen vision', de: 'Echtzeit-Bildschirmvision', tr: 'Gerçek zamanlı ekran görüşü', es: 'Visión de pantalla en tiempo real' }),
-      vals: [true, true, true, true, true], unit: '',
+      vals: [true, true, true, true], unit: '',
     },
     {
       label: tl({ fr: 'Agent IA autonome / jour', en: 'Autonomous AI agent / day', de: 'Autonomer KI-Agent / Tag', tr: 'Özerk YZ ajanı / gün', es: 'Agente IA autónomo / día' }),
       sub: tl({ fr: 'tâches multisteps sur votre Mac/PC', en: 'multi-step tasks on your Mac/PC', de: 'Mehrschrittaufgaben auf Ihrem Mac/PC', tr: 'Mac/PC\'nizde çok adımlı görevler', es: 'tareas multistep en tu Mac/PC' }),
-      vals: [false, 3, 10, 'ul', 'ul'], unit: 'pd',
+      vals: [false, 3, 10, 'ul'], unit: 'pd',
     },
     {
       label: tl({ fr: 'Rappels push intelligents', en: 'Smart push reminders', de: 'Smarte Push-Erinnerungen', tr: 'Akıllı push hatırlatıcılar', es: 'Recordatorios push inteligentes' }),
-      vals: [false, true, true, true, true], unit: '',
+      vals: [false, true, true, true], unit: '',
     },
     {
       label: tl({ fr: 'Intégrations MCP (Notion, GitHub, Brave…)', en: 'MCP integrations (Notion, GitHub, Brave…)', de: 'MCP-Integrationen (Notion, GitHub…)', tr: 'MCP entegrasyonları (Notion, GitHub…)', es: 'Integraciones MCP (Notion, GitHub…)' }),
-      vals: [false, 30, 60, 'ul', 'ul'], unit: 'pd',
+      vals: [false, 30, 60, 'ul'], unit: 'pd',
     },
     {
       label: tl({ fr: 'Contrôle Desktop Mac / PC à distance', en: 'Remote Mac / PC desktop control', de: 'Mac/PC-Fernsteuerung', tr: 'Mac/PC uzaktan masaüstü kontrolü', es: 'Control remoto Mac / PC' }),
-      vals: [false, 5, 15, 'ul', 'ul'], unit: 'pd',
+      vals: [false, 5, 15, 'ul'], unit: 'pd',
     },
     {
       label: tl({ fr: 'Mémoire conversationnelle', en: 'Conversational memory', de: 'Gesprächsgedächtnis', tr: 'Konuşma hafızası', es: 'Memoria conversacional' }),
       sub: tl({ fr: 'mots max stockés', en: 'max words stored', de: 'max. gespeicherte Wörter', tr: 'maks. saklanan kelime', es: 'palabras máx. almacenadas' }),
-      vals: [150, 350, 650, 'ul', 'ul'], unit: 'w',
+      vals: [150, 350, 650, 'ul'], unit: 'w',
     },
     {
       label: tl({ fr: 'Clé API Gemini personnelle (Google AI Studio)', en: 'Personal Gemini API key (Google AI Studio)', de: 'Eigener Gemini-API-Schlüssel (Google AI Studio)', tr: 'Kişisel Gemini API anahtarı (Google AI Studio)', es: 'Clave API Gemini personal (Google AI Studio)' }),
-      vals: [false, false, false, true, true], unit: '',
+      vals: [false, false, false, true], unit: '',
     },
     {
       label: tl({ fr: 'Accès instantané aux derniers modèles Gemini', en: 'Instant access to latest Gemini models', de: 'Sofortiger Zugang zu neuesten Gemini-Modellen', tr: 'En son Gemini modellerine anında erişim', es: 'Acceso instantáneo a los últimos modelos Gemini' }),
-      vals: [true, true, true, true, true], unit: '',
+      vals: [true, true, true, true], unit: '',
     },
     {
       label: tl({ fr: 'Clé chiffrée de bout en bout avec PIN', en: 'End-to-end encrypted key with PIN', de: 'Ende-zu-Ende verschlüsselter Schlüssel mit PIN', tr: 'PIN ile uçtan uca şifreli anahtar', es: 'Clave cifrada de extremo a extremo con PIN' }),
-      vals: [false, false, false, true, true], unit: '',
+      vals: [false, false, false, true], unit: '',
     },
     {
       label: tl({ fr: 'Support multilingue (FR, EN, DE, TR, ES)', en: 'Multilingual support (FR, EN, DE, TR, ES)', de: 'Mehrsprachiger Support (FR, EN, DE, TR, ES)', tr: 'Çok dilli destek (FR, EN, DE, TR, ES)', es: 'Soporte multilingüe (FR, EN, DE, TR, ES)' }),
-      vals: [true, true, true, true, true], unit: '',
+      vals: [true, true, true, true], unit: '',
     },
     {
       label: tl({ fr: 'Support prioritaire', en: 'Priority support', de: 'Prioritätssupport', tr: 'Öncelikli destek', es: 'Soporte prioritario' }),
-      vals: [false, true, true, true, true], unit: '',
+      vals: [false, true, true, true], unit: '',
     },
   ]
 
@@ -979,7 +972,7 @@ function Pricing() {
             <div style={{ minWidth: 720 }} className="px-4 sm:px-0">
 
               {/* Plan headers */}
-              <div className="grid gap-x-1.5" style={{ gridTemplateColumns: '180px repeat(5, 1fr)' }}>
+              <div className="grid gap-x-1.5" style={{ gridTemplateColumns: '180px repeat(4, 1fr)' }}>
                 <div className="flex items-end pb-3">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-white/20">
                     {tl({ fr: 'Fonctionnalité', en: 'Feature', de: 'Funktion', tr: 'Özellik', es: 'Función' })}
@@ -1028,7 +1021,7 @@ function Pricing() {
 
               {/* Feature rows */}
               {features.map((feat, fi) => (
-                <div key={fi} className="grid gap-x-1.5" style={{ gridTemplateColumns: '180px repeat(5, 1fr)' }}>
+                <div key={fi} className="grid gap-x-1.5" style={{ gridTemplateColumns: '180px repeat(4, 1fr)' }}>
                   <div className="py-2.5 pr-3 flex flex-col justify-center"
                     style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                     <span className="text-xs text-slate-300 leading-snug">{feat.label}</span>
@@ -1049,7 +1042,7 @@ function Pricing() {
               ))}
 
               {/* CTA row */}
-              <div className="grid gap-x-1.5" style={{ gridTemplateColumns: '180px repeat(5, 1fr)' }}>
+              <div className="grid gap-x-1.5" style={{ gridTemplateColumns: '180px repeat(4, 1fr)' }}>
                 <div />
                 {plans.map((plan) => (
                   <div key={plan.id} className="rounded-b-2xl px-2 py-3"

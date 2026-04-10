@@ -24,9 +24,8 @@ export const PADDLE_CLIENT_TOKEN = 'live_3f4f6ba16c07c4dfd3064cf21fd'
 export const PADDLE_PRICE_PRO_STARTER = 'pri_01knq7394vkf1g4vf67dvk4fn4'  // 39,99€/mois — Pro Starter
 export const PADDLE_PRICE_PRO_PLUS    = 'pri_01kntmcp2prvxb8ys46cs0rprm'  // 99,99€/mois — Pro Plus (TODO: créer nouveau prix mensuel dans Paddle)
 
-// ── Ava Custom plans ──────────────────────────────────────────────────────────
-export const PADDLE_PRICE_CUSTOM_STARTER = 'pri_01kntn3ymketw85ga6fr03q6f5'  // 14,99€/mois — Custom Starter
-export const PADDLE_PRICE_CUSTOM_PRO     = 'pri_01kntnb5pnck8pc5vcb31z0en7'  // 29,99€/mois — Custom Pro
+// ── Ava Custom plan ───────────────────────────────────────────────────────────
+export const PADDLE_PRICE_CUSTOM = 'pri_01kntn3ymketw85ga6fr03q6f5'  // 14,99€/mois — Custom
 
 // ── Gumroad (legacy / fallback) ───────────────────────────────────────────────
 export const GUMROAD_URL = 'https://woonixltd.gumroad.com/l/avam1'

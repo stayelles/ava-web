@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock } from 'lucide-react'
-import { GUMROAD_CUSTOM_URL, GUMROAD_CUSTOM_QUARTERLY_URL, PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_PRO_PLUS, PADDLE_PRICE_CUSTOM_STARTER, PADDLE_PRICE_CUSTOM_PRO } from '../constants'
+import { GUMROAD_CUSTOM_URL, GUMROAD_CUSTOM_QUARTERLY_URL, PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_PRO_PLUS, PADDLE_PRICE_CUSTOM } from '../constants'
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
 import { usePaddle } from '../hooks/usePaddle'
@@ -49,20 +49,12 @@ const PRO_PLANS = [
 // ── Plans Custom ──────────────────────────────────────────────────────────────
 const CUSTOM_PLANS = [
   {
-    key: 'custom_starter',
-    label: 'Custom Starter',
+    key: 'custom',
+    label: 'Custom',
     price: '14,99€',
     per: '/mois',
-    priceId: PADDLE_PRICE_CUSTOM_STARTER,
+    priceId: PADDLE_PRICE_CUSTOM,
     popular: false,
-  },
-  {
-    key: 'custom_pro',
-    label: 'Custom Pro',
-    price: '29,99€',
-    per: '/mois',
-    priceId: PADDLE_PRICE_CUSTOM_PRO,
-    popular: true,
   },
 ]
 
