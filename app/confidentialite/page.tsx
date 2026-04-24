@@ -169,7 +169,44 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={7} title="Transferts internationaux de données">
+      <LegalSection n={7} title="Utilisation des données issues des API Google (Google Workspace)">
+        <p>
+          L&apos;application Ava permet de connecter votre compte Google (Gmail et Google Agenda)
+          afin que votre assistant vocal IA puisse consulter vos e-mails, rechercher des messages,
+          rédiger des réponses et organiser votre emploi du temps sur simple commande vocale.
+        </p>
+        <ul className="list-disc list-inside space-y-2 mt-2">
+          <li>
+            <strong style={{ color: '#f1f5f9' }}>Accès, utilisation et transfert :</strong> Ava n&apos;accède à vos 
+            données (e-mails, événements) que pour répondre à vos requêtes explicites. Le contenu de vos e-mails et 
+            agendas n&apos;est transmis de manière sécurisée et éphémère qu&apos;au modèle d&apos;intelligence artificielle 
+            (Google Gemini) servant de moteur à l&apos;application, et ce, <strong style={{ color: '#f1f5f9' }}>uniquement pour fournir
+            directement la fonctionnalité associée</strong>.
+          </li>
+          <li>
+            <strong style={{ color: '#f1f5f9' }}>Aucune publicité ni revente :</strong> Vos données issues des API Google 
+            ne sont jamais utilisées pour diffuser des annonces publicitaires, y compris pour le reciblage (retargeting) 
+            ou la publicité personnalisée/basée sur les centres d&apos;intérêt. Elles ne sont jamais revendues, 
+            louées ou partagées à l&apos;insu de leur utilité stricte d&apos;assistance IA.
+          </li>
+          <li>
+            <strong style={{ color: '#f1f5f9' }}>Protection et stockage :</strong> Woonix LTD ne stocke pas le contenu 
+            de vos e-mails sur ses bases de données de manière permanente. Les données sont analysées en temps réel 
+            en mémoire vive (RAM) durant la session vocale.
+          </li>
+        </ul>
+        <p className="mt-2 text-sm italic border-l-2 border-red-500 pl-3">
+          L&apos;utilisation par Ava des informations reçues depuis les API Google et le transfert
+          de ces informations vers toute autre application (y compris ses modèles d&apos;IA) se conforment strictement
+          à la{' '}
+          <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" style={{ color: '#e11d48' }}>
+            Politique d&apos;utilisation des données utilisateur des services API Google
+          </a>
+          {' '}(Google API Services User Data Policy), y compris aux exigences d&apos;utilisation limitée (Limited Use requirements).
+        </p>
+      </LegalSection>
+
+      <LegalSection n={8} title="Transferts internationaux de données">
         <p>
           Certains de nos sous-traitants sont établis hors de l&apos;Espace Économique
           Européen (notamment aux États-Unis). Ces transferts sont encadrés par :
@@ -190,7 +227,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={8} title="Données de paiement">
+      <LegalSection n={9} title="Données de paiement">
         <p>
           Woonix LTD ne stocke directement aucune donnée de carte bancaire ou de paiement.
           Toutes les transactions financières sont traitées exclusivement par nos
@@ -208,7 +245,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={9} title="Mineurs">
+      <LegalSection n={10} title="Mineurs">
         <p>
           Ava est destinée exclusivement aux personnes âgées de{' '}
           <strong style={{ color: '#f1f5f9' }}>18 ans et plus</strong>. Nous ne collectons
@@ -220,7 +257,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={10} title="Notifications push">
+      <LegalSection n={11} title="Notifications push">
         <p>
           Si vous activez les notifications push (disponibles sur les plans Pro et Custom),
           nous collectons et stockons votre token de notification push dans la colonne
@@ -233,7 +270,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={11} title="Cookies et stockage local">
+      <LegalSection n={12} title="Cookies et stockage local">
         <p>
           Ava utilise le stockage local (localStorage) de votre navigateur pour conserver :
         </p>
@@ -249,7 +286,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={12} title="Conservation des données">
+      <LegalSection n={13} title="Conservation des données">
         <p>
           Vos données sont conservées pendant toute la durée d&apos;activité de votre
           compte. Différentes durées s&apos;appliquent selon le type de données :
@@ -274,7 +311,7 @@ export default function PrivacyPage() {
         </ul>
       </LegalSection>
 
-      <LegalSection n={13} title="Vos droits (RGPD)">
+      <LegalSection n={14} title="Vos droits (RGPD)">
         <p>
           Conformément au RGPD et aux lois britanniques équivalentes (UK GDPR), vous
           disposez des droits suivants :
@@ -300,7 +337,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={14} title="Droit de réclamation auprès d'une autorité de contrôle">
+      <LegalSection n={15} title="Droit de réclamation auprès d'une autorité de contrôle">
         <p>
           Si vous estimez que le traitement de vos données personnelles ne respecte pas
           la réglementation applicable, vous disposez du droit d&apos;introduire une
@@ -335,7 +372,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={15} title="Suppression de compte">
+      <LegalSection n={16} title="Suppression de compte">
         <p>
           Vous pouvez demander la suppression de votre compte à tout moment via{' '}
           <a href="/supprimer-compte" style={{ color: '#e11d48' }}>call-ava.com/supprimer-compte</a>
@@ -348,7 +385,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={16} title="Modifications de cette politique">
+      <LegalSection n={17} title="Modifications de cette politique">
         <p>
           Woonix LTD se réserve le droit de modifier cette politique à tout moment.
           En cas de modification substantielle, nous vous en informerons par e-mail
@@ -359,7 +396,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={17} title="Contact">
+      <LegalSection n={18} title="Contact">
         <p>
           Pour toute question relative à cette politique ou pour exercer vos droits :
         </p>
