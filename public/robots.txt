@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /google-auth
+
+Sitemap: https://call-ava.com/sitemap.xml
