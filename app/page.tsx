@@ -802,7 +802,7 @@ interface PlanDef {
 
 // 'ul' = illimité/unlimited, false = unavailable, true = check, number = value
 // Unit type: 'pd' per day, 'pm' per month, 'w' words, 'steps' AI steps
-type FV = false | true | number | 'ul'
+type FV = false | true | number | 'ul' | string
 type FUnit = 'pd' | 'pm' | 'w' | 'steps' | ''
 
 function Pricing() {
@@ -852,7 +852,7 @@ function Pricing() {
 
   // ── Feature rows ─────────────────────────────────────────────────────────────
   // vals order: [Free, Pro Starter, Custom Simple, Custom Pro]
-  const features: { label: string; sub?: string; vals: FV[]; unit: FUnit }[] = [
+  const features: { label: string; sub?: string; vals: FV[]; unit: FUnit; isHeader?: boolean }[] = [
     {
       label: tl({ fr: 'Minutes de voix / mois', en: 'Voice minutes / month', de: 'Sprachminuten / Monat', tr: 'Ses dakikası / ay', es: 'Minutos de voz / mes' }),
       vals: [3, 200, 'ul', 'ul'], unit: 'pm',
@@ -902,6 +902,52 @@ function Pricing() {
     {
       label: tl({ fr: 'Ava Trading Desktop', en: 'Ava Trading Desktop', de: 'Ava Trading Desktop', tr: 'Ava Trading Desktop', es: 'Ava Trading Desktop' }),
       sub: tl({ fr: 'bot MT5, bridge, apprentissage global', en: 'MT5 bot, bridge, global learning', de: 'MT5-Bot, Bridge, globales Lernen', tr: 'MT5 botu, bridge, global öğrenme', es: 'bot MT5, bridge, aprendizaje global' }),
+      vals: [false, false, true, true], unit: '', isHeader: true,
+    },
+    {
+      label: tl({ fr: 'Mode d\'exécution', en: 'Execution mode', de: 'Ausführungsmodus', tr: 'Çalışma modu', es: 'Modo de ejecución' }),
+      vals: [false, false, 'EA Bridge', 'EA Bridge'], unit: '',
+    },
+    {
+      label: tl({ fr: 'Lot de trading', en: 'Trading lot size', de: 'Lotgröße', tr: 'İşlem lotu', es: 'Lote de trading' }),
+      vals: [false, false,
+        tl({ fr: '0.01 (fixe)', en: '0.01 (fixed)', de: '0.01 (fest)', tr: '0.01 (sabit)', es: '0.01 (fijo)' }),
+        tl({ fr: 'jusqu\'à 0.02', en: 'up to 0.02', de: 'bis 0.02', tr: '0.02\'ye kadar', es: 'hasta 0.02' }),
+      ], unit: '',
+    },
+    {
+      label: tl({ fr: 'Profit minimum par trade', en: 'Minimum profit per trade', de: 'Mindestgewinn pro Trade', tr: 'İşlem başına min. kâr', es: 'Beneficio mínimo por operación' }),
+      vals: [false, false,
+        tl({ fr: '0.09$ (fixe)', en: '$0.09 (fixed)', de: '0.09$ (fest)', tr: '0.09$ (sabit)', es: '0.09$ (fijo)' }),
+        tl({ fr: 'jusqu\'à 0.20$', en: 'up to $0.20', de: 'bis 0.20$', tr: '0.20$\'a kadar', es: 'hasta 0.20$' }),
+      ], unit: '',
+    },
+    {
+      label: tl({ fr: 'Stop loss maximum', en: 'Maximum stop loss', de: 'Max. Stop-Loss', tr: 'Maks. stop loss', es: 'Stop loss máximo' }),
+      vals: [false, false,
+        tl({ fr: '-90$ (fixe)', en: '-$90 (fixed)', de: '-90$ (fest)', tr: '-90$ (sabit)', es: '-90$ (fijo)' }),
+        tl({ fr: '-85$ à -300$', en: '-$85 to -$300', de: '-85$ bis -300$', tr: '-85$ ile -300$', es: '-85$ a -300$' }),
+      ], unit: '',
+    },
+    {
+      label: tl({ fr: 'Objectif par session', en: 'Session target', de: 'Sitzungsziel', tr: 'Seans hedefi', es: 'Objetivo por sesión' }),
+      vals: [false, false,
+        tl({ fr: 'Défaut', en: 'Default', de: 'Standard', tr: 'Varsayılan', es: 'Por defecto' }),
+        tl({ fr: 'jusqu\'à 1000$', en: 'up to $1000', de: 'bis 1000$', tr: '1000$\'a kadar', es: 'hasta 1000$' }),
+      ], unit: '',
+    },
+    {
+      label: tl({ fr: 'Configs avancées modifiables', en: 'Editable advanced configs', de: 'Erweiterte Einstellungen', tr: 'Gelişmiş ayarlar', es: 'Configuraciones avanzadas editables' }),
+      sub: tl({ fr: 'fenêtre, seuil, recovery, filtre…', en: 'window, threshold, recovery, filter…', de: 'Fenster, Schwelle, Recovery, Filter…', tr: 'pencere, eşik, kurtarma, filtre…', es: 'ventana, umbral, recovery, filtro…' }),
+      vals: [false, false, false, false], unit: '',
+    },
+    {
+      label: tl({ fr: 'Apprentissage IA global (ML Sync)', en: 'Global AI learning (ML Sync)', de: 'Globales KI-Lernen (ML Sync)', tr: 'Global YZ öğrenme (ML Sync)', es: 'Aprendizaje IA global (ML Sync)' }),
+      vals: [false, false, true, true], unit: '',
+    },
+    {
+      label: tl({ fr: 'Protection anti-multi-appareil', en: 'Anti-multi-device protection', de: 'Anti-Multigerät-Schutz', tr: 'Çoklu cihaz koruma', es: 'Protección anti-multidispositivo' }),
+      sub: tl({ fr: '1 seul appareil actif à la fois', en: '1 active device at a time', de: '1 aktives Gerät gleichzeitig', tr: 'Aynı anda 1 aktif cihaz', es: '1 dispositivo activo a la vez' }),
       vals: [false, false, true, true], unit: '',
     },
     {
@@ -938,6 +984,9 @@ function Pricing() {
       </div>
     )
     if (val === false) return <span className="text-white/15">—</span>
+    if (typeof val === 'string') return (
+      <span className="font-semibold text-[10px] text-white/75 leading-tight">{val}</span>
+    )
     // Numeric value
     const suffix = unit === 'pd' ? pdSuffix : unit === 'pm' ? pmSuffix : unit === 'w' ? wSuffix : ''
     return (
@@ -1037,18 +1086,19 @@ function Pricing() {
               {/* Feature rows */}
               {features.map((feat, fi) => (
                 <div key={fi} className="grid gap-x-1.5" style={{ gridTemplateColumns: planGridTemplate }}>
-                  <div className="py-2.5 pr-3 flex flex-col justify-center"
+                  <div className={`py-2.5 pr-3 flex flex-col justify-center ${feat.isHeader ? 'pt-5' : ''}`}
                     style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <span className="text-xs text-slate-300 leading-snug">{feat.label}</span>
+                    <span className={feat.isHeader ? 'text-xs font-bold text-white leading-snug' : 'text-xs text-slate-300 leading-snug'}>{feat.label}</span>
                     {feat.sub && <span className="text-[9px] text-white/25 mt-0.5">{feat.sub}</span>}
                   </div>
                   {plans.map((plan, pi) => (
-                    <div key={plan.id} className="py-2.5 text-center flex items-center justify-center"
+                    <div key={plan.id} className={`py-2.5 text-center flex items-center justify-center ${feat.isHeader ? 'pt-5' : ''}`}
                       style={{
-                        background: plan.accentBg,
+                        background: feat.isHeader ? `${plan.accentBg}` : plan.accentBg,
                         borderLeft: `1px solid ${plan.accentBorder}`,
                         borderRight: `1px solid ${plan.accentBorder}`,
                         borderBottom: fi < features.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                        borderTop: feat.isHeader ? `1px solid rgba(255,255,255,0.08)` : 'none',
                       }}>
                       {renderVal(feat.vals[pi], feat.unit, plan)}
                     </div>
@@ -1153,10 +1203,13 @@ function Pricing() {
                               const val = feat.vals[pi]
                               if (val === false && pi > 0) return null
                               return (
-                                <li key={fi} className="flex items-center justify-between py-2"
-                                  style={{ borderBottom: fi < features.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+                                <li key={fi} className={`flex items-center justify-between py-2 ${feat.isHeader ? 'pt-4' : ''}`}
+                                  style={{
+                                    borderBottom: fi < features.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                                    borderTop: feat.isHeader ? '1px solid rgba(255,255,255,0.08)' : 'none',
+                                  }}>
                                   <div className="flex-1 mr-3">
-                                    <span className="text-xs text-slate-300 leading-snug">{feat.label}</span>
+                                    <span className={feat.isHeader ? 'text-xs font-bold text-white leading-snug' : 'text-xs text-slate-300 leading-snug'}>{feat.label}</span>
                                     {feat.sub && <p className="text-[9px] text-white/25">{feat.sub}</p>}
                                   </div>
                                   <div className="flex-shrink-0">
