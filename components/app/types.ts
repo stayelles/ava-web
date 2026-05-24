@@ -5,7 +5,7 @@ export interface UserData {
   free_daily_credits: number
   subscription_source: string | null
   subscription_expires_at: string | null
-  subscription_plan?: string | null    // 'pro_starter' | 'pro_plus' | 'custom'
+  subscription_plan?: string | null    // 'pro_starter' | 'custom_simple' | 'custom_pro' | legacy 'pro_plus' | 'custom'
   subscription_tier?: string | null   // RevenueCat: 'free' | 'starter' | 'pro' | 'ultra'
   text_messages_used?: number
   text_quota_reset_at?: string | null
@@ -51,6 +51,7 @@ export interface AvaPermissions {
   agentDailyLimit: number      // -1 = illimité, 0 = bloqué (tâches agent IA/jour)
   mcpDailyLimit: number        // -1 = illimité, 0 = bloqué (appels MCP/jour)
   desktopDailyLimit: number    // -1 = illimité, 0 = bloqué (contrôles desktop/jour)
+  canUseAvaTrading: boolean    // accès au module Ava Trading Desktop
 }
 
 export const FREE_PERMISSIONS: AvaPermissions = {
@@ -65,6 +66,7 @@ export const FREE_PERMISSIONS: AvaPermissions = {
   agentDailyLimit: 0,
   mcpDailyLimit: 0,
   desktopDailyLimit: 0,
+  canUseAvaTrading: false,
 }
 
 export const PRO_STARTER_PERMISSIONS: AvaPermissions = {
@@ -79,21 +81,25 @@ export const PRO_STARTER_PERMISSIONS: AvaPermissions = {
   agentDailyLimit: 3,
   mcpDailyLimit: 30,
   desktopDailyLimit: 5,
+  canUseAvaTrading: false,
 }
 
-export const PRO_PLUS_PERMISSIONS: AvaPermissions = {
+export const CUSTOM_PRO_PERMISSIONS: AvaPermissions = {
   webSearch: true,
   imageUpload: true,
   unlimited: true,
-  canUseCustomApiKey: false,
-  dailyTextMessages: 600,
-  voiceMonthlyMinutes: 450,
+  canUseCustomApiKey: true,
+  dailyTextMessages: -1,
+  voiceMonthlyMinutes: -1,
   dailyWebSearches: -1,
-  memoryWordLimit: 650,
-  agentDailyLimit: 10,
-  mcpDailyLimit: 60,
-  desktopDailyLimit: 15,
+  memoryWordLimit: -1,
+  agentDailyLimit: -1,
+  mcpDailyLimit: -1,
+  desktopDailyLimit: -1,
+  canUseAvaTrading: true,
 }
+
+export const PRO_PLUS_PERMISSIONS = CUSTOM_PRO_PERMISSIONS
 
 export const CUSTOM_PERMISSIONS: AvaPermissions = {
   webSearch: true,
@@ -107,12 +113,13 @@ export const CUSTOM_PERMISSIONS: AvaPermissions = {
   agentDailyLimit: -1,
   mcpDailyLimit: -1,
   desktopDailyLimit: -1,
+  canUseAvaTrading: true,
 }
 
 /** subscription_plan → permissions */
 function paddlePlanPermissions(plan: string | null | undefined): AvaPermissions {
-  if (plan === 'pro_plus') return PRO_PLUS_PERMISSIONS
-  if (plan === 'custom' || plan === 'custom_starter' || plan === 'custom_pro') return CUSTOM_PERMISSIONS
+  if (plan === 'pro_plus' || plan === 'custom_pro') return CUSTOM_PRO_PERMISSIONS
+  if (plan === 'custom' || plan === 'custom_simple' || plan === 'custom_starter') return CUSTOM_PERMISSIONS
   return PRO_STARTER_PERMISSIONS // pro_starter ou inconnu
 }
 
@@ -123,7 +130,7 @@ export function isPro(user: UserData): boolean {
   if (new Date(user.subscription_expires_at) <= new Date()) return false
   // Les plans Custom Paddle ne sont pas des plans Pro (ont leur propre section)
   const plan = user.subscription_plan
-  if (plan === 'custom' || plan === 'custom_starter' || plan === 'custom_pro') return false
+  if (plan === 'custom' || plan === 'custom_simple' || plan === 'custom_starter' || plan === 'custom_pro') return false
   return true
 }
 
@@ -134,7 +141,7 @@ export function isCustomPlan(user: UserData): boolean {
   if (user.subscription_source === 'paddle' &&
       user.subscription_expires_at &&
       new Date(user.subscription_expires_at) > new Date() &&
-      (user.subscription_plan === 'custom' || user.subscription_plan === 'custom_starter' || user.subscription_plan === 'custom_pro')) return true
+      (user.subscription_plan === 'custom' || user.subscription_plan === 'custom_simple' || user.subscription_plan === 'custom_starter' || user.subscription_plan === 'custom_pro')) return true
   return false
 }
 

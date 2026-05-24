@@ -30,10 +30,18 @@ import {
   T, LANG_FLAGS, SUPPORTED_LANGS, LANG_STORAGE_KEY,
 } from "@/lib/landing-translations";
 import {
-  PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_PRO_PLUS,
-  PADDLE_PRICE_CUSTOM,
+  PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_PRO,
+  PADDLE_PRICE_CUSTOM_SIMPLE,
 } from "@/components/app/constants";
 import { usePaddle } from "@/components/app/hooks/usePaddle";
+
+const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
+const DOWNLOADS = {
+  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.0.8-arm64.dmg`,
+  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.0.8-x64.dmg`,
+  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.0.8.exe`,
+  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.0.8.mq5`,
+};
 
 // ─── Language context ──────────────────────────────────────────────────────────
 
@@ -165,6 +173,7 @@ function Navbar() {
   const NAV_ITEMS = [
     { name: tl(T.nav.features), link: "#features" },
     { name: tl(T.nav.pricing),  link: "#pricing" },
+    { name: "Ava Trading",      link: "#trading" },
     { name: tl(T.nav.download), link: "#download" },
     { name: tl(T.nav.blog),     link: "/blog" },
   ];
@@ -324,19 +333,19 @@ function Hero() {
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white font-bold text-sm transition-all">
             <SiGoogleplay size={15} /> Google Play
           </motion.a>
-          <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-arm64.dmg"
+          <motion.a href={DOWNLOADS.macArm}
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             className="inline-flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition-all">
             <div className="flex items-center gap-1.5 font-bold text-sm"><SiApple size={13} /> Mac — Apple Silicon</div>
             <span className="text-white/35 text-[10px]">M1 / M2 / M3 / M4</span>
           </motion.a>
-          <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-x64.dmg"
+          <motion.a href={DOWNLOADS.macIntel}
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             className="inline-flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition-all">
             <div className="flex items-center gap-1.5 font-bold text-sm"><Cpu size={13} /> Mac — Intel</div>
             <span className="text-white/35 text-[10px]">x86_64</span>
           </motion.a>
-          <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/AvaSetup.exe"
+          <motion.a href={DOWNLOADS.windows}
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             className="inline-flex flex-col items-center gap-0.5 px-5 py-2.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white transition-all">
             <div className="flex items-center gap-1.5 font-bold text-sm"><WindowsIcon size={13} /> Windows</div>
@@ -826,31 +835,31 @@ function Pricing() {
       accent: '#f43f5e', accentBg: 'rgba(244,63,94,0.08)', accentBorder: 'rgba(244,63,94,0.32)',
     },
     {
-      id: 'pro_plus',
-      name: 'Pro Plus',
-      priceEur: '99,99€', priceUsd: '$107.99',
-      priceId: PADDLE_PRICE_PRO_PLUS, popular: false, badge: null,
-      accent: '#fb7185', accentBg: 'rgba(251,113,133,0.05)', accentBorder: 'rgba(251,113,133,0.18)',
+      id: 'custom_simple',
+      name: 'Custom Simple',
+      priceEur: '22,90€', priceUsd: '15 000 FCFA',
+      priceId: PADDLE_PRICE_CUSTOM_SIMPLE, popular: false, badge: null,
+      accent: '#818cf8', accentBg: 'rgba(129,140,248,0.06)', accentBorder: 'rgba(129,140,248,0.22)',
     },
     {
-      id: 'custom',
-      name: 'Custom',
-      priceEur: '14,99€', priceUsd: '$15.99',
-      priceId: PADDLE_PRICE_CUSTOM, popular: false, badge: null,
-      accent: '#818cf8', accentBg: 'rgba(129,140,248,0.06)', accentBorder: 'rgba(129,140,248,0.22)',
+      id: 'custom_pro',
+      name: 'Custom Pro',
+      priceEur: '99,99€', priceUsd: '$99.99',
+      priceId: PADDLE_PRICE_CUSTOM_PRO, popular: false, badge: null,
+      accent: '#a78bfa', accentBg: 'rgba(167,139,250,0.06)', accentBorder: 'rgba(167,139,250,0.22)',
     },
   ]
 
   // ── Feature rows ─────────────────────────────────────────────────────────────
-  // vals order: [Free, Pro Starter, Pro Plus, Custom]
+  // vals order: [Free, Pro Starter, Custom Simple, Custom Pro]
   const features: { label: string; sub?: string; vals: FV[]; unit: FUnit }[] = [
     {
       label: tl({ fr: 'Minutes de voix / mois', en: 'Voice minutes / month', de: 'Sprachminuten / Monat', tr: 'Ses dakikası / ay', es: 'Minutos de voz / mes' }),
-      vals: [3, 200, 450, 'ul'], unit: 'pm',
+      vals: [3, 200, 'ul', 'ul'], unit: 'pm',
     },
     {
       label: tl({ fr: 'Messages texte / jour', en: 'Text messages / day', de: 'Textnachrichten / Tag', tr: 'Metin mesajı / gün', es: 'Mensajes de texto / día' }),
-      vals: [10, 250, 600, 'ul'], unit: 'pd',
+      vals: [10, 250, 'ul', 'ul'], unit: 'pd',
     },
     {
       label: tl({ fr: 'Recherche web Google en temps réel', en: 'Real-time Google web search', de: 'Google-Websuche in Echtzeit', tr: 'Gerçek zamanlı Google araması', es: 'Búsqueda web Google en tiempo real' }),
@@ -867,7 +876,7 @@ function Pricing() {
     {
       label: tl({ fr: 'Agent IA autonome / jour', en: 'Autonomous AI agent / day', de: 'Autonomer KI-Agent / Tag', tr: 'Özerk YZ ajanı / gün', es: 'Agente IA autónomo / día' }),
       sub: tl({ fr: 'tâches multisteps sur votre Mac/PC', en: 'multi-step tasks on your Mac/PC', de: 'Mehrschrittaufgaben auf Ihrem Mac/PC', tr: 'Mac/PC\'nizde çok adımlı görevler', es: 'tareas multistep en tu Mac/PC' }),
-      vals: [false, 3, 10, 'ul'], unit: 'pd',
+      vals: [false, 3, 'ul', 'ul'], unit: 'pd',
     },
     {
       label: tl({ fr: 'Rappels push intelligents', en: 'Smart push reminders', de: 'Smarte Push-Erinnerungen', tr: 'Akıllı push hatırlatıcılar', es: 'Recordatorios push inteligentes' }),
@@ -875,20 +884,25 @@ function Pricing() {
     },
     {
       label: tl({ fr: 'Intégrations MCP (Notion, GitHub, Brave…)', en: 'MCP integrations (Notion, GitHub, Brave…)', de: 'MCP-Integrationen (Notion, GitHub…)', tr: 'MCP entegrasyonları (Notion, GitHub…)', es: 'Integraciones MCP (Notion, GitHub…)' }),
-      vals: [false, 30, 60, 'ul'], unit: 'pd',
+      vals: [false, 30, 'ul', 'ul'], unit: 'pd',
     },
     {
       label: tl({ fr: 'Contrôle Desktop Mac / PC à distance', en: 'Remote Mac / PC desktop control', de: 'Mac/PC-Fernsteuerung', tr: 'Mac/PC uzaktan masaüstü kontrolü', es: 'Control remoto Mac / PC' }),
-      vals: [false, 5, 15, 'ul'], unit: 'pd',
+      vals: [false, 5, 'ul', 'ul'], unit: 'pd',
     },
     {
       label: tl({ fr: 'Mémoire conversationnelle', en: 'Conversational memory', de: 'Gesprächsgedächtnis', tr: 'Konuşma hafızası', es: 'Memoria conversacional' }),
       sub: tl({ fr: 'mots max stockés', en: 'max words stored', de: 'max. gespeicherte Wörter', tr: 'maks. saklanan kelime', es: 'palabras máx. almacenadas' }),
-      vals: [150, 350, 650, 'ul'], unit: 'w',
+      vals: [150, 350, 'ul', 'ul'], unit: 'w',
     },
     {
       label: tl({ fr: 'Clé API Gemini personnelle (Google AI Studio)', en: 'Personal Gemini API key (Google AI Studio)', de: 'Eigener Gemini-API-Schlüssel (Google AI Studio)', tr: 'Kişisel Gemini API anahtarı (Google AI Studio)', es: 'Clave API Gemini personal (Google AI Studio)' }),
-      vals: [false, false, false, true], unit: '',
+      vals: [false, false, true, true], unit: '',
+    },
+    {
+      label: tl({ fr: 'Ava Trading Desktop', en: 'Ava Trading Desktop', de: 'Ava Trading Desktop', tr: 'Ava Trading Desktop', es: 'Ava Trading Desktop' }),
+      sub: tl({ fr: 'bot MT5, bridge, apprentissage global', en: 'MT5 bot, bridge, global learning', de: 'MT5-Bot, Bridge, globales Lernen', tr: 'MT5 botu, bridge, global öğrenme', es: 'bot MT5, bridge, aprendizaje global' }),
+      vals: [false, false, true, true], unit: '',
     },
     {
       label: tl({ fr: 'Accès instantané aux derniers modèles Gemini', en: 'Instant access to latest Gemini models', de: 'Sofortiger Zugang zu neuesten Gemini-Modellen', tr: 'En son Gemini modellerine anında erişim', es: 'Acceso instantáneo a los últimos modelos Gemini' }),
@@ -896,7 +910,7 @@ function Pricing() {
     },
     {
       label: tl({ fr: 'Clé chiffrée de bout en bout avec PIN', en: 'End-to-end encrypted key with PIN', de: 'Ende-zu-Ende verschlüsselter Schlüssel mit PIN', tr: 'PIN ile uçtan uca şifreli anahtar', es: 'Clave cifrada de extremo a extremo con PIN' }),
-      vals: [false, false, false, true], unit: '',
+      vals: [false, false, true, true], unit: '',
     },
     {
       label: tl({ fr: 'Support multilingue (FR, EN, DE, TR, ES)', en: 'Multilingual support (FR, EN, DE, TR, ES)', de: 'Mehrsprachiger Support (FR, EN, DE, TR, ES)', tr: 'Çok dilli destek (FR, EN, DE, TR, ES)', es: 'Soporte multilingüe (FR, EN, DE, TR, ES)' }),
@@ -934,6 +948,7 @@ function Pricing() {
   const perMonth = tl({ fr: '/mois', en: '/mo', de: '/Mon.', tr: '/ay', es: '/mes' })
   const trialLabel = tl({ fr: 'Aujourd\'hui : 0€', en: 'Today: $0', de: 'Heute: 0€', tr: 'Bugün: 0€', es: 'Hoy: 0€' })
   const afterLabel = tl(T.pricing.afterTrial)
+  const planGridTemplate = `180px repeat(${plans.length}, 1fr)`
 
   const [expandedMobilePlan, setExpandedMobilePlan] = useState<number | null>(1) // default Pro Starter expanded
 
@@ -972,7 +987,7 @@ function Pricing() {
             <div style={{ minWidth: 720 }} className="px-4 sm:px-0">
 
               {/* Plan headers */}
-              <div className="grid gap-x-1.5" style={{ gridTemplateColumns: '180px repeat(4, 1fr)' }}>
+              <div className="grid gap-x-1.5" style={{ gridTemplateColumns: planGridTemplate }}>
                 <div className="flex items-end pb-3">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-white/20">
                     {tl({ fr: 'Fonctionnalité', en: 'Feature', de: 'Funktion', tr: 'Özellik', es: 'Función' })}
@@ -1021,7 +1036,7 @@ function Pricing() {
 
               {/* Feature rows */}
               {features.map((feat, fi) => (
-                <div key={fi} className="grid gap-x-1.5" style={{ gridTemplateColumns: '180px repeat(4, 1fr)' }}>
+                <div key={fi} className="grid gap-x-1.5" style={{ gridTemplateColumns: planGridTemplate }}>
                   <div className="py-2.5 pr-3 flex flex-col justify-center"
                     style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
                     <span className="text-xs text-slate-300 leading-snug">{feat.label}</span>
@@ -1042,7 +1057,7 @@ function Pricing() {
               ))}
 
               {/* CTA row */}
-              <div className="grid gap-x-1.5" style={{ gridTemplateColumns: '180px repeat(4, 1fr)' }}>
+              <div className="grid gap-x-1.5" style={{ gridTemplateColumns: planGridTemplate }}>
                 <div />
                 {plans.map((plan) => (
                   <div key={plan.id} className="rounded-b-2xl px-2 py-3"
@@ -1190,6 +1205,99 @@ function Pricing() {
   )
 }
 
+// ─── Ava Trading ──────────────────────────────────────────────────────────────
+
+function AvaTradingSection() {
+  const tl = useTl()
+  const steps = [
+    {
+      icon: Monitor,
+      title: tl({ fr: 'Installer Ava Desktop', en: 'Install Ava Desktop', de: 'Ava Desktop installieren', tr: 'Ava Desktop kur', es: 'Instalar Ava Desktop' }),
+      text: tl({ fr: 'Téléchargez la version Mac ou Windows depuis Ava, sans passer par GitHub.', en: 'Download the Mac or Windows build from Ava without leaving for GitHub.', de: 'Laden Sie die Mac- oder Windows-Version direkt von Ava herunter.', tr: 'Mac veya Windows sürümünü GitHub’a gitmeden Ava’dan indirin.', es: 'Descarga la versión Mac o Windows desde Ava sin ir a GitHub.' }),
+    },
+    {
+      icon: Terminal,
+      title: tl({ fr: 'Ajouter le bridge MT5', en: 'Add the MT5 bridge', de: 'MT5-Bridge hinzufügen', tr: 'MT5 bridge ekle', es: 'Añadir el bridge MT5' }),
+      text: tl({ fr: 'Copiez AvaBridgeEA.mq5 dans MQL5/Experts, compilez-le dans MetaEditor, puis attachez-le au graphique XAUUSD.', en: 'Copy AvaBridgeEA.mq5 into MQL5/Experts, compile it in MetaEditor, then attach it to the XAUUSD chart.', de: 'Kopieren Sie AvaBridgeEA.mq5 in MQL5/Experts, kompilieren Sie es in MetaEditor und hängen Sie es an XAUUSD an.', tr: 'AvaBridgeEA.mq5 dosyasını MQL5/Experts içine kopyalayın, MetaEditor’da derleyin ve XAUUSD grafiğine ekleyin.', es: 'Copia AvaBridgeEA.mq5 en MQL5/Experts, compílalo en MetaEditor y añádelo al gráfico XAUUSD.' }),
+    },
+    {
+      icon: Shield,
+      title: tl({ fr: 'Accès protégé', en: 'Protected access', de: 'Geschützter Zugriff', tr: 'Korumalı erişim', es: 'Acceso protegido' }),
+      text: tl({ fr: 'Ava Desktop reste téléchargeable pour tous. Le module Ava Trading se déverrouille seulement avec Custom Simple ou Custom Pro actif.', en: 'Ava Desktop stays downloadable for everyone. Ava Trading unlocks only with active Custom Simple or Custom Pro.', de: 'Ava Desktop bleibt für alle downloadbar. Ava Trading wird nur mit aktivem Custom Simple oder Custom Pro freigeschaltet.', tr: 'Ava Desktop herkes tarafından indirilebilir. Ava Trading yalnızca aktif Custom Simple veya Custom Pro ile açılır.', es: 'Ava Desktop se puede descargar para todos. Ava Trading solo se desbloquea con Custom Simple o Custom Pro activo.' }),
+    },
+  ]
+
+  return (
+    <section id="trading" className="relative py-24 sm:py-32 overflow-hidden">
+      <DotGrid className="opacity-30" />
+      <div className="relative max-w-6xl mx-auto px-6">
+        <FadeUp className="text-center mb-14">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">Ava Trading</p>
+          <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
+            {tl({ fr: 'Scalping MT5 avec apprentissage global Ava', en: 'MT5 scalping with Ava global learning', de: 'MT5-Scalping mit globalem Ava-Lernen', tr: 'Ava global öğrenme ile MT5 scalping', es: 'Scalping MT5 con aprendizaje global Ava' })}
+          </h2>
+          <p className="text-slate-400 text-lg mt-4 max-w-2xl mx-auto">
+            {tl({ fr: 'Une installation guidée pour Mac et Windows: Ava Desktop, le bridge MT5, puis le bot de trading verrouillé par abonnement Custom.', en: 'A guided setup for Mac and Windows: Ava Desktop, the MT5 bridge, then the Custom-locked trading bot.', de: 'Geführte Einrichtung für Mac und Windows: Ava Desktop, MT5-Bridge und der per Custom-Abo geschützte Trading-Bot.', tr: 'Mac ve Windows için yönlendirmeli kurulum: Ava Desktop, MT5 bridge ve Custom aboneliğine bağlı trading botu.', es: 'Instalación guiada para Mac y Windows: Ava Desktop, bridge MT5 y bot protegido por plan Custom.' })}
+          </p>
+        </FadeUp>
+
+        <div className="grid lg:grid-cols-3 gap-4 mb-8">
+          {steps.map((step, index) => (
+            <FadeUp key={step.title} delay={index * 0.06}>
+              <div className="h-full rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-xl p-6">
+                <div className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-5">
+                  <step.icon size={20} className="text-rose-400" />
+                </div>
+                <h3 className="text-white font-black text-lg mb-2">{step.title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">{step.text}</p>
+              </div>
+            </FadeUp>
+          ))}
+        </div>
+
+        <FadeUp delay={0.16}>
+          <div className="rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-xl p-6 sm:p-8">
+            <div className="grid lg:grid-cols-[1fr_1.1fr] gap-8 items-start">
+              <div>
+                <h3 className="text-white font-black text-2xl mb-3">
+                  {tl({ fr: 'Téléchargements Ava Trading', en: 'Ava Trading downloads', de: 'Ava Trading Downloads', tr: 'Ava Trading indirmeleri', es: 'Descargas Ava Trading' })}
+                </h3>
+                <p className="text-slate-400 leading-relaxed mb-6">
+                  {tl({ fr: 'Les fichiers sont servis depuis call-ava.com/downloads avec des noms versionnés pour garder les anciennes versions disponibles.', en: 'Files are served from call-ava.com/downloads with versioned names so older builds stay available.', de: 'Dateien werden über call-ava.com/downloads mit versionierten Namen bereitgestellt.', tr: 'Dosyalar eski sürümleri korumak için sürüm adlarıyla call-ava.com/downloads üzerinden sunulur.', es: 'Los archivos se sirven desde call-ava.com/downloads con nombres versionados.' })}
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <a href={DOWNLOADS.macArm} className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white text-sm font-bold transition-colors">
+                    <SiApple size={15} /> Mac Apple Silicon
+                  </a>
+                  <a href={DOWNLOADS.macIntel} className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
+                    <Cpu size={15} /> Mac Intel
+                  </a>
+                  <a href={DOWNLOADS.windows} className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
+                    <WindowsIcon size={15} /> Windows
+                  </a>
+                  <a href={DOWNLOADS.ea} className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
+                    <Terminal size={15} /> AvaBridgeEA.mq5
+                  </a>
+                </div>
+              </div>
+              <div className="rounded-2xl bg-slate-950/70 border border-white/10 p-5">
+                <p className="text-[10px] uppercase tracking-widest font-bold text-white/35 mb-4">
+                  {tl({ fr: 'Installation MT5', en: 'MT5 setup', de: 'MT5 Einrichtung', tr: 'MT5 kurulumu', es: 'Instalación MT5' })}
+                </p>
+                <ol className="space-y-3 text-sm text-slate-300">
+                  <li>1. {tl({ fr: 'Installez MetaTrader 5 et connectez votre compte démo ou réel.', en: 'Install MetaTrader 5 and connect your demo or real account.', de: 'Installieren Sie MetaTrader 5 und verbinden Sie Ihr Demo- oder Live-Konto.', tr: 'MetaTrader 5’i kurun ve demo veya gerçek hesabınızı bağlayın.', es: 'Instala MetaTrader 5 y conecta tu cuenta demo o real.' })}</li>
+                  <li>2. {tl({ fr: 'Ouvrez MetaEditor, placez AvaBridgeEA.mq5 dans MQL5/Experts, puis compilez.', en: 'Open MetaEditor, put AvaBridgeEA.mq5 in MQL5/Experts, then compile.', de: 'Öffnen Sie MetaEditor, legen Sie AvaBridgeEA.mq5 in MQL5/Experts ab und kompilieren Sie.', tr: 'MetaEditor’ı açın, AvaBridgeEA.mq5 dosyasını MQL5/Experts içine koyun ve derleyin.', es: 'Abre MetaEditor, coloca AvaBridgeEA.mq5 en MQL5/Experts y compila.' })}</li>
+                  <li>3. {tl({ fr: 'Ajoutez l’EA au graphique XAUUSD, activez Algo Trading, puis lancez Ava Desktop.', en: 'Attach the EA to XAUUSD, enable Algo Trading, then launch Ava Desktop.', de: 'Hängen Sie den EA an XAUUSD, aktivieren Sie Algo Trading und starten Sie Ava Desktop.', tr: 'EA’yı XAUUSD grafiğine ekleyin, Algo Trading’i açın ve Ava Desktop’ı başlatın.', es: 'Añade el EA a XAUUSD, activa Algo Trading y abre Ava Desktop.' })}</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </FadeUp>
+      </div>
+    </section>
+  )
+}
+
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
 
 function FAQ() {
@@ -1273,19 +1381,19 @@ function FinalCTA() {
             </motion.a>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-arm64.dmg"
+            <motion.a href={DOWNLOADS.macArm}
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
               <div className="flex items-center gap-2 font-bold text-sm"><SiApple size={15} /> Mac — Apple Silicon</div>
               <span className="text-white/35 text-[10px] font-medium">M1 / M2 / M3 / M4</span>
             </motion.a>
-            <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-x64.dmg"
+            <motion.a href={DOWNLOADS.macIntel}
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
               <div className="flex items-center gap-2 font-bold text-sm"><Cpu size={15} /> Mac — Intel</div>
               <span className="text-white/35 text-[10px] font-medium">x86_64</span>
             </motion.a>
-            <motion.a href="https://github.com/stayelles/ava-desktop/releases/latest/download/AvaSetup.exe"
+            <motion.a href={DOWNLOADS.windows}
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               className="inline-flex flex-col items-center gap-1 px-6 py-3.5 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white transition-all">
               <div className="flex items-center gap-2 font-bold text-sm"><WindowsIcon size={15} /> Windows</div>
@@ -1319,9 +1427,9 @@ function Footer() {
               {[
                 ["iOS App", "https://apps.apple.com/app/ava-ai-voice-assistant/id6744959525"],
                 ["Android App", "https://play.google.com/store/apps/details?id=com.kemyamo.ava"],
-                ["Mac (Apple Silicon)", "https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-arm64.dmg"],
-                ["Mac (Intel)", "https://github.com/stayelles/ava-desktop/releases/latest/download/Ava-x64.dmg"],
-                ["Windows", "https://github.com/stayelles/ava-desktop/releases/latest/download/AvaSetup.exe"],
+                ["Mac (Apple Silicon)", DOWNLOADS.macArm],
+                ["Mac (Intel)", DOWNLOADS.macIntel],
+                ["Windows", DOWNLOADS.windows],
               ].map(([l, h]) => (
                 <li key={l}><a href={h} className="text-white/35 hover:text-white text-sm transition-colors">{l}</a></li>
               ))}
@@ -1393,6 +1501,7 @@ export default function Page() {
         <Integrations />
         <Testimonials />
         <Showcase />
+        <AvaTradingSection />
         <Pricing />
         <FAQ />
         <FinalCTA />

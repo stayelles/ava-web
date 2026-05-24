@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock } from 'lucide-react'
-import { GUMROAD_CUSTOM_URL, GUMROAD_CUSTOM_QUARTERLY_URL, PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_PRO_PLUS, PADDLE_PRICE_CUSTOM } from '../constants'
+import { GUMROAD_CUSTOM_URL, GUMROAD_CUSTOM_QUARTERLY_URL, PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_PRO, PADDLE_PRICE_CUSTOM_SIMPLE } from '../constants'
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
 import { usePaddle } from '../hooks/usePaddle'
@@ -31,17 +31,17 @@ const PRO_PLANS = [
   },
   {
     key: 'plus',
-    label: 'Pro Plus',
+    label: 'Custom Pro',
     price: '99,99€',
     per: '/mois',
-    priceId: PADDLE_PRICE_PRO_PLUS,
+    priceId: PADDLE_PRICE_CUSTOM_PRO,
     popular: true,
     limits: {
-      voice: '450 min/mois',
-      text: '600 messages/jour',
+      voice: 'Illimité',
+      text: 'Illimité',
       search: 'Illimitée',
-      mcp: '50 appels MCP/jour',
-      desktop: '30 interactions/jour',
+      mcp: 'Illimité',
+      desktop: 'Ava Trading inclus',
     },
   },
 ]
@@ -50,10 +50,10 @@ const PRO_PLANS = [
 const CUSTOM_PLANS = [
   {
     key: 'custom',
-    label: 'Custom',
-    price: '14,99€',
+    label: 'Custom Simple',
+    price: '22,90€',
     per: '/mois',
-    priceId: PADDLE_PRICE_CUSTOM,
+    priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
     popular: false,
   },
 ]
@@ -79,6 +79,7 @@ const CUSTOM_FEATURES = [
   { icon: Monitor, text: '∞ Contrôle à distance illimité' },
   { icon: Brain, text: '∞ Vision écran illimitée' },
   { icon: Cpu, text: '∞ Auto-amélioration IA — aucune limite d\'étapes' },
+  { icon: Monitor, text: 'Ava Trading Desktop inclus' },
   { icon: Bell, text: '∞ Rappels push illimités' },
   { icon: Layers, text: '∞ Intégrations MCP illimitées' },
   { icon: Key, text: 'Votre propre clé API Gemini (Google AI Studio)' },
@@ -165,7 +166,13 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
     user.subscription_source !== 'paddle'
 
   const currentPlan = pro ? (user.subscription_plan ?? 'pro_starter') : null
-  const activePlanLabel = currentPlan === 'pro_plus' ? 'Pro Plus' : currentPlan === 'pro_starter' ? 'Pro Starter' : null
+  const activePlanLabel = currentPlan === 'custom_pro' || currentPlan === 'pro_plus'
+    ? 'Custom Pro'
+    : currentPlan === 'custom_simple' || currentPlan === 'custom' || currentPlan === 'custom_starter'
+      ? 'Custom Simple'
+      : currentPlan === 'pro_starter'
+        ? 'Pro Starter'
+        : null
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full space-y-4">
