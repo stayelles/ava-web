@@ -37,10 +37,10 @@ import { usePaddle } from "@/components/app/hooks/usePaddle";
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = {
-  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.0.9-arm64.dmg`,
-  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.0.9-x64.dmg`,
-  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.0.9.exe`,
-  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.0.9.mq5`,
+  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.0-arm64.dmg`,
+  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.0-x64.dmg`,
+  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.0.exe`,
+  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.1.0.mq5`,
 };
 
 // ─── Language context ──────────────────────────────────────────────────────────
@@ -937,9 +937,24 @@ function Pricing() {
       ], unit: '',
     },
     {
+      label: tl({ fr: 'Giveback (protection profit)', en: 'Giveback (profit protection)', de: 'Giveback (Gewinnschutz)', tr: 'Giveback (kâr koruması)', es: 'Giveback (protección de ganancias)' }),
+      sub: tl({ fr: 'arrête le bot si le profit chute trop depuis le pic', en: 'stops bot if profit drops too much from peak', de: 'stoppt Bot bei zu großem Gewinnrückgang vom Peak', tr: 'kâr zirveden çok düşerse botu durdurur', es: 'detiene el bot si el beneficio cae demasiado desde el pico' }),
+      vals: [
+        false,
+        false,
+        tl({ fr: '0.50$ (fixe)', en: '$0.50 (fixed)', de: '0.50$ (fest)', tr: '0.50$ (sabit)', es: '0.50$ (fijo)' }),
+        tl({ fr: '0.10$ à 4.00$', en: '$0.10 to $4.00', de: '0.10$ bis 4.00$', tr: '0.10$ ile 4.00$', es: '0.10$ a 4.00$' }),
+      ], unit: '',
+    },
+    {
+      label: tl({ fr: 'Reset session au démarrage', en: 'Session reset on start', de: 'Sitzungs-Reset beim Start', tr: 'Başlangıçta seans sıfırlama', es: 'Reinicio de sesión al iniciar' }),
+      sub: tl({ fr: 'remet pic et profit à zéro au redémarrage', en: 'resets peak and profit to zero on launch', de: 'setzt Peak und Gewinn bei Neustart auf Null', tr: 'başlangıçta zirve ve kârı sıfırlar', es: 'restablece pico y beneficio a cero al reiniciar' }),
+      vals: [false, false, false, true], unit: '',
+    },
+    {
       label: tl({ fr: 'Configs avancées modifiables', en: 'Editable advanced configs', de: 'Erweiterte Einstellungen', tr: 'Gelişmiş ayarlar', es: 'Configuraciones avanzadas editables' }),
       sub: tl({ fr: 'fenêtre, seuil, recovery, filtre…', en: 'window, threshold, recovery, filter…', de: 'Fenster, Schwelle, Recovery, Filter…', tr: 'pencere, eşik, kurtarma, filtre…', es: 'ventana, umbral, recovery, filtro…' }),
-      vals: [false, false, false, false], unit: '',
+      vals: [false, false, false, true], unit: '',
     },
     {
       label: tl({ fr: 'Apprentissage IA global (ML Sync)', en: 'Global AI learning (ML Sync)', de: 'Globales KI-Lernen (ML Sync)', tr: 'Global YZ öğrenme (ML Sync)', es: 'Aprendizaje IA global (ML Sync)' }),
