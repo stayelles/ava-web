@@ -1319,16 +1319,16 @@ function AvaTradingSection() {
                   {tl({ fr: 'Les fichiers sont servis depuis call-ava.com/downloads avec des noms versionnés pour garder les anciennes versions disponibles.', en: 'Files are served from call-ava.com/downloads with versioned names so older builds stay available.', de: 'Dateien werden über call-ava.com/downloads mit versionierten Namen bereitgestellt.', tr: 'Dosyalar eski sürümleri korumak için sürüm adlarıyla call-ava.com/downloads üzerinden sunulur.', es: 'Los archivos se sirven desde call-ava.com/downloads con nombres versionados.' })}
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  <a href={DOWNLOADS.macArm} className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white text-sm font-bold transition-colors">
+                  <a href={DOWNLOADS.macArm} download className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white text-sm font-bold transition-colors">
                     <SiApple size={15} /> Mac Apple Silicon
                   </a>
-                  <a href={DOWNLOADS.macIntel} className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
+                  <a href={DOWNLOADS.macIntel} download className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
                     <Cpu size={15} /> Mac Intel
                   </a>
-                  <a href={DOWNLOADS.windows} className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
+                  <a href={DOWNLOADS.windows} download className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
                     <WindowsIcon size={15} /> Windows
                   </a>
-                  <a href={DOWNLOADS.ea} className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
+                  <a href={DOWNLOADS.ea} download className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
                     <Terminal size={15} /> AvaBridgeEA.mq5
                   </a>
                 </div>

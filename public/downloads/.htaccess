@@ -1,0 +1,18 @@
+<IfModule mod_headers.c>
+  <FilesMatch "\.(dmg|mq5|exe)$">
+    Header set Content-Disposition "attachment"
+    Header set X-Content-Type-Options "nosniff"
+  </FilesMatch>
+</IfModule>
+
+<FilesMatch "\.dmg$">
+  ForceType application/x-apple-diskimage
+</FilesMatch>
+
+<FilesMatch "\.mq5$">
+  ForceType application/octet-stream
+</FilesMatch>
+
+<FilesMatch "\.exe$">
+  ForceType application/vnd.microsoft.portable-executable
+</FilesMatch>
