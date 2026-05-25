@@ -111,6 +111,45 @@ export function useUserData() {
     }
   }, [])
 
+  const registerRequest = useCallback(async (email: string, pin: string, lang = 'fr', referralCode?: string): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const body: Record<string, string> = { email: email.trim(), pin, lang }
+      if (referralCode?.trim()) body.referral_code = referralCode.trim()
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/email-signup-request`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify(body),
+      })
+      const result = await res.json()
+      if (!res.ok || result.error) {
+        return { ok: false, error: result.error ?? 'Erreur lors de la création du compte' }
+      }
+      return { ok: true }
+    } catch {
+      return { ok: false, error: 'Erreur réseau' }
+    }
+  }, [])
+
+  const registerVerify = useCallback(async (email: string, code: string, pin: string): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/email-signup-verify`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({ email: email.trim(), code: code.trim() }),
+      })
+      const result = await res.json()
+      if (!res.ok || result.error) {
+        return { ok: false, error: result.error ?? 'Code incorrect ou expiré' }
+      }
+      
+      // Verification succeeded, now log in using the regular login flow to populate local state & storage
+      await login(email, pin)
+      return { ok: true }
+    } catch {
+      return { ok: false, error: 'Erreur réseau' }
+    }
+  }, [login])
+
   const logout = useCallback(() => {
     setUser(null)
     setPermissions({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false, dailyTextMessages: 10, voiceMonthlyMinutes: 3, dailyWebSearches: 0, memoryWordLimit: 150, agentDailyLimit: 0, mcpDailyLimit: 0, desktopDailyLimit: 0, canUseAvaTrading: false })
@@ -273,5 +312,6 @@ export function useUserData() {
     refreshUser, updatePin, decrementCredits, trackVoiceTime,
     customApiKey, saveApiKey, removeApiKey,
     incrementTextMessages,
+    registerRequest, registerVerify,
   }
 }

@@ -226,17 +226,13 @@ export default function CGUPage() {
       <LegalSection n={12} title="Intelligence artificielle et limites du service">
         <p>
           Les réponses fournies par Ava sont générées par intelligence artificielle et présentées
-          à titre informatif uniquement. Elles ne constituent en aucun cas un conseil professionnel
-          (médical, juridique, financier, psychologique, etc.) et ne doivent pas être interprétées
-          comme tel.
+          à titre informatif uniquement. <strong style={{ color: '#f8fafc' }}>Ava est une intelligence artificielle qui peut faire des erreurs et n&apos;est pas parfaite.</strong> Elles ne constituent en aucun cas un conseil professionnel (médical, juridique, financier, de trading, de placement, ou autre) et ne doivent pas être interprétées comme tel.
         </p>
         <p className="mt-2">
           Woonix LTD ne garantit pas l&apos;exactitude, la complétude ou l&apos;adéquation des
           réponses générées par l&apos;IA. Le service est fourni{' '}
           <strong style={{ color: '#f1f5f9' }}>&quot;en l&apos;état&quot;</strong>{' '}
-          sans garantie d&apos;aucune sorte, expresse ou implicite. L&apos;utilisateur conserve
-          la pleine et entière responsabilité des décisions prises sur la base des informations
-          fournies par Ava.
+          sans garantie d&apos;aucune sorte, expresse ou implicite. <strong style={{ color: '#f8fafc' }}>L&apos;utilisateur est le seul et unique responsable de ce qu&apos;il fait de ces informations, des actions entreprises et de tout usage des fonctionnalités d&apos;Ava.</strong>
         </p>
       </LegalSection>
 
