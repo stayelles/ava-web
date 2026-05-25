@@ -173,7 +173,7 @@ function Navbar() {
   const NAV_ITEMS = [
     { name: tl(T.nav.features), link: "#features" },
     { name: tl(T.nav.pricing),  link: "#pricing" },
-    { name: "Ava Trading",      link: "#trading" },
+    { name: "Ava Trading",      link: "/trading" },
     { name: tl(T.nav.download), link: "#download" },
     { name: tl(T.nav.blog),     link: "/blog" },
   ];
