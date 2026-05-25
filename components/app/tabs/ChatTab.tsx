@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Send, Trash2, MessageSquare } from 'lucide-react'
+import { Send, Trash2, MessageSquare, Key } from 'lucide-react'
+import { motion } from 'framer-motion'
 import type { UserData, AvaPermissions } from '../types'
 import { SYSTEM_INSTRUCTION } from '../constants'
 
@@ -21,11 +22,22 @@ interface Props {
   webSearch: boolean
   onIncrementTextMessages: () => Promise<{ blocked: boolean }>
   sharedApiKey?: string | null
+  customApiKey?: string | null
+  onGoToSettings?: () => void
 }
 
 const GEMINI_TEXT_MODEL = 'gemini-3-flash-preview'
 
-export function ChatTab({ user, permissions, language, webSearch, onIncrementTextMessages, sharedApiKey }: Props) {
+export function ChatTab({
+  user,
+  permissions,
+  language,
+  webSearch,
+  onIncrementTextMessages,
+  sharedApiKey,
+  customApiKey,
+  onGoToSettings,
+}: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -100,7 +112,7 @@ export function ChatTab({ user, permissions, language, webSearch, onIncrementTex
 
       for (let step = 0; step < 10; step++) {
         const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${sharedApiKey ?? process.env.NEXT_PUBLIC_GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${customApiKey ?? sharedApiKey ?? process.env.NEXT_PUBLIC_GEMINI_API_KEY}`,
           { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
         )
         const data = await res.json()
@@ -129,7 +141,7 @@ export function ChatTab({ user, permissions, language, webSearch, onIncrementTex
     } finally {
       setLoading(false)
     }
-  }, [input, loading, messages, storageKey, language, webSearch, user, onIncrementTextMessages])
+  }, [input, loading, messages, storageKey, language, webSearch, user, onIncrementTextMessages, customApiKey, sharedApiKey])
 
   const limit = permissions.dailyTextMessages
   const nowTs = new Date()
@@ -137,6 +149,45 @@ export function ChatTab({ user, permissions, language, webSearch, onIncrementTex
   const needsReset = !resetAt || resetAt <= nowTs
   const usedToday = needsReset ? 0 : (user.text_messages_used ?? 0)
   const remaining = limit === -1 ? null : Math.max(0, limit - usedToday)
+
+  if (permissions.canUseCustomApiKey && !customApiKey) {
+    return (
+      <div className="relative h-full w-full flex flex-col items-center justify-center p-6 text-center" style={{ background: '#020617' }}>
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/40 via-transparent to-slate-950 pointer-events-none z-0" />
+        
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative z-10 max-w-sm w-full p-8 rounded-3xl border border-white/10 bg-slate-900/20 backdrop-blur-xl flex flex-col items-center gap-6"
+        >
+          <div className="p-4 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500">
+            <Key size={32} />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-white mb-2">Clé API Gemini Requise</h2>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Vous avez souscrit au plan <strong>Custom Simple</strong> ou <strong>Custom Pro</strong>.<br />
+              Pour communiquer avec Ava par écrit, vous devez configurer votre propre clé API Gemini (Google AI Studio) dans vos paramètres.
+            </p>
+            <p className="text-[10px] text-slate-500 leading-relaxed mt-2">
+              Cette clé est gratuite et sera chiffrée de bout en bout localement avec votre PIN de sécurité.
+            </p>
+          </div>
+          <button
+            onClick={onGoToSettings}
+            className="w-full py-3 rounded-2xl font-bold text-sm transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            style={{
+              background: '#e11d48',
+              color: '#fff',
+              boxShadow: '0 4px 24px rgba(225,29,72,0.4)',
+            }}
+          >
+            Configurer la clé API
+          </button>
+        </motion.div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col h-full" style={{ background: '#020617' }}>

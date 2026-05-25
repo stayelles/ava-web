@@ -61,6 +61,10 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
     setActiveTab('subscription')
   }, [])
 
+  const handleGoToSettings = useCallback(() => {
+    setActiveTab('settings')
+  }, [])
+
   return (
     <div
       className="flex h-screen w-screen overflow-hidden"
@@ -103,7 +107,8 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               onGoToSubscription={handleGoToSubscription}
               onVoiceDone={onTrackVoiceTime}
               customApiKey={customApiKey}
-              sharedApiKey={sharedGeminiKey}
+              sharedApiKey={permissions.canUseCustomApiKey ? null : sharedGeminiKey}
+              onGoToSettings={handleGoToSettings}
             />
           )}
           {activeTab === 'chat' && (
@@ -113,7 +118,9 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               language={settings.language}
               webSearch={settings.webSearch}
               onIncrementTextMessages={onIncrementTextMessages}
-              sharedApiKey={sharedGeminiKey}
+              customApiKey={customApiKey}
+              sharedApiKey={permissions.canUseCustomApiKey ? null : sharedGeminiKey}
+              onGoToSettings={handleGoToSettings}
             />
           )}
           {activeTab === 'profile' && (
