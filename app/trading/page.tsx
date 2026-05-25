@@ -394,11 +394,11 @@ const PAGE_T = {
       name: "Giveback $",
       icon: Shield,
       desc: {
-        en: "Smart profit protection. If the session profit reaches a peak (e.g. +$179) and then drops by this threshold (e.g. drop of $0.50), the bot locks and stops trading to secure earnings. Fixed at $0.50 for Simple, customizable from $0.10 to $4.00 for Custom Pro.",
-        fr: "Protection intelligente des gains. Si le profit cumulé de la session atteint un sommet (ex: +179$) puis retombe de la valeur du Giveback (ex: baisse de 0.50$), le bot se verrouille pour sécuriser les gains. Fixé à 0.50$ pour Simple, modifiable de 0.10$ à 4.00$ pour Custom Pro.",
-        de: "Intelligenter Gewinnschutz. Wenn der aufgelaufene Gewinn ein Hoch erreicht (z.B. +179$) und dann um diesen Wert fällt (z.B. Rückgang um 0.50$), sperrt sich der Bot, um Gewinne zu sichern. Fest auf 0.50$ für Simple, anpassbar von 0.10$ bis 4.00$ für Custom Pro.",
-        tr: "Akıllı kâr koruması. Oturum kârı bir zirveye ulaşırsa (örneğin +179$) ve ardından bu eşik kadar düşerse (örneğin 0.50$ düşüş), bot kazançları korumak için kendini kilitler. Simple için 0.50$ sabittir, Custom Pro için 0.10$ ile 4.00$ arasında özelleştirilebilir.",
-        es: "Protección inteligente de ganancias. Si el beneficio acumulado de la sesión alcanza un pico (ej: +$179) y luego cae por este umbral (ej: caída de $0.50), el bot se bloquea para asegurar las ganancias. Fijo en $0.50 para Simple, ajustable de $0.10 a $4.00 para Custom Pro.",
+        en: "Smart profit protection. If the session profit reaches a peak (e.g. +$179) and then drops by this threshold (e.g. drop of $0.50), the bot locks and stops trading to secure earnings. Customizable from $0.10 to $5.00 for Custom Simple, and up to $100.00 for Custom Pro.",
+        fr: "Protection intelligente des gains. Si le profit cumulé de la session atteint un sommet (ex: +179$) puis retombe de la valeur du Giveback (ex: baisse de 0.50$), le bot se verrouille pour sécuriser les gains. Modifiable de 0.10$ à 5.00$ pour Custom Simple, et jusqu'à 100.00$ pour Custom Pro.",
+        de: "Intelligenter Gewinnschutz. Wenn der aufgelaufene Gewinn ein Hoch erreicht (z.B. +179$) und dann um diesen Wert fällt (z.B. Rückgang um 0.50$), sperrt sich der Bot, um Gewinne zu sichern. Anpassbar von 0.10$ bis 5.00$ für Custom Simple, und bis zu 100.00$ für Custom Pro.",
+        tr: "Akıllı kâr koruması. Oturum kârı bir zirveye ulaşırsa (örneğin +179$) ve ardından bu eşik kadar düşerse (örneğin 0.50$ düşüş), bot kazançları korumak için kendini kilitler. Custom Simple için 0.10$ ile 5.00$, Custom Pro için 0.10$ ile 100.00$ arasında ayarlanabilir.",
+        es: "Protección inteligente de ganancias. Si el beneficio acumulado de la sesión alcanza un pico (ej: +$179) y luego cae por este umbral (ej: caída de $0.50), el bot se bloquea para asegurar las ganancias. Ajustable de $0.10 a $5.00 para Custom Simple, y hasta $100.00 para Custom Pro.",
       }
     },
     {
@@ -481,8 +481,8 @@ const PAGE_T = {
     },
     {
       name: { en: "Giveback $ (Profit Protection)", fr: "Giveback $ (Protection Profit)", de: "Giveback (Gewinnschutz)", tr: "Giveback (Kâr Koruması)", es: "Giveback (Protección Ganancias)" },
-      simple: { en: "$0.50 (Fixed)", fr: "0.50$ (Fixe)", de: "0.50$ (Fest)", tr: "0.50$ (Sabit)", es: "0.50$ (Fijo)" },
-      pro: { en: "$0.10 to $4.00 (Custom)", fr: "0.10$ à 4.00$ (Modifiable)", de: "0.10$ à 4.00$ (Modifiable)", tr: "0.10$ ile 4.00$ (Özel)", es: "0.10$ a 4.00$ (Modificable)" },
+      simple: { en: "$0.10 to $5.00 (Custom)", fr: "0.10$ à 5.00$ (Modifiable)", de: "0.10$ bis 5.00$ (Anpassbar)", tr: "0.10$ ile 5.00$ (Özel)", es: "0.10$ a 5.00$ (Modificable)" },
+      pro: { en: "$0.10 to $100.00 (Custom)", fr: "0.10$ à 100.00$ (Modifiable)", de: "0.10$ bis 100.00$ (Anpassbar)", tr: "0.10$ ile 100.00$ (Özel)", es: "0.10$ a 100.00$ (Modificable)" },
       isNew: true
     },
     {
