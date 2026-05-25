@@ -34,6 +34,7 @@ jobs:
           local-dir: ./out/
           server-dir: /public_html/
           dangerous-clean-slate: false
+          timeout: 120000
           exclude: |
             **/.git*
             **/.git*/**
