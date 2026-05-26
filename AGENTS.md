@@ -33,3 +33,18 @@ When changing desktop download links, keep filenames versioned so older installe
 - `Ava-1.1.0-x64.dmg`
 - `AvaSetup-1.1.0.exe`
 - `AvaBridgeEA-1.1.0.mq5`
+
+## macOS Signature & Notarization (Apple Developer)
+
+To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
+- **Certificate**: A valid Apple "Developer ID Application" certificate must be installed in the Keychain of the build host.
+- **Identity**: Configured in `package.json` as `"Woonix LTD (YW93WGC3RQ)"`.
+- **Entitlements**: Uses `build/entitlements.mac.plist` (which allows JIT, micro access, and location).
+- **Notarization**: Apple notarization requires the following env vars to be present when running the release command:
+  - `APPLE_ID`: The Apple Developer account email address.
+  - `APPLE_APP_SPECIFIC_PASSWORD`: An app-specific password generated on appleid.apple.com.
+  - `APPLE_TEAM_ID`: `YW93WGC3RQ` (also specified in `package.json` under `notarize.teamId`).
+- **Release Command**:
+  ```bash
+  APPLE_ID="your-apple-id@dev.com" APPLE_APP_SPECIFIC_PASSWORD="abcd-efgh-ijkl-mnop" GH_TOKEN="your_github_token" npm run release:mac
+  ```
