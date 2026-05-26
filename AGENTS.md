@@ -29,9 +29,9 @@ Keep `public/downloads/.htaccess` deployed with the site. It forces `.dmg`, `.ex
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.1.1-arm64.dmg`
-- `Ava-1.1.1-x64.dmg`
-- `AvaSetup-1.1.1.exe`
+- `Ava-1.1.2-arm64.dmg`
+- `Ava-1.1.2-x64.dmg`
+- `AvaSetup-1.1.2.exe`
 - `AvaBridgeEA-1.11.mq5`
 
 ## macOS Signature & Notarization (Apple Developer)

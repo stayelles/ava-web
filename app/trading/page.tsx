@@ -20,9 +20,9 @@ import {
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = {
-  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.1-arm64.dmg`,
-  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.1-x64.dmg`,
-  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.1.exe`,
+  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.2-arm64.dmg`,
+  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.2-x64.dmg`,
+  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.2.exe`,
   ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.11.mq5`,
 };
 
