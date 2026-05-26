@@ -40,7 +40,7 @@ const DOWNLOADS = {
   macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.1-arm64.dmg`,
   macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.1-x64.dmg`,
   windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.1.exe`,
-  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.1.1.mq5`,
+  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.11.mq5`,
 };
 
 // ─── Language context ──────────────────────────────────────────────────────────

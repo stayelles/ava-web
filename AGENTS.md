@@ -32,7 +32,7 @@ When changing desktop download links, keep filenames versioned so older installe
 - `Ava-1.1.1-arm64.dmg`
 - `Ava-1.1.1-x64.dmg`
 - `AvaSetup-1.1.1.exe`
-- `AvaBridgeEA-1.1.1.mq5`
+- `AvaBridgeEA-1.11.mq5`
 
 ## macOS Signature & Notarization (Apple Developer)
 
