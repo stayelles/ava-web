@@ -818,7 +818,7 @@ function Pricing() {
     } catch {}
   }, [])
 
-  const plans: PlanDef[] = [
+  const allPlans: PlanDef[] = [
     {
       id: 'free',
       name: tl({ fr: 'Gratuit', en: 'Free', de: 'Kostenlos', tr: 'Ücretsiz', es: 'Gratis' }),
@@ -849,6 +849,8 @@ function Pricing() {
       accent: '#a78bfa', accentBg: 'rgba(167,139,250,0.06)', accentBorder: 'rgba(167,139,250,0.22)',
     },
   ]
+  const plans = allPlans.filter(p => p.id !== 'pro_starter')
+
 
   // ── Feature rows ─────────────────────────────────────────────────────────────
   // vals order: [Free, Pro Starter, Custom Simple, Custom Pro]
@@ -1115,7 +1117,7 @@ function Pricing() {
                         borderBottom: fi < features.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
                         borderTop: feat.isHeader ? `1px solid rgba(255,255,255,0.08)` : 'none',
                       }}>
-                      {renderVal(feat.vals[pi], feat.unit, plan)}
+                      {renderVal(feat.vals[allPlans.findIndex(p => p.id === plan.id)], feat.unit, plan)}
                     </div>
                   ))}
                 </div>
@@ -1215,8 +1217,9 @@ function Pricing() {
                           {/* Feature list */}
                           <ul className="px-5 py-3 space-y-0">
                             {features.map((feat, fi) => {
-                              const val = feat.vals[pi]
-                              if (val === false && pi > 0) return null
+                              const originalPi = allPlans.findIndex(p => p.id === plan.id)
+                              const val = feat.vals[originalPi]
+                              if (val === false && originalPi > 0) return null
                               return (
                                 <li key={fi} className={`flex items-center justify-between py-2 ${feat.isHeader ? 'pt-4' : ''}`}
                                   style={{
