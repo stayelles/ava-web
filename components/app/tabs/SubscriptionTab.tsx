@@ -1,6 +1,7 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, 
   Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock,
@@ -202,6 +203,9 @@ function VoiceQuotaBar({ user, pro }: { user: UserData; pro: boolean }) {
 }
 
 export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [targetPlan, setTargetPlan] = useState<any>(null)
+
   const pro = isPro(user)
   const custom = isCustomPlan(user)
   const { openCheckout } = usePaddle(onRefresh ? () => setTimeout(onRefresh!, 5000) : undefined)
@@ -564,7 +568,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                       </div>
                     ) : (
                       <button
-                        onClick={() => openCheckout(plan.priceId, user.email)}
+                        onClick={() => {
+                          setTargetPlan(plan)
+                          setShowUpgradeModal(true)
+                        }}
                         className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
                         style={{
                           background: plan.btnBg,
@@ -578,7 +585,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                           e.currentTarget.style.background = plan.btnBg as string
                         }}
                       >
-                        {plan.trial ? 'Commencer l\'essai' : 'Souscrire'}
+                        Changer de formule
                       </button>
                     )}
                   </div>
@@ -694,6 +701,78 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
           </p>
         </div>
       )}
+
+      {/* Upgrade / subscription change warning modal */}
+      <AnimatePresence>
+        {showUpgradeModal && targetPlan && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-6 md:p-8 shadow-2xl space-y-6"
+              style={{
+                boxShadow: `0 20px 50px -12px ${targetPlan.accentColor}30`,
+                borderColor: `${targetPlan.accentColor}40`
+              }}
+            >
+              {/* Top accent glow line */}
+              <div 
+                className="absolute top-0 left-0 right-0 h-[3px]"
+                style={{ background: `linear-gradient(90deg, transparent, ${targetPlan.accentColor}, transparent)` }}
+              />
+
+              <div className="flex items-start gap-4">
+                <div 
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${targetPlan.accentColor}15` }}
+                >
+                  <AlertCircle size={24} style={{ color: targetPlan.accentColor }} />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-black text-white tracking-tight">
+                    Changer de formule ({targetPlan.label})
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Abonnement actif : <span className="text-white font-bold">{activePlanLabel}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-white/5 border border-white/5 p-4 space-y-2.5">
+                <p className="text-xs text-slate-300 leading-relaxed font-semibold">
+                  Pour éviter les doubles facturations, Paddle ne permet pas de cumuler plusieurs abonnements séparés.
+                </p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Veuillez utiliser votre <strong>Portail Client Paddle</strong> pour modifier votre formule existante. La transition (upgrade ou downgrade) sera calculée au prorata automatiquement.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <a
+                  href="https://customer.paddle.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-xs text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg text-center"
+                  style={{ background: `linear-gradient(90deg, ${targetPlan.accentColor}dd, ${targetPlan.accentColor})` }}
+                  onClick={() => setShowUpgradeModal(false)}
+                >
+                  <CreditCard size={14} />
+                  Ouvrir le portail Paddle
+                  <ExternalLink size={10} className="opacity-80" />
+                </a>
+                <button
+                  onClick={() => setShowUpgradeModal(false)}
+                  className="px-5 py-3.5 rounded-2xl font-bold text-xs text-slate-400 hover:text-white transition-colors border border-white/5 hover:bg-white/5"
+                >
+                  Fermer
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

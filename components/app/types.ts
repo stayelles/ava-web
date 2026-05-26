@@ -5,6 +5,7 @@ export interface UserData {
   free_daily_credits: number
   subscription_source: string | null
   subscription_expires_at: string | null
+  paddle_subscription_id?: string | null
   subscription_plan?: string | null    // 'pro_starter' | 'custom_simple' | 'custom_pro' | legacy 'pro_plus' | 'custom'
   subscription_tier?: string | null   // RevenueCat: 'free' | 'starter' | 'pro' | 'ultra'
   text_messages_used?: number
