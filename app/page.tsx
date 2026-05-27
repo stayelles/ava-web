@@ -37,10 +37,10 @@ import { usePaddle } from "@/components/app/hooks/usePaddle";
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = {
-  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.3-arm64.dmg`,
-  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.3-x64.dmg`,
-  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.3.exe`,
-  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.11.mq5`,
+  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.4-arm64.dmg`,
+  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.4-x64.dmg`,
+  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.4.exe`,
+  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.12.mq5`,
 };
 
 // ─── Language context ──────────────────────────────────────────────────────────
@@ -1039,7 +1039,7 @@ function Pricing() {
             <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold"
               style={{ background: 'rgba(8,16,26,0.85)', border: '1px solid rgba(255,255,255,0.10)', color: '#34d399' }}>
               <Sparkles size={13} className="text-emerald-400" />
-              {tl({ fr: '3 jours d\'essai gratuit · Annulez à tout moment', en: '3-day free trial · Cancel anytime', de: '3 Tage gratis testen · Jederzeit kündbar', tr: '3 günlük ücretsiz deneme · İstediğiniz zaman iptal', es: '3 días de prueba gratis · Cancela cuando quieras' })}
+              {tl({ fr: '1 jour d\'essai gratuit · Annulez à tout moment', en: '1-day free trial · Cancel anytime', de: '1 Tag gratis testen · Jederzeit kündbar', tr: '1 günlük ücretsiz deneme · İstediğiniz zaman iptal', es: '1 día de prueba gratis · Cancela cuando quieras' })}
             </div>
           </div>
         </FadeUp>
