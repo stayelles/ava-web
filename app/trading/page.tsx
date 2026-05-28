@@ -21,9 +21,9 @@ import {
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const AVA_BRIDGE_EA_VERSION = "1.12";
 const DOWNLOADS = {
-  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.5-arm64.dmg`,
-  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.5-x64.dmg`,
-  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.5.exe`,
+  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.6-arm64.dmg`,
+  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.6-x64.dmg`,
+  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.6.exe`,
   ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.mq5`,
 };
 

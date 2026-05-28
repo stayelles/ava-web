@@ -37,9 +37,9 @@ import { usePaddle } from "@/components/app/hooks/usePaddle";
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = {
-  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.5-arm64.dmg`,
-  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.5-x64.dmg`,
-  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.5.exe`,
+  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.6-arm64.dmg`,
+  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.6-x64.dmg`,
+  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.6.exe`,
   ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.12.mq5`,
 };
 

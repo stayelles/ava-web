@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, 
   Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock,
   CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight
 } from 'lucide-react'
-import { PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_PRO, PADDLE_PRICE_CUSTOM_SIMPLE } from '../constants'
+import { PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_PRO, PADDLE_PRICE_CUSTOM_SIMPLE, SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
 import { usePaddle } from '../hooks/usePaddle'
@@ -205,6 +205,9 @@ function VoiceQuotaBar({ user, pro }: { user: UserData; pro: boolean }) {
 export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [targetPlan, setTargetPlan] = useState<any>(null)
+  const [billingLoading, setBillingLoading] = useState(false)
+  const [billingError, setBillingError] = useState('')
+  const [billingMessage, setBillingMessage] = useState('')
 
   const pro = isPro(user)
   const custom = isCustomPlan(user)
@@ -241,6 +244,58 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
       : currentPlan === 'pro_starter'
         ? 'pro_starter'
         : null
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('upgrade') === 'custom_pro' && activePlanKey === 'custom_simple') {
+      const plan = ALL_PLANS.find(p => p.key === 'custom_pro')
+      if (plan) {
+        setTargetPlan(plan)
+        setShowUpgradeModal(true)
+      }
+    }
+  }, [activePlanKey])
+
+  const callPaddleSubscription = async (action: 'portal' | 'upgrade', plan?: string) => {
+    setBillingLoading(true)
+    setBillingError('')
+    setBillingMessage('')
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/paddle-subscription`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({ action, user_id: user.id, target_plan: plan }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok || result.error || !result.ok) {
+        setBillingError(result.error ?? 'Action Paddle impossible pour le moment.')
+        return null
+      }
+      return result
+    } catch {
+      setBillingError('Erreur réseau. Réessayez dans un instant.')
+      return null
+    } finally {
+      setBillingLoading(false)
+    }
+  }
+
+  const openPaddlePortal = async () => {
+    const result = await callPaddleSubscription('portal')
+    if (result?.url) {
+      window.open(result.url, '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  const changePaddlePlan = async () => {
+    if (!targetPlan?.key) return
+    const result = await callPaddleSubscription('upgrade', targetPlan.key)
+    if (result?.ok) {
+      setBillingMessage(result.unchanged ? 'Cette formule est déjà active.' : `Formule mise à jour vers ${targetPlan.label}.`)
+      setShowUpgradeModal(false)
+      setTimeout(() => onRefresh?.(), 1000)
+    }
+  }
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-10 md:py-14 max-w-6xl mx-auto w-full space-y-10">
@@ -327,20 +382,30 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
                   {user.subscription_source === 'paddle' && (
                     <div className="flex-shrink-0">
-                      <a
-                        href="https://customer.paddle.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
+                        onClick={openPaddlePortal}
+                        disabled={billingLoading}
                         className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 shadow-xl"
                       >
                         <CreditCard size={14} />
-                        Gérer la facturation
+                        {billingLoading ? 'Ouverture...' : 'Gérer la facturation'}
                         <ExternalLink size={12} className="opacity-60" />
-                      </a>
+                      </button>
                     </div>
                   )}
                 </div>
               </motion.div>
+
+              {(billingError || billingMessage) && (
+                <div className={`rounded-2xl border px-4 py-3 text-xs font-semibold ${
+                  billingError
+                    ? 'border-rose-500/20 bg-rose-500/10 text-rose-200'
+                    : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-200'
+                }`}>
+                  {billingError || billingMessage}
+                </div>
+              )}
 
               {/* Custom Key Integration (Show alert if on custom plan) */}
               {custom && (
@@ -742,26 +807,38 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
               <div className="rounded-2xl bg-white/5 border border-white/5 p-4 space-y-2.5">
                 <p className="text-xs text-slate-300 leading-relaxed font-semibold">
-                  Pour éviter les doubles facturations, Paddle ne permet pas de cumuler plusieurs abonnements séparés.
+                  Ava va modifier votre abonnement Paddle existant, sans créer de deuxième abonnement.
                 </p>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Veuillez utiliser votre <strong>Portail Client Paddle</strong> pour modifier votre formule existante. La transition (upgrade ou downgrade) sera calculée au prorata automatiquement.
+                  La transition vers <strong>{targetPlan.label}</strong> est calculée au prorata par Paddle. Si vous êtes encore en période d&apos;essai, l&apos;abonnement reste attaché à la même subscription.
                 </p>
+                {billingError && (
+                  <p className="text-xs text-rose-300 leading-relaxed font-semibold">
+                    {billingError}
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                <a
-                  href="https://customer.paddle.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  disabled={billingLoading}
+                  onClick={changePaddlePlan}
                   className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-xs text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg text-center"
                   style={{ background: `linear-gradient(90deg, ${targetPlan.accentColor}dd, ${targetPlan.accentColor})` }}
-                  onClick={() => setShowUpgradeModal(false)}
                 >
                   <CreditCard size={14} />
-                  Ouvrir le portail Paddle
+                  {billingLoading ? 'Modification...' : `Passer à ${targetPlan.label}`}
+                </button>
+                <button
+                  type="button"
+                  disabled={billingLoading}
+                  onClick={openPaddlePortal}
+                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-xs text-slate-200 transition-colors border border-white/5 bg-white/5 hover:bg-white/10"
+                >
+                  Portail Paddle
                   <ExternalLink size={10} className="opacity-80" />
-                </a>
+                </button>
                 <button
                   onClick={() => setShowUpgradeModal(false)}
                   className="px-5 py-3.5 rounded-2xl font-bold text-xs text-slate-400 hover:text-white transition-colors border border-white/5 hover:bg-white/5"

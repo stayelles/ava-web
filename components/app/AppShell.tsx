@@ -36,6 +36,14 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
   const [activeTab, setActiveTab] = useState<AppTab>('voice')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const tab = params.get('tab') as AppTab | null
+    if (tab && ['voice', 'chat', 'profile', 'subscription', 'referral', 'settings'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [])
+
   // Detect browser language on mount (after hydration to avoid SSR mismatch)
   useEffect(() => {
     const saved = localStorage.getItem(LANG_STORAGE_KEY) as AppSettings['language'] | null
