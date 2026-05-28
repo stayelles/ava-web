@@ -19,11 +19,12 @@ import {
 } from "@/lib/landing-translations";
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
+const AVA_BRIDGE_EA_VERSION = "1.12";
 const DOWNLOADS = {
   macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.4-arm64.dmg`,
   macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.4-x64.dmg`,
   windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.4.exe`,
-  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.12.mq5`,
+  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.mq5`,
 };
 
 // ─── Language context ──────────────────────────────────────────────────────────
@@ -713,7 +714,7 @@ export default function TradingExplanationPage() {
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-sm shadow-xl shadow-rose-500/25 transition-all">
                     <Download size={16} />
-                    <span>Download AvaBridgeEA (v1.11)</span>
+                    <span>Download AvaBridgeEA (v{AVA_BRIDGE_EA_VERSION})</span>
                   </motion.a>
                   <motion.a href="/#pricing"
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
