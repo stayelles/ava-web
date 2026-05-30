@@ -32,15 +32,19 @@ import {
 import {
   PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_PRO,
   PADDLE_PRICE_CUSTOM_SIMPLE,
+  PADDLE_PRICE_CUSTOM_ULTRA,
+  PADDLE_PRICE_CUSTOM_MAX,
 } from "@/components/app/constants";
 import { usePaddle } from "@/components/app/hooks/usePaddle";
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
+const AVA_DESKTOP_VERSION = "1.1.12";
+const AVA_BRIDGE_EA_VERSION = "1.15";
 const DOWNLOADS = {
-  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.6-arm64.dmg`,
-  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.6-x64.dmg`,
-  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.6.exe`,
-  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.12.mq5`,
+  macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-arm64.dmg`,
+  macIntel: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-x64.dmg`,
+  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_VERSION}.exe`,
+  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.mq5`,
 };
 
 // ─── Language context ──────────────────────────────────────────────────────────
@@ -809,6 +813,183 @@ function Pricing() {
   const tl = useTl()
   const { openCheckout } = usePaddle()
 
+  const plans = [
+    {
+      id: 'custom_simple',
+      name: 'Custom Simple',
+      price: '$27.99',
+      priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
+      badge: tl({ fr: 'Départ prudent', en: 'Careful start', de: 'Vorsichtiger Start', tr: 'Dikkatli başlangıç', es: 'Inicio prudente' }),
+      description: tl({
+        fr: 'Pour tester Ava Trading sur petit capital avec des limites prudentes.',
+        en: 'For trying Ava Trading with a smaller capital and careful limits.',
+        de: 'Für Ava Trading mit kleinerem Kapital und vorsichtigen Limits.',
+        tr: 'Ava Trading’i küçük sermaye ve dikkatli limitlerle denemek için.',
+        es: 'Para probar Ava Trading con capital pequeño y límites prudentes.',
+      }),
+      features: [
+        'Capital conseillé : 200$ à 500$',
+        'Objectif/session : 2$ à 5$',
+        '1 renfort contrôlé maximum',
+        'Référence perte jusqu’à -250$',
+        'AvaBridge inclus',
+      ],
+    },
+    {
+      id: 'custom_pro',
+      name: 'Custom Pro',
+      price: '$99.99',
+      priceId: PADDLE_PRICE_CUSTOM_PRO,
+      badge: tl({ fr: 'Recommandé', en: 'Recommended', de: 'Empfohlen', tr: 'Önerilen', es: 'Recomendado' }),
+      description: tl({
+        fr: 'Pour capital intermédiaire avec plus de liberté sur les objectifs.',
+        en: 'For mid-sized capital with more freedom on session targets.',
+        de: 'Für mittleres Kapital mit mehr Freiheit bei Sitzungszielen.',
+        tr: 'Orta sermaye ve daha esnek seans hedefleri için.',
+        es: 'Para capital intermedio con más libertad en objetivos.',
+      }),
+      highlighted: true,
+      features: [
+        'Tout Custom Simple inclus',
+        'Capital conseillé : 500$ à 3 000$',
+        'Objectif/session : 2$ à 25$',
+        '2 renforts contrôlés maximum',
+        'Référence perte jusqu’à -500$',
+      ],
+    },
+    {
+      id: 'custom_ultra',
+      name: 'Custom Ultra',
+      price: '$399.99',
+      priceId: PADDLE_PRICE_CUSTOM_ULTRA,
+      badge: tl({ fr: 'Haute performance', en: 'High performance', de: 'Hohe Leistung', tr: 'Yüksek performans', es: 'Alto rendimiento' }),
+      description: tl({
+        fr: 'Pour gros scalping avec capital solide et suivi plus ambitieux.',
+        en: 'For stronger scalping with solid capital and more ambitious limits.',
+        de: 'Für stärkeres Scalping mit solidem Kapital und höheren Limits.',
+        tr: 'Güçlü sermaye ve daha iddialı limitlerle scalping için.',
+        es: 'Para scalping más fuerte con capital sólido y límites ambiciosos.',
+      }),
+      features: [
+        'Tout Custom Pro inclus',
+        'Capital conseillé : 3 000$ à 8 000$',
+        'Objectif/session : 2$ à 100$',
+        '3 renforts contrôlés maximum',
+        'Référence perte jusqu’à -1000$',
+      ],
+    },
+    {
+      id: 'custom_max',
+      name: 'Custom Max',
+      price: '$999.99',
+      priceId: PADDLE_PRICE_CUSTOM_MAX,
+      badge: tl({ fr: 'Capital élevé', en: 'Large capital', de: 'Hohes Kapital', tr: 'Yüksek sermaye', es: 'Capital alto' }),
+      description: tl({
+        fr: 'Le plan maximal pour capital important, limites hautes et accompagnement.',
+        en: 'The maximum plan for larger capital, higher limits and closer support.',
+        de: 'Der maximale Plan für großes Kapital, hohe Limits und engere Betreuung.',
+        tr: 'Büyük sermaye, yüksek limitler ve yakın destek için maksimum plan.',
+        es: 'El plan máximo para capital grande, límites altos y soporte cercano.',
+      }),
+      features: [
+        'Tout Custom Ultra inclus',
+        'Capital conseillé : 8 000$ à 20 000$+',
+        'Objectif/session illimité, minimum 2$',
+        '5 renforts contrôlés maximum',
+        'Profit min jusqu’à 10$ · lot max jusqu’à 1',
+      ],
+    },
+  ]
+
+  const onPlanClick = (priceId: string) => openCheckout(priceId)
+
+  return (
+    <section id="pricing" className="relative py-24 sm:py-32 overflow-hidden">
+      <DotGrid className="opacity-30" />
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
+        <FadeUp className="text-center mb-14">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">
+            {tl(T.pricing.label)}
+          </p>
+          <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">
+            {tl({ fr: 'Choisissez votre niveau Ava Trading', en: 'Choose your Ava Trading level', de: 'Wählen Sie Ihr Ava-Trading-Level', tr: 'Ava Trading seviyenizi seçin', es: 'Elija su nivel de Ava Trading' })}
+          </h2>
+          <p className="text-slate-400 text-lg mt-4 max-w-2xl mx-auto">
+            {tl({ fr: 'Quatre plans Custom, quatre niveaux de capital et de limites. Le prix final peut être affiché localement par Paddle au paiement.', en: 'Four Custom plans, four levels of capital and limits. Paddle may show the final localized price at checkout.', de: 'Vier Custom-Pläne, vier Kapital- und Limitstufen. Paddle kann den lokalisierten Endpreis im Checkout anzeigen.', tr: 'Dört Custom plan, dört sermaye ve limit seviyesi. Paddle ödeme sırasında yerel fiyatı gösterebilir.', es: 'Cuatro planes Custom, cuatro niveles de capital y límites. Paddle puede mostrar el precio local al pagar.' })}
+          </p>
+        </FadeUp>
+
+        <FadeUp delay={0.08}>
+          <div className="overflow-x-auto pb-3">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-w-0 lg:min-w-[1040px]">
+              {plans.map((plan, index) => (
+                <motion.button
+                  key={plan.id}
+                  type="button"
+                  onClick={() => onPlanClick(plan.priceId)}
+                  whileHover={{ y: -4 }}
+                  whileTap={{ scale: 0.985 }}
+                  className={cn(
+                    "group text-left rounded-[28px] border p-5 sm:p-6 min-h-[430px] flex flex-col transition-colors",
+                    plan.highlighted
+                      ? "border-rose-400/45 bg-[linear-gradient(145deg,rgba(244,63,94,0.16),rgba(15,23,42,0.72))] shadow-2xl shadow-rose-950/40"
+                      : "border-white/10 bg-white/[0.035] hover:border-rose-400/30 hover:bg-white/[0.055]"
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-rose-300">
+                        {plan.badge}
+                      </span>
+                      <h3 className="mt-5 text-xl font-black text-white">{plan.name}</h3>
+                    </div>
+                    <span className="rounded-2xl bg-white text-slate-950 px-4 py-2 text-xs font-black group-hover:bg-rose-400 group-hover:text-white transition-colors">
+                      {tl(T.pricing.cta)}
+                    </span>
+                  </div>
+
+                  <div className="mt-7">
+                    <span className="text-4xl sm:text-5xl font-black tracking-tight text-white">{plan.price}</span>
+                    <span className="ml-1 text-sm font-semibold text-slate-500">/mois</span>
+                    <p className="mt-4 min-h-[66px] text-sm leading-relaxed text-slate-400">{plan.description}</p>
+                  </div>
+
+                  <div className="my-6 h-px bg-white/[0.07]" />
+
+                  <ul className="space-y-3.5">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex gap-3 text-sm font-semibold leading-snug text-slate-300">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-rose-500/12 text-rose-300">
+                          <Check size={12} />
+                        </span>
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-auto pt-6 text-[11px] font-bold uppercase tracking-widest text-slate-600 group-hover:text-rose-300 transition-colors">
+                    {tl({ fr: 'Cliquer sur la carte pour choisir', en: 'Click the card to choose', de: 'Karte anklicken zum Auswählen', tr: 'Seçmek için karta tıklayın', es: 'Haga clic para elegir' })}
+                  </div>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        </FadeUp>
+
+        <FadeUp delay={0.22}>
+          <p className="text-center text-xs text-slate-600 mt-6 max-w-2xl mx-auto">
+            {tl({ fr: 'Ava Trading reste un outil à risque: choisissez un plan adapté à votre capital et ne tradez jamais un capital que vous ne pouvez pas perdre.', en: 'Ava Trading remains risky: choose a plan that matches your capital and never trade money you cannot afford to lose.', de: 'Ava Trading bleibt risikoreich: Wählen Sie einen Plan passend zu Ihrem Kapital.', tr: 'Ava Trading risk içerir: sermayenize uygun planı seçin.', es: 'Ava Trading implica riesgo: elija un plan adaptado a su capital.' })}
+          </p>
+        </FadeUp>
+      </div>
+    </section>
+  )
+}
+
+function PricingLegacy() {
+  const tl = useTl()
+  const { openCheckout } = usePaddle()
+
   // ── Currency detection ──────────────────────────────────────────────────────
   const [isEuro, setIsEuro] = useState(true)
   useEffect(() => {
@@ -903,7 +1084,7 @@ function Pricing() {
     },
     {
       label: tl({ fr: 'Ava Trading Desktop', en: 'Ava Trading Desktop', de: 'Ava Trading Desktop', tr: 'Ava Trading Desktop', es: 'Ava Trading Desktop' }),
-      sub: tl({ fr: 'agent MT5, bridge, apprentissage global', en: 'MT5 agent, bridge, global learning', de: 'MT5-Agent, Bridge, globales Lernen', tr: 'MT5 botu, bridge, global öğrenme', es: 'agent MT5, bridge, aprendizaje global' }),
+      sub: tl({ fr: 'agent MT5, bridge, apprentissage global', en: 'MT5 agent, bridge, global learning', de: 'MT5-Agent, Bridge, globales Lernen', tr: 'MT5 ajanı, bridge, global öğrenme', es: 'agent MT5, bridge, aprendizaje global' }),
       vals: [false, false, true, true], unit: '', isHeader: true,
     },
     {
@@ -1501,6 +1682,7 @@ function Footer() {
                 ["Mac (Apple Silicon)", DOWNLOADS.macArm],
                 ["Mac (Intel)", DOWNLOADS.macIntel],
                 ["Windows", DOWNLOADS.windows],
+                [`AvaBridgeEA ${AVA_BRIDGE_EA_VERSION}`, DOWNLOADS.ea],
               ].map(([l, h]) => (
                 <li key={l}><a href={h} className="text-white/35 hover:text-white text-sm transition-colors">{l}</a></li>
               ))}

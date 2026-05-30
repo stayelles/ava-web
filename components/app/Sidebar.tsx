@@ -88,7 +88,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
         })}
         <div className="pt-3 mt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <a
-            href="https://call-ava.com/downloads"
+            href="/downloads"
             target="_blank"
             rel="noopener noreferrer"
             className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors group"

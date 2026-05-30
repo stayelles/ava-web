@@ -19,11 +19,12 @@ import {
 } from "@/lib/landing-translations";
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
-const AVA_BRIDGE_EA_VERSION = "1.12";
+const AVA_DESKTOP_VERSION = "1.1.12";
+const AVA_BRIDGE_EA_VERSION = "1.15";
 const DOWNLOADS = {
-  macArm: `${DOWNLOAD_BASE_URL}/Ava-1.1.6-arm64.dmg`,
-  macIntel: `${DOWNLOAD_BASE_URL}/Ava-1.1.6-x64.dmg`,
-  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-1.1.6.exe`,
+  macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-arm64.dmg`,
+  macIntel: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-x64.dmg`,
+  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_VERSION}.exe`,
   ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.mq5`,
 };
 
@@ -234,7 +235,7 @@ const PAGE_T = {
   prereqSub: {
     en: "Before configuring and launching the agent, make sure you have prepared the following elements:",
     fr: "Avant de configurer et de lancer l'agent, assurez-vous d'avoir préparé les éléments suivants :",
-    de: "Stellen Sie vor dem Konfigurieren und Starten des Bots sicher, dass Sie folgende Elemente vorbereitet haben:",
+    de: "Stellen Sie vor dem Konfigurieren und Starten des Agenten sicher, dass Sie folgende Elemente vorbereitet haben:",
     tr: "Botu kurup başlatmadan önce aşağıdaki unsurları hazırladığınızdan emin olun:",
     es: "Antes de configurar y lanzar el agent, asegúrese de haber preparado los siguientes elementos:",
   },
@@ -408,7 +409,7 @@ const PAGE_T = {
       desc: {
         en: "Resets session statistics (peak profit, actual profit, trade counter) back to zero upon booting the agent. Simple users always resume from previous session counters. Pro users can toggle this option freely.",
         fr: "Remet à zéro les compteurs de session (plus haut pic, profit actuel, nombre de trades) à chaque démarrage du agent. Simple reprend toujours là où il s'est arrêté. Les membres Pro peuvent l'activer ou la désactiver librement.",
-        de: "Setzt die Sitzungsstatistiken (Peak, aktueller Gewinn, Trade-Zähler) beim Starten des Bots auf Null zurück. Simple-Nutzer setzen immer die vorherige Sitzung fort. Pro-Nutzer können diese Option frei wählen.",
+        de: "Setzt die Sitzungsstatistiken (Peak, aktueller Gewinn, Trade-Zähler) beim Starten des Agenten auf Null zurück. Simple-Nutzer setzen immer die vorherige Sitzung fort. Pro-Nutzer können diese Option frei wählen.",
         tr: "Agent başlatıldığında oturum istatistiklerini (en yüksek kâr, mevcut kâr, işlem sayacı) sıfırlar. Simple kullanıcıları her zaman önceki oturumdan devam eder. Pro kullanıcıları bu seçeneği serbestçe açıp kapatabilir.",
         es: "Restablece a cero las estadísticas de la sesión (pico de beneficio, beneficio actual, contador de operaciones) al iniciar el agent. Simple siempre continúa desde la sesión anterior. Los miembros Pro pueden activar o desactivar esta opción libremente.",
       }
@@ -475,7 +476,7 @@ const PAGE_T = {
       isNew: false
     },
     {
-      name: { en: "Max Stop Loss", fr: "Stop Loss Max", de: "Max. Stop-Loss", tr: "Maks. Stop Loss", es: "Stop Loss Máximo" },
+      name: { en: "Loss reference", fr: "Référence perte", de: "Verlustreferenz", tr: "Zarar referansı", es: "Referencia de pérdida" },
       simple: { en: "-$90 (Fixed)", fr: "-90$ (Fixe)", de: "-90$ (Fest)", tr: "-90$ (Sabit)", es: "-90$ (Fijo)" },
       pro: { en: "-$85 to -$300 (Custom)", fr: "-85$ à -300$ (Modifiable)", de: "-85$ bis -300$ (Anpassbar)", tr: "-85$ ile -300$ (Özel)", es: "-85$ a -300$ (Modificable)" },
       isNew: false
@@ -519,7 +520,7 @@ const PAGE_T = {
       },
       a: {
         en: "The agent locks itself primarily when the Giveback threshold is triggered. If the session profit drops by the Giveback value from its peak, the agent secures the remaining profits and locks further entries. It also stops trading if the maximum stop loss is hit, if there's insufficient volatility, or if the market is outside of active scalping hours.",
-        fr: "L'agent se verrouille principalement lorsque le seuil de Giveback est franchi. Si le gain retombe depuis le sommet de la valeur du Giveback, l'agent fige la session pour sécuriser vos gains. Il s'arrête aussi si le Stop Loss Max est touché, en cas de volatilité insuffisante, ou si le marché est hors des heures propices de scalping.",
+        fr: "L'agent se verrouille principalement lorsque le seuil de Giveback est franchi. Si le gain retombe depuis le sommet de la valeur du Giveback, l'agent fige la session pour sécuriser vos gains. La référence perte reste un repère interne pour les renforts, sans stop loss broker envoyé à MT5.",
         de: "Der Agent sperrt sich hauptsächlich, wenn die Giveback-Schwelle erreicht wird. Wenn der Gewinn seit dem Höchststand um den Giveback-Wert fällt, friert der Agent die Sitzung ein, um Gewinne zu sichern. Er stoppt auch, wenn der maximale Stop-Loss erreicht ist, bei mangelnder Volatilität oder außerhalb der Handelszeiten.",
         tr: "Agent, öncelikle Giveback eşiği aşıldığında kendini kilitler. Oturum kârı zirve noktasından Giveback değeri kadar düşerse, agent kazançları korumak için oturumu dondurur. Ayrıca, Maks. Stop Loss seviyesine ulaşıldığında, yetersiz oynaklık durumunda veya piyasa aktif scalping saatlerinin dışındaysa işlem yapmayı durdurur.",
         es: "El agent se bloquea principalmente cuando se alcanza el umbral de Giveback. Si el beneficio de la sesión cae desde el pico por el valor del Giveback, el agent congela la sesión para asegurar sus ganancias. También se detiene si se toca el Stop Loss Máximo, si no hay suficiente volatilidad o si el mercado está fuera del horario de scalping.",
@@ -543,17 +544,17 @@ const PAGE_T = {
     },
     {
       q: {
-        en: "Why don't I see Stop Loss (SL) or Take Profit (TP) orders in MetaTrader 5?",
-        fr: "Pourquoi le SL et le TP ne s'affichent pas sur mon MetaTrader 5 ?",
+        en: "Why don't I see Stop Loss (SL) orders in MetaTrader 5?",
+        fr: "Pourquoi le SL ne s'affiche pas sur mon MetaTrader 5 ?",
         de: "Warum sehe ich keine Stop-Loss (SL) oder Take-Profit (TP) Orders in MT5?",
         tr: "MetaTrader 5'te neden Stop Loss (SL) veya Take Profit (TP) emirlerini göremiyorum?",
         es: "¿Por qué no se muestran el SL y el TP en mi MetaTrader 5?",
       },
       a: {
-        en: "Ava Trading uses internal 'soft' Stop Loss and Take Profit levels managed directly by our AI engine. Since orders are monitored and closed dynamically by the agent, they are not registered on the broker's books. This prevents brokers from hunting your stops and protects our proprietary algorithms from reverse-engineering.",
-        fr: "Ava Trading utilise des Stop Loss et Take Profit 'soft' gérés en interne par notre moteur IA. Comme les ordres sont surveillés et clôturés dynamiquement par l'agent, ils ne sont pas visibles chez le courtier. Cela évite la chasse aux stops par les brokers et protège notre technologie contre le reverse-engineering.",
+        en: "Ava Trading no longer sends broker Stop Loss orders to MT5. The Take Profit is still sent to MT5 from the user's Profit min $ setting, while the loss reference stays internal for recovery logic.",
+        fr: "Ava Trading n'envoie plus de Stop Loss broker à MT5. Le Take Profit reste bien envoyé à MT5 selon le réglage Profit min $, tandis que la référence perte reste interne pour la logique de renfort.",
         de: "Ava Trading verwendet interne, 'weiche' Stop-Loss- und Take-Profit-Level, die direkt von unserer KI verwaltet werden. Da die Orders vom Agent dynamisch überwacht und geschlossen werden, sind sie beim Broker nicht sichtbar. Dies verhindert Stop-Hunting durch Broker und schützt unsere Technologie vor Reverse-Engineering.",
-        tr: "Ava Trading, doğrudan yapay zeka motorumuz tarafından yönetilen dahili 'esnek' Stop Loss ve Take Profit seviyeleri kullanır. İşlemler agent tarafından dinamik olarak izlendiği ve kapatıldığı için aracı kurumda görünmezler. Bu, aracı kurumların stop seviyelerinizi hedeflemesini (stop hunting) önler ve teknolojimizi tersine mühendisliğe karşı korur.",
+        tr: "Ava Trading artık MT5'e broker Stop Loss emri göndermez. Take Profit, kullanıcının Profit min $ ayarına göre MT5'e gönderilmeye devam eder; zarar referansı ise renfort mantığı için içeride kalır.",
         es: "Ava Trading utiliza niveles de Stop Loss y Take Profit 'soft' gestionados internamente por nuestro motor de IA. Como las órdenes son monitoreadas y cerradas dinámicamente por el agent, no son visibles para el bróker. Esto evita la caza de stops por parte de los brókers y protege nuestra tecnología contra la ingeniería inversa.",
       }
     }
@@ -604,6 +605,7 @@ function Footer() {
                 ["Mac (Apple Silicon)", DOWNLOADS.macArm],
                 ["Mac (Intel)", DOWNLOADS.macIntel],
                 ["Windows", DOWNLOADS.windows],
+                [`AvaBridgeEA ${AVA_BRIDGE_EA_VERSION}`, DOWNLOADS.ea],
               ].map(([l, h]) => (
                 <li key={l}><a href={h} className="text-white/35 hover:text-white text-sm transition-colors">{l}</a></li>
               ))}
@@ -674,6 +676,32 @@ export default function TradingExplanationPage() {
   };
 
   const tl = (obj: TL): string => obj[lang] ?? obj.en;
+  const tradingPlans = [
+    {
+      name: "Custom Simple",
+      price: "$27.99",
+      tag: "Prudent",
+      features: ["Capital : 200$ à 500$", "Objectif/session : 2$ à 5$", "1 renfort contrôlé", "Référence perte jusqu’à -250$"],
+    },
+    {
+      name: "Custom Pro",
+      price: "$99.99",
+      tag: "Recommandé",
+      features: ["Capital : 500$ à 3 000$", "Objectif/session : 2$ à 25$", "2 renforts contrôlés", "Référence perte jusqu’à -500$"],
+    },
+    {
+      name: "Custom Ultra",
+      price: "$399.99",
+      tag: "Performance",
+      features: ["Capital : 3 000$ à 8 000$", "Objectif/session : 2$ à 100$", "3 renforts contrôlés", "Référence perte jusqu’à -1000$"],
+    },
+    {
+      name: "Custom Max",
+      price: "$999.99",
+      tag: "Capital élevé",
+      features: ["Capital : 8 000$ à 20 000$+", "Objectif/session illimité", "5 renforts contrôlés", "Profit min jusqu’à 10$ · lot max 1"],
+    },
+  ];
 
   return (
     <LangCtx.Provider value={{ lang, setLang: handleSetLang }}>
@@ -684,8 +712,9 @@ export default function TradingExplanationPage() {
 
         {/* ─── Hero Section ─── */}
         <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(225,29,72,0.08),transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(59,130,246,0.08),transparent_50%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_24%,rgba(244,63,94,0.14),transparent_42%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_80%,rgba(148,163,184,0.08),transparent_46%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.2)_0%,rgba(2,6,23,0.92)_100%)]" />
           <div className="absolute inset-0 pointer-events-none"
             style={{
               backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)",
@@ -702,7 +731,7 @@ export default function TradingExplanationPage() {
                 <h1 className="text-5xl md:text-7xl font-black tracking-tight text-white mb-6 leading-tight">
                   {tl(PAGE_T.heroH1)}
                   <br />
-                  <span className="bg-gradient-to-r from-rose-400 via-rose-500 to-blue-500 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-rose-300 via-rose-500 to-white bg-clip-text text-transparent">
                     {tl(PAGE_T.heroH2)}
                   </span>
                 </h1>
@@ -723,6 +752,56 @@ export default function TradingExplanationPage() {
                   </motion.a>
                 </div>
               </FadeUp>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-16 border-t border-white/[0.06] relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(244,63,94,0.09),transparent_40%)]" />
+          <div className="relative max-w-7xl mx-auto px-6">
+            <FadeUp className="text-center mb-10">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">Plans Ava Trading</p>
+              <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight">
+                Quatre niveaux selon votre capital
+              </h2>
+              <p className="text-slate-400 text-base mt-4 max-w-2xl mx-auto">
+                Chaque plan augmente les limites utiles de scalping: objectif par session, renforts, référence perte et plage de capital recommandée.
+              </p>
+            </FadeUp>
+            <div className="overflow-x-auto pb-3">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-w-0 lg:min-w-[1040px]">
+                {tradingPlans.map((plan, index) => (
+                  <FadeUp key={plan.name} delay={index * 0.05}>
+                    <a
+                      href="/#pricing"
+                      className="group block h-full rounded-[28px] border border-white/10 bg-white/[0.035] p-5 transition-colors hover:border-rose-400/35 hover:bg-white/[0.055]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <span className="inline-flex rounded-full bg-rose-500/10 border border-rose-500/20 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-rose-300">
+                            {plan.tag}
+                          </span>
+                          <h3 className="mt-5 text-xl font-black text-white">{plan.name}</h3>
+                        </div>
+                        <ArrowRight size={18} className="text-slate-600 transition-colors group-hover:text-rose-300" />
+                      </div>
+                      <div className="mt-7">
+                        <span className="text-4xl font-black text-white">{plan.price}</span>
+                        <span className="ml-1 text-sm font-semibold text-slate-500">/mois</span>
+                      </div>
+                      <div className="my-6 h-px bg-white/[0.07]" />
+                      <ul className="space-y-3">
+                        {plan.features.map((feature) => (
+                          <li key={feature} className="flex gap-3 text-sm font-semibold text-slate-300">
+                            <Check size={14} className="mt-0.5 shrink-0 text-rose-300" />
+                            <span>{feature}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </a>
+                  </FadeUp>
+                ))}
+              </div>
             </div>
           </div>
         </section>

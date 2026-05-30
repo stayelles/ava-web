@@ -617,7 +617,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch max-w-4xl mx-auto w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch max-w-7xl mx-auto w-full">
               {ALL_PLANS.filter(p => p.key !== 'pro_starter').map((plan, index) => (
                 <motion.div
                   key={plan.key}
@@ -736,7 +736,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         <div className="space-y-12">
           
           {/* Main Grid of Plans */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch max-w-4xl mx-auto w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch max-w-7xl mx-auto w-full">
             {ALL_PLANS.filter(p => p.key !== 'pro_starter').map((plan, index) => (
               <motion.div
                 key={plan.key}
