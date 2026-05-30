@@ -38,8 +38,9 @@ const ALL_PLANS = [
     description: 'Pour démarrer avec Ava Trading sur petit capital, avec une configuration prudente.',
     features: [
       'Capital conseillé : 200$ à 500$',
-      'Ava Trading Desktop inclus',
-      'Paramètres de risque prudents',
+      'Objectif/session : 2$ à 5$',
+      '1 renfort contrôlé maximum',
+      'Référence perte jusqu’à -250$',
       'AvaBridge inclus',
       'Clé API Gemini personnelle',
       'Support standard',
@@ -89,8 +90,9 @@ const ALL_PLANS = [
     description: 'Pour capital intermédiaire, avec plus de liberté sur les objectifs et réglages trading.',
     features: [
       'Capital conseillé : 500$ à 3 000$',
-      'Objectifs et lots plus flexibles',
-      'Renforts avancés',
+      'Objectif/session : 2$ à 25$',
+      '2 renforts contrôlés maximum',
+      'Référence perte jusqu’à -500$',
       'AvaBridge auto-installable',
       'Clé API Gemini personnelle',
       'Support prioritaire',
@@ -115,9 +117,9 @@ const ALL_PLANS = [
     description: 'Pour gros scalping avec capital solide, suivi plus strict et stratégie plus ambitieuse.',
     features: [
       'Capital conseillé : 3 000$ à 8 000$',
-      'Objectifs journaliers étendus',
-      'Plus de positions simultanées',
-      'Réglages trading avancés',
+      'Objectif/session : 2$ à 100$',
+      '3 renforts contrôlés maximum',
+      'Référence perte jusqu’à -1000$',
       'Diagnostic AvaBridge prioritaire',
       'Support très prioritaire',
     ]
@@ -141,9 +143,10 @@ const ALL_PLANS = [
     description: 'Le plan maximal pour capital important, avec accompagnement et limites sur mesure.',
     features: [
       'Capital conseillé : 8 000$ à 20 000$+',
-      'Objectifs élevés ou personnalisés',
-      'Configuration trading premium',
-      'Priorité sur les diagnostics',
+      'Objectif/session illimité, minimum 2$',
+      '5 renforts contrôlés maximum',
+      'Référence perte sans plafond',
+      'Profit min jusqu’à 10$ et lot max jusqu’à 1',
       'Accompagnement direct',
       'Support maximal',
     ]

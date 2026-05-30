@@ -23,12 +23,12 @@ export const PADDLE_CLIENT_TOKEN = 'live_3f4f6ba16c07c4dfd3064cf21fd'
 // ── Ava Pro plans ─────────────────────────────────────────────────────────────
 export const PADDLE_PRICE_PRO_STARTER = 'pri_01knq7394vkf1g4vf67dvk4fn4'  // 39,99€/mois — Pro Starter
 export const PADDLE_PRICE_CUSTOM_PRO   = 'pri_01kntnb5pnck8pc5vcb31z0en7'  // 99,99$/mois — Custom Pro
-export const PADDLE_PRICE_CUSTOM_ULTRA = ''                                // 399,99$/mois — Custom Ultra (à renseigner)
-export const PADDLE_PRICE_CUSTOM_MAX   = ''                                // 999,99$/mois — Custom Max (à renseigner)
+export const PADDLE_PRICE_CUSTOM_ULTRA = 'pri_01kssqd2yckjv3rx33j2kjvnq7'  // 399,99$/mois — Custom Ultra
+export const PADDLE_PRICE_CUSTOM_MAX   = 'pri_01kswjq9qc93fzdcffhbw3f972'  // 999,99$/mois — Custom Max
 export const PADDLE_PRICE_PRO_PLUS     = PADDLE_PRICE_CUSTOM_PRO            // alias legacy
 
 // ── Ava Custom plan ───────────────────────────────────────────────────────────
-export const PADDLE_PRICE_CUSTOM_SIMPLE = 'pri_01kntn3ymketw85ga6fr03q6f5'  // 15 000 FCFA/mois ≈ 22,90€ — Custom Simple
+export const PADDLE_PRICE_CUSTOM_SIMPLE = 'pri_01kntn3ymketw85ga6fr03q6f5'  // 27,99$/mois — Custom Simple
 export const PADDLE_PRICE_CUSTOM = PADDLE_PRICE_CUSTOM_SIMPLE              // alias legacy
 
 // ── Gumroad (legacy / fallback) ───────────────────────────────────────────────
