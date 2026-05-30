@@ -38,11 +38,11 @@ export const T = {
     h1:       { en: 'AI that actually', fr: 'Une IA qui', de: 'KI, die wirklich', tr: 'Gerçekten', es: 'IA que realmente' } as TL,
     h2:       { en: 'does things', fr: 'agit vraiment', de: 'handelt', tr: 'harekete geçer', es: 'actúa' } as TL,
     subtitle: {
-      en: 'Not just a chatbot. Ava understands you, acts on your behalf, and gets smarter every day.',
-      fr: 'Pas juste un chatbot. Ava vous comprend, agit pour vous et s\'améliore chaque jour.',
-      de: 'Nicht nur ein Chatbot. Ava versteht Sie, handelt in Ihrem Namen und wird täglich klüger.',
-      tr: 'Sadece bir chatbot değil. Ava sizi anlıyor, sizin adınıza hareket ediyor ve her gün daha akıllı oluyor.',
-      es: 'No solo un chatbot. Ava te entiende, actúa en tu nombre y se vuelve más inteligente cada día.',
+      en: 'Not just a assistant IA. Ava understands you, acts on your behalf, and gets smarter every day.',
+      fr: 'Pas juste un assistant IA. Ava vous comprend, agit pour vous et s\'améliore chaque jour.',
+      de: 'Nicht nur ein Assistant IA. Ava versteht Sie, handelt in Ihrem Namen und wird täglich klüger.',
+      tr: 'Sadece bir assistant IA değil. Ava sizi anlıyor, sizin adınıza hareket ediyor ve her gün daha akıllı oluyor.',
+      es: 'No solo un assistant IA. Ava te entiende, actúa en tu nombre y se vuelve más inteligente cada día.',
     } as TL,
     cards: [
       {

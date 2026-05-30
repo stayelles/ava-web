@@ -7,7 +7,7 @@ import {
   Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock,
   CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight
 } from 'lucide-react'
-import { PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_PRO, PADDLE_PRICE_CUSTOM_SIMPLE, SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
+import { PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_MAX, PADDLE_PRICE_CUSTOM_PRO, PADDLE_PRICE_CUSTOM_SIMPLE, PADDLE_PRICE_CUSTOM_ULTRA, SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
 import { usePaddle } from '../hooks/usePaddle'
@@ -23,7 +23,7 @@ const ALL_PLANS = [
   {
     key: 'custom_simple',
     label: 'Custom Simple',
-    price: '22,90€',
+    price: '$27.99',
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
     popular: false,
@@ -35,14 +35,14 @@ const ALL_PLANS = [
     btnBg: 'rgba(99, 102, 241, 0.08)',
     btnHoverBg: 'rgba(99, 102, 241, 0.15)',
     btnColor: '#818cf8',
-    description: 'Utilisez votre propre clé API Gemini. Idéal pour un usage personnel et intensif.',
+    description: 'Pour démarrer avec Ava Trading sur petit capital, avec une configuration prudente.',
     features: [
-      'Voix & Texte Illimités',
-      'Recherche Web Google Illimitée',
-      'Analyse d\'images Illimitée',
-      'Contrôle Mac/PC & Vision écran',
-      'Module Ava Trading inclus',
+      'Capital conseillé : 200$ à 500$',
+      'Ava Trading Desktop inclus',
+      'Paramètres de risque prudents',
+      'AvaBridge inclus',
       'Clé API Gemini personnelle',
+      'Support standard',
     ]
   },
   {
@@ -73,7 +73,7 @@ const ALL_PLANS = [
   {
     key: 'custom_pro',
     label: 'Custom Pro',
-    price: '99,99€',
+    price: '$99.99',
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_PRO,
     popular: true,
@@ -86,14 +86,66 @@ const ALL_PLANS = [
     btnBg: 'linear-gradient(90deg, #f43f5e 0%, #e11d48 100%)',
     btnHoverBg: 'linear-gradient(90deg, #fb7185 0%, #f43f5e 100%)',
     btnColor: '#fff',
-    description: 'La puissance absolue pour professionnels avec fonctionnalités de trading avancées.',
+    description: 'Pour capital intermédiaire, avec plus de liberté sur les objectifs et réglages trading.',
     features: [
-      '∞ Voix & Texte Illimités',
-      '∞ Recherche Web Illimitée',
-      '∞ Analyse d\'images Illimitée',
-      '∞ Contrôle Mac/PC & Vision',
-      'Ava Trading Desktop inclus',
+      'Capital conseillé : 500$ à 3 000$',
+      'Objectifs et lots plus flexibles',
+      'Renforts avancés',
+      'AvaBridge auto-installable',
       'Clé API Gemini personnelle',
+      'Support prioritaire',
+    ]
+  },
+  {
+    key: 'custom_ultra',
+    label: 'Custom Ultra',
+    price: '$399.99',
+    per: '/mois',
+    priceId: PADDLE_PRICE_CUSTOM_ULTRA,
+    popular: true,
+    trial: null,
+    badge: 'Haute performance',
+    accentColor: '#e11d48',
+    bg: 'linear-gradient(135deg, rgba(225, 29, 72, 0.06) 0%, rgba(99, 102, 241, 0.02) 100%)',
+    border: 'rgba(225, 29, 72, 0.28)',
+    glow: 'rgba(225, 29, 72, 0.18)',
+    btnBg: 'linear-gradient(90deg, #f43f5e 0%, #e11d48 100%)',
+    btnHoverBg: 'linear-gradient(90deg, #fb7185 0%, #f43f5e 100%)',
+    btnColor: '#fff',
+    description: 'Pour gros scalping avec capital solide, suivi plus strict et stratégie plus ambitieuse.',
+    features: [
+      'Capital conseillé : 3 000$ à 8 000$',
+      'Objectifs journaliers étendus',
+      'Plus de positions simultanées',
+      'Réglages trading avancés',
+      'Diagnostic AvaBridge prioritaire',
+      'Support très prioritaire',
+    ]
+  },
+  {
+    key: 'custom_max',
+    label: 'Custom Max',
+    price: '$999.99',
+    per: '/mois',
+    priceId: PADDLE_PRICE_CUSTOM_MAX,
+    popular: false,
+    trial: null,
+    badge: 'Capital élevé',
+    accentColor: '#f43f5e',
+    bg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(15, 23, 42, 0.18) 100%)',
+    border: 'rgba(244, 63, 94, 0.35)',
+    glow: 'rgba(244, 63, 94, 0.24)',
+    btnBg: 'linear-gradient(90deg, #e11d48 0%, #be123c 100%)',
+    btnHoverBg: 'linear-gradient(90deg, #fb7185 0%, #e11d48 100%)',
+    btnColor: '#fff',
+    description: 'Le plan maximal pour capital important, avec accompagnement et limites sur mesure.',
+    features: [
+      'Capital conseillé : 8 000$ à 20 000$+',
+      'Objectifs élevés ou personnalisés',
+      'Configuration trading premium',
+      'Priorité sur les diagnostics',
+      'Accompagnement direct',
+      'Support maximal',
     ]
   }
 ]
@@ -125,6 +177,29 @@ const CUSTOM_FEATURES = [
   { icon: Key, text: 'Votre propre clé API Gemini (Google AI Studio)', val: 'Requis' },
   { icon: Lock, text: 'Clé chiffrée de bout en bout avec votre PIN', val: 'Chiffré' },
 ]
+
+const planLabels: Record<string, string> = {
+  pro_starter: 'Pro Starter',
+  custom: 'Custom Simple',
+  custom_starter: 'Custom Simple',
+  custom_simple: 'Custom Simple',
+  pro_plus: 'Custom Pro',
+  custom_pro: 'Custom Pro',
+  custom_ultra: 'Custom Ultra',
+  custom_max: 'Custom Max',
+}
+
+function normalizePlanKey(plan: string | null | undefined, custom: boolean): string | null {
+  if (plan === 'custom' || plan === 'custom_starter') return 'custom_simple'
+  if (plan === 'pro_plus') return 'custom_pro'
+  if (plan && planLabels[plan]) return plan
+  if (custom) return 'custom_simple'
+  return null
+}
+
+function isPriceConfigured(priceId: string) {
+  return priceId.startsWith('pri_')
+}
 
 function VoiceQuotaBar({ user, pro }: { user: UserData; pro: boolean }) {
   const used = voiceMinutesUsed(user)
@@ -218,32 +293,24 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     user.subscription_source !== 'gumroad' &&
     user.subscription_source !== 'paddle'
 
-  const currentPlan = pro ? (user.subscription_plan ?? 'pro_starter') : null
-  const activePlanLabel = currentPlan === 'custom_pro' || currentPlan === 'pro_plus'
-    ? 'Custom Pro'
-    : currentPlan === 'custom_simple' || currentPlan === 'custom' || currentPlan === 'custom_starter'
-      ? 'Custom Simple'
-      : currentPlan === 'pro_starter'
-        ? 'Pro Starter'
-        : null
+  const currentPlan = normalizePlanKey(user.subscription_plan, custom)
+  const activePlanLabel = currentPlan ? planLabels[currentPlan] ?? null : null
 
   const isSubscribed = pro || custom
 
   // Define accent colors for current plan
   const planAccent = activePlanLabel === 'Custom Pro'
     ? '#e11d48'
+    : activePlanLabel === 'Custom Ultra'
+      ? '#e11d48'
+      : activePlanLabel === 'Custom Max'
+        ? '#f43f5e'
     : activePlanLabel === 'Custom Simple'
       ? '#6366f1'
       : '#f43f5e'
 
   // Determine active plan key
-  const activePlanKey = currentPlan === 'custom_pro' || currentPlan === 'pro_plus'
-    ? 'custom_pro'
-    : currentPlan === 'custom_simple' || currentPlan === 'custom' || currentPlan === 'custom_starter' || (custom && !activePlanLabel)
-      ? 'custom_simple'
-      : currentPlan === 'pro_starter'
-        ? 'pro_starter'
-        : null
+  const activePlanKey = currentPlan
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -634,10 +701,12 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                     ) : (
                       <button
                         onClick={() => {
+                          if (!isPriceConfigured(plan.priceId)) return
                           setTargetPlan(plan)
                           setShowUpgradeModal(true)
                         }}
-                        className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                        disabled={!isPriceConfigured(plan.priceId)}
+                        className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 cursor-pointer"
                         style={{
                           background: plan.btnBg,
                           color: plan.btnColor,
@@ -650,7 +719,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                           e.currentTarget.style.background = plan.btnBg as string
                         }}
                       >
-                        Changer de formule
+                        {isPriceConfigured(plan.priceId) ? 'Changer de formule' : 'Prix Paddle en attente'}
                       </button>
                     )}
                   </div>
@@ -736,8 +805,9 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 {/* Subscribing CTA Button */}
                 <div className="mt-8 pt-4">
                   <button
-                    onClick={() => openCheckout(plan.priceId, user.email)}
-                    className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                    onClick={() => isPriceConfigured(plan.priceId) && openCheckout(plan.priceId, user.email)}
+                    disabled={!isPriceConfigured(plan.priceId)}
+                    className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 cursor-pointer"
                     style={{
                       background: plan.btnBg,
                       color: plan.btnColor,
@@ -754,7 +824,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                       e.currentTarget.style.background = plan.btnBg as string
                     }}
                   >
-                    {plan.trial ? 'Commencer l\'essai' : 'Souscrire'}
+                    {isPriceConfigured(plan.priceId) ? (plan.trial ? 'Commencer l\'essai' : 'Souscrire') : 'Prix Paddle en attente'}
                   </button>
                 </div>
               </motion.div>

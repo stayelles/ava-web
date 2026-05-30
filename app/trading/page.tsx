@@ -188,18 +188,18 @@ function Navbar() {
 
 const PAGE_T = {
   metaTitle: {
-    en: "Ava Trading — Automatic IA Scalping Bot for MT5",
-    fr: "Ava Trading — Bot de Scalping IA Automatique pour MT5",
-    de: "Ava Trading — Automatischer KI-Scalping-Bot für MT5",
+    en: "Ava Trading — Automatic IA Scalping Agent for MT5",
+    fr: "Ava Trading — Agent de Scalping IA Automatique pour MT5",
+    de: "Ava Trading — Automatischer KI-Scalping-Agent für MT5",
     tr: "Ava Trading — MT5 için Otomatik Yapay Zeka Scalping Botu",
-    es: "Ava Trading — Bot de Scalping IA Automático para MT5",
+    es: "Ava Trading — Agent de Scalping IA Automático para MT5",
   },
   heroBadge: {
-    en: "Algorithmic Scalping Bot",
-    fr: "Bot de Scalping Algorithmique",
-    de: "Algorithmischer Scalping-Bot",
+    en: "Algorithmic Scalping Agent",
+    fr: "Agent de Scalping Algorithmique",
+    de: "Algorithmischer Scalping-Agent",
     tr: "Algoritmik Scalping Botu",
-    es: "Bot de Scalping Algorítmico",
+    es: "Agent de Scalping Algorítmico",
   },
   heroH1: {
     en: "Ava Trading",
@@ -232,21 +232,21 @@ const PAGE_T = {
     es: "Requisitos para Ava Trading",
   },
   prereqSub: {
-    en: "Before configuring and launching the bot, make sure you have prepared the following elements:",
-    fr: "Avant de configurer et de lancer le bot, assurez-vous d'avoir préparé les éléments suivants :",
+    en: "Before configuring and launching the agent, make sure you have prepared the following elements:",
+    fr: "Avant de configurer et de lancer l'agent, assurez-vous d'avoir préparé les éléments suivants :",
     de: "Stellen Sie vor dem Konfigurieren und Starten des Bots sicher, dass Sie folgende Elemente vorbereitet haben:",
     tr: "Botu kurup başlatmadan önce aşağıdaki unsurları hazırladığınızdan emin olun:",
-    es: "Antes de configurar y lanzar el bot, asegúrese de haber preparado los siguientes elementos:",
+    es: "Antes de configurar y lanzar el agent, asegúrese de haber preparado los siguientes elementos:",
   },
   prereqs: [
     {
       title: { en: "MT5 Demo Account", fr: "Compte démo MT5", de: "MT5-Demo-Konto", tr: "MT5 Demo Hesabı", es: "Cuenta Demo MT5" },
       desc: {
-        en: "A MetaTrader 5 account is required. We highly recommend starting with a Deriv Demo account to familiarize yourself with the bot's speed.",
-        fr: "Un compte MetaTrader 5 est nécessaire. Nous recommandons vivement de commencer sur un compte Démo Deriv pour se familiariser avec la vitesse du bot.",
+        en: "A MetaTrader 5 account is required. We highly recommend starting with a Deriv Demo account to familiarize yourself with the agent's speed.",
+        fr: "Un compte MetaTrader 5 est nécessaire. Nous recommandons vivement de commencer sur un compte Démo Deriv pour se familiariser avec la vitesse du agent.",
         de: "Ein MetaTrader 5-Konto ist erforderlich. Wir empfehlen dringend, mit einem Deriv-Demo-Konto zu beginnen, um sich mit der Geschwindigkeit vertraut zu machen.",
         tr: "Bir MetaTrader 5 hesabı gereklidir. Botun hızına alışmak için kesinlikle bir Deriv Demo hesabı ile başlamanızı öneririz.",
-        es: "Se requiere una cuenta de MetaTrader 5. Recomendamos encarecidamente comenzar con una cuenta demo de Deriv para familiarizarse con la velocidad del bot.",
+        es: "Se requiere una cuenta de MetaTrader 5. Recomendamos encarecidamente comenzar con una cuenta demo de Deriv para familiarizarse con la velocidad del agent.",
       }
     },
     {
@@ -331,7 +331,7 @@ const PAGE_T = {
       }
     },
     {
-      title: { en: "Adjust & Launch Bot", fr: "Ajuster & Lancer le bot", de: "Anpassen & Bot starten", tr: "Ayarla ve Botu Başlat", es: "Ajustar y Lanzar el Bot" },
+      title: { en: "Adjust & Launch Agent", fr: "Ajuster & Lancer l'agent", de: "Agent anpassen & starten", tr: "Ayarla ve ajanı başlat", es: "Ajustar y lanzar el agente" },
       desc: {
         en: "If you have Custom Pro, set your parameters (Lot, Giveback, SL, TP). Press 'Start' to let the AI take over.",
         fr: "Si vous avez le plan Custom Pro, ajustez vos paramètres (Lot, Giveback, SL, TP). Appuyez sur 'Démarrer' pour laisser l'IA agir.",
@@ -395,33 +395,33 @@ const PAGE_T = {
       name: "Giveback $",
       icon: Shield,
       desc: {
-        en: "Smart profit protection. If the session profit reaches a peak (e.g. +$179) and then drops by this threshold (e.g. drop of $0.50), the bot locks and stops trading to secure earnings. Customizable from $0.10 to $5.00 for Custom Simple, and up to $100.00 for Custom Pro.",
-        fr: "Protection intelligente des gains. Si le profit cumulé de la session atteint un sommet (ex: +179$) puis retombe de la valeur du Giveback (ex: baisse de 0.50$), le bot se verrouille pour sécuriser les gains. Modifiable de 0.10$ à 5.00$ pour Custom Simple, et jusqu'à 100.00$ pour Custom Pro.",
-        de: "Intelligenter Gewinnschutz. Wenn der aufgelaufene Gewinn ein Hoch erreicht (z.B. +179$) und dann um diesen Wert fällt (z.B. Rückgang um 0.50$), sperrt sich der Bot, um Gewinne zu sichern. Anpassbar von 0.10$ bis 5.00$ für Custom Simple, und bis zu 100.00$ für Custom Pro.",
-        tr: "Akıllı kâr koruması. Oturum kârı bir zirveye ulaşırsa (örneğin +179$) ve ardından bu eşik kadar düşerse (örneğin 0.50$ düşüş), bot kazançları korumak için kendini kilitler. Custom Simple için 0.10$ ile 5.00$, Custom Pro için 0.10$ ile 100.00$ arasında ayarlanabilir.",
-        es: "Protección inteligente de ganancias. Si el beneficio acumulado de la sesión alcanza un pico (ej: +$179) y luego cae por este umbral (ej: caída de $0.50), el bot se bloquea para asegurar las ganancias. Ajustable de $0.10 a $5.00 para Custom Simple, y hasta $100.00 para Custom Pro.",
+        en: "Smart profit protection. If the session profit reaches a peak (e.g. +$179) and then drops by this threshold (e.g. drop of $0.50), the agent locks and stops trading to secure earnings. Customizable from $0.10 to $5.00 for Custom Simple, and up to $100.00 for Custom Pro.",
+        fr: "Protection intelligente des gains. Si le profit cumulé de la session atteint un sommet (ex: +179$) puis retombe de la valeur du Giveback (ex: baisse de 0.50$), l'agent se verrouille pour sécuriser les gains. Modifiable de 0.10$ à 5.00$ pour Custom Simple, et jusqu'à 100.00$ pour Custom Pro.",
+        de: "Intelligenter Gewinnschutz. Wenn der aufgelaufene Gewinn ein Hoch erreicht (z.B. +179$) und dann um diesen Wert fällt (z.B. Rückgang um 0.50$), sperrt sich der Agent, um Gewinne zu sichern. Anpassbar von 0.10$ bis 5.00$ für Custom Simple, und bis zu 100.00$ für Custom Pro.",
+        tr: "Akıllı kâr koruması. Oturum kârı bir zirveye ulaşırsa (örneğin +179$) ve ardından bu eşik kadar düşerse (örneğin 0.50$ düşüş), agent kazançları korumak için kendini kilitler. Custom Simple için 0.10$ ile 5.00$, Custom Pro için 0.10$ ile 100.00$ arasında ayarlanabilir.",
+        es: "Protección inteligente de ganancias. Si el beneficio acumulado de la sesión alcanza un pico (ej: +$179) y luego cae por este umbral (ej: caída de $0.50), el agent se bloquea para asegurar las ganancias. Ajustable de $0.10 a $5.00 para Custom Simple, y hasta $100.00 para Custom Pro.",
       }
     },
     {
       name: "Reset on Start",
       icon: Clock,
       desc: {
-        en: "Resets session statistics (peak profit, actual profit, trade counter) back to zero upon booting the bot. Simple users always resume from previous session counters. Pro users can toggle this option freely.",
-        fr: "Remet à zéro les compteurs de session (plus haut pic, profit actuel, nombre de trades) à chaque démarrage du bot. Simple reprend toujours là où il s'est arrêté. Les membres Pro peuvent l'activer ou la désactiver librement.",
+        en: "Resets session statistics (peak profit, actual profit, trade counter) back to zero upon booting the agent. Simple users always resume from previous session counters. Pro users can toggle this option freely.",
+        fr: "Remet à zéro les compteurs de session (plus haut pic, profit actuel, nombre de trades) à chaque démarrage du agent. Simple reprend toujours là où il s'est arrêté. Les membres Pro peuvent l'activer ou la désactiver librement.",
         de: "Setzt die Sitzungsstatistiken (Peak, aktueller Gewinn, Trade-Zähler) beim Starten des Bots auf Null zurück. Simple-Nutzer setzen immer die vorherige Sitzung fort. Pro-Nutzer können diese Option frei wählen.",
-        tr: "Bot başlatıldığında oturum istatistiklerini (en yüksek kâr, mevcut kâr, işlem sayacı) sıfırlar. Simple kullanıcıları her zaman önceki oturumdan devam eder. Pro kullanıcıları bu seçeneği serbestçe açıp kapatabilir.",
-        es: "Restablece a cero las estadísticas de la sesión (pico de beneficio, beneficio actual, contador de operaciones) al iniciar el bot. Simple siempre continúa desde la sesión anterior. Los miembros Pro pueden activar o desactivar esta opción libremente.",
+        tr: "Agent başlatıldığında oturum istatistiklerini (en yüksek kâr, mevcut kâr, işlem sayacı) sıfırlar. Simple kullanıcıları her zaman önceki oturumdan devam eder. Pro kullanıcıları bu seçeneği serbestçe açıp kapatabilir.",
+        es: "Restablece a cero las estadísticas de la sesión (pico de beneficio, beneficio actual, contador de operaciones) al iniciar el agent. Simple siempre continúa desde la sesión anterior. Los miembros Pro pueden activar o desactivar esta opción libremente.",
       }
     },
     {
       name: "Session Target $",
       icon: TargetIcon,
       desc: {
-        en: "Session profit goal. Once this threshold is hit, the bot shuts down to prevent overtrading. Customizable up to $1000 for Custom Pro users.",
-        fr: "Objectif de gain global de la session. Une fois ce profit cumulé atteint, le bot s'arrête de lui-même pour éviter l'overtrading. Ajustable jusqu'à 1000$ pour le plan Custom Pro.",
-        de: "Gewinnziel für die Sitzung. Sobald dieses Ziel erreicht ist, stoppt der Bot, um Overtrading zu vermeiden. Anpassbar bis zu 1000$ für Custom Pro-Nutzer.",
-        tr: "Oturum kâr hedefi. Bu birikmiş kâr hedefine ulaşıldığında, bot aşırı ticareti önlemek için kendi kendine durur. Custom Pro kullanıcıları için 1000$'a kadar ayarlanabilir.",
-        es: "Objetivo de ganancia global de la sesión. Una vez alcanzado este beneficio acumulado, el bot se detiene por sí mismo para evitar el overtrading. Ajustable hasta $1000 para el plan Custom Pro.",
+        en: "Session profit goal. Once this threshold is hit, the agent shuts down to prevent overtrading. Customizable up to $1000 for Custom Pro users.",
+        fr: "Objectif de gain global de la session. Une fois ce profit cumulé atteint, l'agent s'arrête de lui-même pour éviter l'overtrading. Ajustable jusqu'à 1000$ pour le plan Custom Pro.",
+        de: "Gewinnziel für die Sitzung. Sobald dieses Ziel erreicht ist, stoppt der Agent, um Overtrading zu vermeiden. Anpassbar bis zu 1000$ für Custom Pro-Nutzer.",
+        tr: "Oturum kâr hedefi. Bu birikmiş kâr hedefine ulaşıldığında, agent aşırı ticareti önlemek için kendi kendine durur. Custom Pro kullanıcıları için 1000$'a kadar ayarlanabilir.",
+        es: "Objetivo de ganancia global de la sesión. Una vez alcanzado este beneficio acumulado, el agent se detiene por sí mismo para evitar el overtrading. Ajustable hasta $1000 para el plan Custom Pro.",
       }
     },
     {
@@ -511,18 +511,18 @@ const PAGE_T = {
   faqs: [
     {
       q: {
-        en: "Why is the bot locked and not taking any trades?",
-        fr: "Pourquoi le bot est-il verrouillé et ne prend plus de positions ?",
-        de: "Warum ist der Bot gesperrt und platziert keine Trades mehr?",
-        tr: "Bot neden kilitlendi ve neden yeni işlem açmıyor?",
-        es: "¿Por qué el bot está bloqueado y no abre posiciones?",
+        en: "Why is the agent locked and not taking any trades?",
+        fr: "Pourquoi l'agent est-il verrouillé et ne prend plus de positions ?",
+        de: "Warum ist der Agent gesperrt und platziert keine Trades mehr?",
+        tr: "Agent neden kilitlendi ve neden yeni işlem açmıyor?",
+        es: "¿Por qué el agent está bloqueado y no abre posiciones?",
       },
       a: {
-        en: "The bot locks itself primarily when the Giveback threshold is triggered. If the session profit drops by the Giveback value from its peak, the bot secures the remaining profits and locks further entries. It also stops trading if the maximum stop loss is hit, if there's insufficient volatility, or if the market is outside of active scalping hours.",
-        fr: "Le bot se verrouille principalement lorsque le seuil de Giveback est franchi. Si le gain retombe depuis le sommet de la valeur du Giveback, le bot fige la session pour sécuriser vos gains. Il s'arrête aussi si le Stop Loss Max est touché, en cas de volatilité insuffisante, ou si le marché est hors des heures propices de scalping.",
-        de: "Der Bot sperrt sich hauptsächlich, wenn die Giveback-Schwelle erreicht wird. Wenn der Gewinn seit dem Höchststand um den Giveback-Wert fällt, friert der Bot die Sitzung ein, um Gewinne zu sichern. Er stoppt auch, wenn der maximale Stop-Loss erreicht ist, bei mangelnder Volatilität oder außerhalb der Handelszeiten.",
-        tr: "Bot, öncelikle Giveback eşiği aşıldığında kendini kilitler. Oturum kârı zirve noktasından Giveback değeri kadar düşerse, bot kazançları korumak için oturumu dondurur. Ayrıca, Maks. Stop Loss seviyesine ulaşıldığında, yetersiz oynaklık durumunda veya piyasa aktif scalping saatlerinin dışındaysa işlem yapmayı durdurur.",
-        es: "El bot se bloquea principalmente cuando se alcanza el umbral de Giveback. Si el beneficio de la sesión cae desde el pico por el valor del Giveback, el bot congela la sesión para asegurar sus ganancias. También se detiene si se toca el Stop Loss Máximo, si no hay suficiente volatilidad o si el mercado está fuera del horario de scalping.",
+        en: "The agent locks itself primarily when the Giveback threshold is triggered. If the session profit drops by the Giveback value from its peak, the agent secures the remaining profits and locks further entries. It also stops trading if the maximum stop loss is hit, if there's insufficient volatility, or if the market is outside of active scalping hours.",
+        fr: "L'agent se verrouille principalement lorsque le seuil de Giveback est franchi. Si le gain retombe depuis le sommet de la valeur du Giveback, l'agent fige la session pour sécuriser vos gains. Il s'arrête aussi si le Stop Loss Max est touché, en cas de volatilité insuffisante, ou si le marché est hors des heures propices de scalping.",
+        de: "Der Agent sperrt sich hauptsächlich, wenn die Giveback-Schwelle erreicht wird. Wenn der Gewinn seit dem Höchststand um den Giveback-Wert fällt, friert der Agent die Sitzung ein, um Gewinne zu sichern. Er stoppt auch, wenn der maximale Stop-Loss erreicht ist, bei mangelnder Volatilität oder außerhalb der Handelszeiten.",
+        tr: "Agent, öncelikle Giveback eşiği aşıldığında kendini kilitler. Oturum kârı zirve noktasından Giveback değeri kadar düşerse, agent kazançları korumak için oturumu dondurur. Ayrıca, Maks. Stop Loss seviyesine ulaşıldığında, yetersiz oynaklık durumunda veya piyasa aktif scalping saatlerinin dışındaysa işlem yapmayı durdurur.",
+        es: "El agent se bloquea principalmente cuando se alcanza el umbral de Giveback. Si el beneficio de la sesión cae desde el pico por el valor del Giveback, el agent congela la sesión para asegurar sus ganancias. También se detiene si se toca el Stop Loss Máximo, si no hay suficiente volatilidad o si el mercado está fuera del horario de scalping.",
       }
     },
     {
@@ -534,11 +534,11 @@ const PAGE_T = {
         es: "¿El marcar 'Reiniciar sesión' borra el aprendizaje de la IA?",
       },
       a: {
-        en: "No. The 'Reset Session' (Repartir à zéro) option only resets local session metrics such as the peak profit, current session profit, and trade count back to 0. It does not affect the artificial intelligence core, machine learning weights, or the conversational coach memory. Your bot retains all its global learned intelligence.",
-        fr: "Non. L'option 'Repartir à zéro' (Reset Session) réinitialise uniquement les indicateurs locaux de la session en cours (sommet de gain, profit cumulé, nombre de trades). Cela n'a aucun impact sur le modèle d'intelligence artificielle, les poids d'apprentissage automatique (ML Sync) ou la mémoire du coach. Le bot conserve toute son expérience.",
-        de: "Nein. Die Option 'Sitzungs-Reset' (Repartir à zéro) setzt lediglich die lokalen Indikatoren der aktuellen Sitzung (Spitzengewinn, aufgelaufener Gewinn, Anzahl der Trades) zurück. Dies hat keine Auswirkungen auf das KI-Modell, die Lerneinstellungen (ML Sync) oder das Gedächtnis. Der Bot behält seine gesamte Erfahrung.",
+        en: "No. The 'Reset Session' (Repartir à zéro) option only resets local session metrics such as the peak profit, current session profit, and trade count back to 0. It does not affect the artificial intelligence core, machine learning weights, or the conversational coach memory. Your agent retains all its global learned intelligence.",
+        fr: "Non. L'option 'Repartir à zéro' (Reset Session) réinitialise uniquement les indicateurs locaux de la session en cours (sommet de gain, profit cumulé, nombre de trades). Cela n'a aucun impact sur le modèle d'intelligence artificielle, les poids d'apprentissage automatique (ML Sync) ou la mémoire du coach. L'agent conserve toute son expérience.",
+        de: "Nein. Die Option 'Sitzungs-Reset' (Repartir à zéro) setzt lediglich die lokalen Indikatoren der aktuellen Sitzung (Spitzengewinn, aufgelaufener Gewinn, Anzahl der Trades) zurück. Dies hat keine Auswirkungen auf das KI-Modell, die Lerneinstellungen (ML Sync) oder das Gedächtnis. Der Agent behält seine gesamte Erfahrung.",
         tr: "Hayır. 'Repartir à zéro' (Oturumu Sıfırla) seçeneği yalnızca en yüksek kâr, mevcut oturum kârı ve işlem sayısı gibi yerel oturum göstergelerini sıfırlar. Yapay zeka çekirdeğini, makine öğrenimi ağırlıklarını (ML Sync) veya koç hafızasını etkilemez. Botunuz tüm küresel öğrenilmiş deneyimini korur.",
-        es: "No. La opción 'Reiniciar sesión' (Repartir à zéro) solo restablece los indicadores locales de la sesión actual (pico de ganancias, beneficio acumulado, número de operaciones). No tiene ningún impacto en el núcleo del modelo de IA, los pesos de aprendizaje automático (ML Sync) o la memoria del coach. El bot conserva toda su experiencia.",
+        es: "No. La opción 'Reiniciar sesión' (Repartir à zéro) solo restablece los indicadores locales de la sesión actual (pico de ganancias, beneficio acumulado, número de operaciones). No tiene ningún impacto en el núcleo del modelo de IA, los pesos de aprendizaje automático (ML Sync) o la memoria del coach. El agent conserva toda su experiencia.",
       }
     },
     {
@@ -550,11 +550,11 @@ const PAGE_T = {
         es: "¿Por qué no se muestran el SL y el TP en mi MetaTrader 5?",
       },
       a: {
-        en: "Ava Trading uses internal 'soft' Stop Loss and Take Profit levels managed directly by our AI engine. Since orders are monitored and closed dynamically by the bot, they are not registered on the broker's books. This prevents brokers from hunting your stops and protects our proprietary algorithms from reverse-engineering.",
-        fr: "Ava Trading utilise des Stop Loss et Take Profit 'soft' gérés en interne par notre moteur IA. Comme les ordres sont surveillés et clôturés dynamiquement par le bot, ils ne sont pas visibles chez le courtier. Cela évite la chasse aux stops par les brokers et protège notre technologie contre le reverse-engineering.",
-        de: "Ava Trading verwendet interne, 'weiche' Stop-Loss- und Take-Profit-Level, die direkt von unserer KI verwaltet werden. Da die Orders vom Bot dynamisch überwacht und geschlossen werden, sind sie beim Broker nicht sichtbar. Dies verhindert Stop-Hunting durch Broker und schützt unsere Technologie vor Reverse-Engineering.",
-        tr: "Ava Trading, doğrudan yapay zeka motorumuz tarafından yönetilen dahili 'esnek' Stop Loss ve Take Profit seviyeleri kullanır. İşlemler bot tarafından dinamik olarak izlendiği ve kapatıldığı için aracı kurumda görünmezler. Bu, aracı kurumların stop seviyelerinizi hedeflemesini (stop hunting) önler ve teknolojimizi tersine mühendisliğe karşı korur.",
-        es: "Ava Trading utiliza niveles de Stop Loss y Take Profit 'soft' gestionados internamente por nuestro motor de IA. Como las órdenes son monitoreadas y cerradas dinámicamente por el bot, no son visibles para el bróker. Esto evita la caza de stops por parte de los brókers y protege nuestra tecnología contra la ingeniería inversa.",
+        en: "Ava Trading uses internal 'soft' Stop Loss and Take Profit levels managed directly by our AI engine. Since orders are monitored and closed dynamically by the agent, they are not registered on the broker's books. This prevents brokers from hunting your stops and protects our proprietary algorithms from reverse-engineering.",
+        fr: "Ava Trading utilise des Stop Loss et Take Profit 'soft' gérés en interne par notre moteur IA. Comme les ordres sont surveillés et clôturés dynamiquement par l'agent, ils ne sont pas visibles chez le courtier. Cela évite la chasse aux stops par les brokers et protège notre technologie contre le reverse-engineering.",
+        de: "Ava Trading verwendet interne, 'weiche' Stop-Loss- und Take-Profit-Level, die direkt von unserer KI verwaltet werden. Da die Orders vom Agent dynamisch überwacht und geschlossen werden, sind sie beim Broker nicht sichtbar. Dies verhindert Stop-Hunting durch Broker und schützt unsere Technologie vor Reverse-Engineering.",
+        tr: "Ava Trading, doğrudan yapay zeka motorumuz tarafından yönetilen dahili 'esnek' Stop Loss ve Take Profit seviyeleri kullanır. İşlemler agent tarafından dinamik olarak izlendiği ve kapatıldığı için aracı kurumda görünmezler. Bu, aracı kurumların stop seviyelerinizi hedeflemesini (stop hunting) önler ve teknolojimizi tersine mühendisliğe karşı korur.",
+        es: "Ava Trading utiliza niveles de Stop Loss y Take Profit 'soft' gestionados internamente por nuestro motor de IA. Como las órdenes son monitoreadas y cerradas dinámicamente por el agent, no son visibles para el bróker. Esto evita la caza de stops por parte de los brókers y protege nuestra tecnología contra la ingeniería inversa.",
       }
     }
   ]

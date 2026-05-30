@@ -6,7 +6,7 @@ export interface UserData {
   subscription_source: string | null
   subscription_expires_at: string | null
   paddle_subscription_id?: string | null
-  subscription_plan?: string | null    // 'pro_starter' | 'custom_simple' | 'custom_pro' | legacy 'pro_plus' | 'custom'
+  subscription_plan?: string | null    // 'pro_starter' | 'custom_simple' | 'custom_pro' | 'custom_ultra' | 'custom_max' | legacy 'pro_plus' | 'custom'
   subscription_tier?: string | null   // RevenueCat: 'free' | 'starter' | 'pro' | 'ultra'
   text_messages_used?: number
   text_quota_reset_at?: string | null
@@ -100,6 +100,8 @@ export const CUSTOM_PRO_PERMISSIONS: AvaPermissions = {
   canUseAvaTrading: true,
 }
 
+export const CUSTOM_ULTRA_PERMISSIONS: AvaPermissions = CUSTOM_PRO_PERMISSIONS
+export const CUSTOM_MAX_PERMISSIONS: AvaPermissions = CUSTOM_PRO_PERMISSIONS
 export const PRO_PLUS_PERMISSIONS = CUSTOM_PRO_PERMISSIONS
 
 export const CUSTOM_PERMISSIONS: AvaPermissions = {
@@ -119,6 +121,8 @@ export const CUSTOM_PERMISSIONS: AvaPermissions = {
 
 /** subscription_plan → permissions */
 function paddlePlanPermissions(plan: string | null | undefined): AvaPermissions {
+  if (plan === 'custom_max') return CUSTOM_MAX_PERMISSIONS
+  if (plan === 'custom_ultra') return CUSTOM_ULTRA_PERMISSIONS
   if (plan === 'pro_plus' || plan === 'custom_pro') return CUSTOM_PRO_PERMISSIONS
   if (plan === 'custom' || plan === 'custom_simple' || plan === 'custom_starter') return CUSTOM_PERMISSIONS
   return PRO_STARTER_PERMISSIONS // pro_starter ou inconnu
@@ -131,7 +135,7 @@ export function isPro(user: UserData): boolean {
   if (new Date(user.subscription_expires_at) <= new Date()) return false
   // Les plans Custom Paddle ne sont pas des plans Pro (ont leur propre section)
   const plan = user.subscription_plan
-  if (plan === 'custom' || plan === 'custom_simple' || plan === 'custom_starter' || plan === 'custom_pro') return false
+  if (plan === 'custom' || plan === 'custom_simple' || plan === 'custom_starter' || plan === 'custom_pro' || plan === 'custom_ultra' || plan === 'custom_max') return false
   return true
 }
 
@@ -142,7 +146,7 @@ export function isCustomPlan(user: UserData): boolean {
   if (user.subscription_source === 'paddle' &&
       user.subscription_expires_at &&
       new Date(user.subscription_expires_at) > new Date() &&
-      (user.subscription_plan === 'custom' || user.subscription_plan === 'custom_simple' || user.subscription_plan === 'custom_starter' || user.subscription_plan === 'custom_pro')) return true
+      (user.subscription_plan === 'custom' || user.subscription_plan === 'custom_simple' || user.subscription_plan === 'custom_starter' || user.subscription_plan === 'custom_pro' || user.subscription_plan === 'custom_ultra' || user.subscription_plan === 'custom_max')) return true
   return false
 }
 

@@ -23,6 +23,8 @@ export const PADDLE_CLIENT_TOKEN = 'live_3f4f6ba16c07c4dfd3064cf21fd'
 // ── Ava Pro plans ─────────────────────────────────────────────────────────────
 export const PADDLE_PRICE_PRO_STARTER = 'pri_01knq7394vkf1g4vf67dvk4fn4'  // 39,99€/mois — Pro Starter
 export const PADDLE_PRICE_CUSTOM_PRO   = 'pri_01kntnb5pnck8pc5vcb31z0en7'  // 99,99$/mois — Custom Pro
+export const PADDLE_PRICE_CUSTOM_ULTRA = ''                                // 399,99$/mois — Custom Ultra (à renseigner)
+export const PADDLE_PRICE_CUSTOM_MAX   = ''                                // 999,99$/mois — Custom Max (à renseigner)
 export const PADDLE_PRICE_PRO_PLUS     = PADDLE_PRICE_CUSTOM_PRO            // alias legacy
 
 // ── Ava Custom plan ───────────────────────────────────────────────────────────

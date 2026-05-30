@@ -903,7 +903,7 @@ function Pricing() {
     },
     {
       label: tl({ fr: 'Ava Trading Desktop', en: 'Ava Trading Desktop', de: 'Ava Trading Desktop', tr: 'Ava Trading Desktop', es: 'Ava Trading Desktop' }),
-      sub: tl({ fr: 'bot MT5, bridge, apprentissage global', en: 'MT5 bot, bridge, global learning', de: 'MT5-Bot, Bridge, globales Lernen', tr: 'MT5 botu, bridge, global öğrenme', es: 'bot MT5, bridge, aprendizaje global' }),
+      sub: tl({ fr: 'agent MT5, bridge, apprentissage global', en: 'MT5 agent, bridge, global learning', de: 'MT5-Agent, Bridge, globales Lernen', tr: 'MT5 botu, bridge, global öğrenme', es: 'agent MT5, bridge, aprendizaje global' }),
       vals: [false, false, true, true], unit: '', isHeader: true,
     },
     {
@@ -940,7 +940,7 @@ function Pricing() {
     },
     {
       label: tl({ fr: 'Giveback (protection profit)', en: 'Giveback (profit protection)', de: 'Giveback (Gewinnschutz)', tr: 'Giveback (kâr koruması)', es: 'Giveback (protección de ganancias)' }),
-      sub: tl({ fr: 'arrête le bot si le profit chute trop depuis le pic', en: 'stops bot if profit drops too much from peak', de: 'stoppt Bot bei zu großem Gewinnrückgang vom Peak', tr: 'kâr zirveden çok düşerse botu durdurur', es: 'detiene el bot si el beneficio cae demasiado desde el pico' }),
+      sub: tl({ fr: "arrête l'agent si le profit chute trop depuis le pic", en: 'stops the agent if profit drops too much from peak', de: 'stoppt den Agenten bei zu großem Gewinnrückgang vom Peak', tr: 'kâr zirveden çok düşerse ajanı durdurur', es: 'detiene el agente si el beneficio cae demasiado desde el pico' }),
       vals: [
         false,
         false,
@@ -1308,7 +1308,7 @@ function AvaTradingSection() {
             {tl({ fr: 'Scalping MT5 avec apprentissage global Ava', en: 'MT5 scalping with Ava global learning', de: 'MT5-Scalping mit globalem Ava-Lernen', tr: 'Ava global öğrenme ile MT5 scalping', es: 'Scalping MT5 con aprendizaje global Ava' })}
           </h2>
           <p className="text-slate-400 text-lg mt-4 max-w-2xl mx-auto">
-            {tl({ fr: 'Une installation guidée pour Mac et Windows: Ava Desktop, le bridge MT5, puis le bot de trading verrouillé par abonnement Custom.', en: 'A guided setup for Mac and Windows: Ava Desktop, the MT5 bridge, then the Custom-locked trading bot.', de: 'Geführte Einrichtung für Mac und Windows: Ava Desktop, MT5-Bridge und der per Custom-Abo geschützte Trading-Bot.', tr: 'Mac ve Windows için yönlendirmeli kurulum: Ava Desktop, MT5 bridge ve Custom aboneliğine bağlı trading botu.', es: 'Instalación guiada para Mac y Windows: Ava Desktop, bridge MT5 y bot protegido por plan Custom.' })}
+            {tl({ fr: "Une installation guidée pour Mac et Windows: Ava Desktop, le bridge MT5, puis l'agent de trading verrouillé par abonnement Custom.", en: 'A guided setup for Mac and Windows: Ava Desktop, the MT5 bridge, then the Custom-locked trading agent.', de: 'Geführte Einrichtung für Mac und Windows: Ava Desktop, MT5-Bridge und der per Custom-Abo geschützte Trading-Agent.', tr: 'Mac ve Windows için yönlendirmeli kurulum: Ava Desktop, MT5 bridge ve Custom aboneliğine bağlı trading ajanı.', es: 'Instalación guiada para Mac y Windows: Ava Desktop, bridge MT5 y agente protegido por plan Custom.' })}
           </p>
         </FadeUp>
 
