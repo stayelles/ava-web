@@ -19,13 +19,13 @@ import {
 } from "@/lib/landing-translations";
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
-const AVA_DESKTOP_VERSION = "1.1.21";
+const AVA_DESKTOP_VERSION = "1.1.22";
 const AVA_BRIDGE_EA_VERSION = "1.15";
 const DOWNLOADS = {
   macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-arm64.dmg`,
   macIntel: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-x64.dmg`,
   windows: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_VERSION}.exe`,
-  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.mq5`,
+  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.ex5`,
 };
 
 // ─── Language context ──────────────────────────────────────────────────────────
@@ -301,11 +301,11 @@ const PAGE_T = {
     {
       title: { en: "EA Bridge File", fr: "Le fichier EA Bridge", de: "Die EA Bridge-Datei", tr: "EA Bridge Dosyası", es: "El archivo EA Bridge" },
       desc: {
-        en: "Download the AvaBridgeEA.mq5 file and install it in your MT5 terminal to link the Ava Desktop app and MetaTrader 5.",
-        fr: "Téléchargez le fichier AvaBridgeEA.mq5 et placez-le dans votre terminal MT5 pour faire la liaison entre l'application Ava Desktop et MetaTrader 5.",
-        de: "Laden Sie die Datei AvaBridgeEA.mq5 herunter und legen Sie sie in Ihrem MT5-Terminal ab, um die Ava Desktop-App mit MetaTrader 5 zu verbinden.",
-        tr: "AvaBridgeEA.mq5 dosyasını indirin ve Ava Desktop uygulaması ile MetaTrader 5 arasında köprü kurmak için MT5 terminalinize kurun.",
-        es: "Descargue el archivo AvaBridgeEA.mq5 e instálelo en su terminal MT5 para vincular la aplicación Ava Desktop y MetaTrader 5.",
+        en: "Download the compiled AvaBridgeEA.ex5 file and install it in your MT5 terminal to link the Ava Desktop app and MetaTrader 5.",
+        fr: "Téléchargez le fichier compilé AvaBridgeEA.ex5 et placez-le dans votre terminal MT5 pour faire la liaison entre l'application Ava Desktop et MetaTrader 5.",
+        de: "Laden Sie die kompilierte Datei AvaBridgeEA.ex5 herunter und legen Sie sie in Ihrem MT5-Terminal ab, um die Ava Desktop-App mit MetaTrader 5 zu verbinden.",
+        tr: "AvaBridgeEA.ex5 dosyasını indirin ve Ava Desktop uygulaması ile MetaTrader 5 arasında köprü kurmak için MT5 terminalinize kurun.",
+        es: "Descargue el archivo AvaBridgeEA.ex5 e instálelo en su terminal MT5 para vincular la aplicación Ava Desktop y MetaTrader 5.",
       }
     },
     {
@@ -332,11 +332,11 @@ const PAGE_T = {
     {
       title: { en: "Download and Install", fr: "Télécharger & Installer", de: "Herunterladen & Installieren", tr: "İndir ve Kur", es: "Descargar e Instalar" },
       desc: {
-        en: "Download Ava Desktop for your operating system and place the AvaBridgeEA.mq5 file inside your MT5 Experts folder.",
-        fr: "Téléchargez Ava Desktop pour votre système et placez le fichier AvaBridgeEA.mq5 dans le dossier Experts de votre MT5.",
-        de: "Laden Sie Ava Desktop für Ihr System herunter und legen Sie die Datei AvaBridgeEA.mq5 in den Experts-Ordner Ihres MT5.",
-        tr: "Sisteminiz için Ava Desktop'ı indirin ve AvaBridgeEA.mq5 dosyasını MT5 Experts klasörünüzün içine yerleştirin.",
-        es: "Descargue Ava Desktop para su sistema y coloque el archivo AvaBridgeEA.mq5 en la carpeta Experts de su MT5.",
+        en: "Download Ava Desktop for your operating system and place the compiled AvaBridgeEA.ex5 file inside your MT5 Experts folder. No MetaEditor compilation is required.",
+        fr: "Téléchargez Ava Desktop pour votre système et placez le fichier compilé AvaBridgeEA.ex5 dans le dossier Experts de votre MT5. Aucune compilation MetaEditor n'est nécessaire.",
+        de: "Laden Sie Ava Desktop für Ihr System herunter und legen Sie die kompilierte Datei AvaBridgeEA.ex5 in den Experts-Ordner Ihres MT5.",
+        tr: "Sisteminiz için Ava Desktop'ı indirin ve AvaBridgeEA.ex5 dosyasını MT5 Experts klasörünüzün içine yerleştirin.",
+        es: "Descargue Ava Desktop para su sistema y coloque el archivo AvaBridgeEA.ex5 en la carpeta Experts de su MT5.",
       }
     },
     {
@@ -362,8 +362,8 @@ const PAGE_T = {
     {
       title: { en: "Attach EA in MT5", fr: "Attacher l'EA sur MT5", de: "EA in MT5 anhängen", tr: "EA'yı MT5'e Ekle", es: "Acoplar el EA en MT5" },
       desc: {
-        en: "Open MT5, refresh your Experts list, drag AvaBridgeEA onto a chart (e.g. Gold XAUUSD), and make sure 'Algo Trading' is enabled.",
-        fr: "Sur MT5, rafraîchissez vos Experts, glissez AvaBridgeEA sur un graphique (ex: Gold XAUUSD) et assurez-vous d'activer l'Option 'Algo Trading'.",
+        en: "Open MT5, refresh your Experts list, drag AvaBridgeEA onto a chart (e.g. Gold XAUUSD), and make sure 'Algo Trading' is enabled. On macOS, use File > Open Data Folder in MT5; if Finder hides the MetaQuotes/Wine folders, press Cmd + Shift + . to reveal hidden files.",
+        fr: "Sur MT5, rafraîchissez vos Experts, glissez AvaBridgeEA sur un graphique (ex: Gold XAUUSD) et activez 'Algo Trading'. Sur macOS, utilisez Fichier > Ouvrir le dossier des données dans MT5; si Finder masque les dossiers MetaQuotes/Wine, appuyez sur Cmd + Shift + . pour afficher les fichiers cachés.",
         de: "Aktualisieren Sie in MT5 Ihre Experten, ziehen Sie AvaBridgeEA auf einen Chart (z.B. Gold XAUUSD) und aktivieren Sie 'Algo Trading'.",
         tr: "MT5'te Uzman listesini yenileyin, AvaBridgeEA'yı bir grafiğe (örn. Gold XAUUSD) sürükleyin ve 'Algo Trading' seçeneğinin açık olduğundan emin olun.",
         es: "En MT5, actualice sus Expertos, arrastre AvaBridgeEA a un gráfico (por ejemplo, Gold XAUUSD) y asegúrese de activar la opción 'Algo Trading'.",
@@ -751,10 +751,11 @@ export default function TradingExplanationPage() {
         {/* ─── Hero Section ─── */}
         <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden">
           <div className="absolute inset-0 bg-[#020617]" />
-          <BGPattern variant="grid" mask="fade-edges" size={44} fill="rgba(244,63,94,0.13)" className="opacity-70" />
-          <BGPattern variant="dots" mask="fade-y" size={24} fill="rgba(255,255,255,0.08)" className="opacity-35" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,rgba(244,63,94,0.18),rgba(88,28,135,0.08)_32%,transparent_62%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.08)_0%,rgba(2,6,23,0.78)_58%,rgba(2,6,23,0.98)_100%)]" />
+          <BGPattern variant="grid" mask="fade-edges" size={40} fill="rgba(244,63,94,0.18)" className="opacity-90" />
+          <BGPattern variant="grid" mask="fade-y" size={120} fill="rgba(255,255,255,0.055)" className="opacity-70" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_28%_42%,rgba(244,63,94,0.24),rgba(88,28,135,0.09)_30%,transparent_58%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_72%_46%,rgba(15,23,42,0.35),transparent_48%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.62)_0%,rgba(2,6,23,0.82)_52%,rgba(2,6,23,0.99)_100%)]" />
 
           <div className="max-w-6xl mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
@@ -766,7 +767,7 @@ export default function TradingExplanationPage() {
                 <h1 className="text-5xl md:text-7xl font-black tracking-tight text-white mb-6 leading-tight">
                   {tl(PAGE_T.heroH1)}
                   <br />
-                  <span className="bg-gradient-to-r from-rose-300 via-rose-500 to-fuchsia-400 bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-rose-500 via-fuchsia-500 to-rose-300 bg-clip-text text-transparent">
                     {tl(PAGE_T.heroH2)}
                   </span>
                 </h1>
@@ -778,7 +779,7 @@ export default function TradingExplanationPage() {
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                     className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-sm shadow-xl shadow-rose-500/25 transition-all">
                     <Download size={16} />
-                    <span>Download AvaBridgeEA (v{AVA_BRIDGE_EA_VERSION})</span>
+                    <span>Download AvaBridgeEA .ex5 (v{AVA_BRIDGE_EA_VERSION})</span>
                   </motion.a>
                   <motion.a href="/#pricing"
                     whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}

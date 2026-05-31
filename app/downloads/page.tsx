@@ -3,11 +3,11 @@ import { Apple, ArrowLeft, Download, ShieldCheck, Smartphone, Terminal } from "l
 import { SiGoogleplay } from "react-icons/si";
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
-const AVA_DESKTOP_VERSION = "1.1.21";
+const AVA_DESKTOP_VERSION = "1.1.22";
 const AVA_BRIDGE_EA_VERSION = "1.15";
 const BRIDGE_COMPATIBILITY = [
   {
-    desktop: "1.1.21",
+    desktop: "1.1.22",
     bridge: "1.15",
     status: "Recommandé",
     note: "TP broker actif, aucune protection broker côté stop loss, détection plus souple des symboles Gold/XAUUSD.",
@@ -63,8 +63,8 @@ const DOWNLOADS = [
   },
   {
     title: "AvaBridgeEA",
-    subtitle: `Expert Advisor MT5 · v${AVA_BRIDGE_EA_VERSION}`,
-    href: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.mq5`,
+    subtitle: `Expert Advisor MT5 compilé · v${AVA_BRIDGE_EA_VERSION}`,
+    href: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.ex5`,
     icon: Terminal,
     cta: "Télécharger",
   },
@@ -168,6 +168,29 @@ export default function DownloadsPage() {
                 <p className="text-sm leading-relaxed text-slate-400">{item.note}</p>
               </div>
             ))}
+          </div>
+        </div>
+
+        <div className="mx-auto mt-6 max-w-4xl rounded-3xl border border-white/10 bg-white/[0.035] p-5">
+          <p className="text-[10px] font-black uppercase tracking-widest text-rose-300">Installation AvaBridgeEA</p>
+          <h2 className="mt-1 text-2xl font-black">Installer le fichier compilé .ex5 dans MT5</h2>
+          <div className="mt-5 grid gap-3 text-sm leading-relaxed text-slate-400 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/10 bg-slate-950/55 p-4">
+              <p className="font-black text-white">Windows</p>
+              <ol className="mt-3 space-y-2">
+                <li>1. Téléchargez <span className="font-bold text-slate-200">AvaBridgeEA-{AVA_BRIDGE_EA_VERSION}.ex5</span>.</li>
+                <li>2. Dans MT5, ouvrez <span className="font-bold text-slate-200">Fichier &gt; Ouvrir le dossier des données</span>.</li>
+                <li>3. Copiez le fichier dans <span className="font-bold text-slate-200">MQL5/Experts</span>, puis redémarrez MT5.</li>
+              </ol>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-slate-950/55 p-4">
+              <p className="font-black text-white">macOS</p>
+              <ol className="mt-3 space-y-2">
+                <li>1. Dans MT5, ouvrez <span className="font-bold text-slate-200">Fichier &gt; Ouvrir le dossier des données</span>.</li>
+                <li>2. Si Finder masque le conteneur MetaQuotes/Wine, appuyez sur <span className="font-bold text-slate-200">Cmd + Shift + .</span>.</li>
+                <li>3. Placez le fichier dans <span className="font-bold text-slate-200">MQL5/Experts</span>, redémarrez MT5, puis attachez AvaBridgeEA au graphique XAUUSD.</li>
+              </ol>
+            </div>
           </div>
         </div>
       </section>

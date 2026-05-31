@@ -38,13 +38,13 @@ import {
 import { usePaddle } from "@/components/app/hooks/usePaddle";
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
-const AVA_DESKTOP_VERSION = "1.1.21";
+const AVA_DESKTOP_VERSION = "1.1.22";
 const AVA_BRIDGE_EA_VERSION = "1.15";
 const DOWNLOADS = {
   macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-arm64.dmg`,
   macIntel: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-x64.dmg`,
   windows: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_VERSION}.exe`,
-  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.mq5`,
+  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.ex5`,
 };
 
 // ─── Language context ──────────────────────────────────────────────────────────
@@ -1464,7 +1464,7 @@ function AvaTradingSection() {
     {
       icon: Terminal,
       title: tl({ fr: 'Ajouter le bridge MT5', en: 'Add the MT5 bridge', de: 'MT5-Bridge hinzufügen', tr: 'MT5 bridge ekle', es: 'Añadir el bridge MT5' }),
-      text: tl({ fr: 'Copiez AvaBridgeEA.mq5 dans MQL5/Experts, compilez-le dans MetaEditor, puis attachez-le au graphique XAUUSD.', en: 'Copy AvaBridgeEA.mq5 into MQL5/Experts, compile it in MetaEditor, then attach it to the XAUUSD chart.', de: 'Kopieren Sie AvaBridgeEA.mq5 in MQL5/Experts, kompilieren Sie es in MetaEditor und hängen Sie es an XAUUSD an.', tr: 'AvaBridgeEA.mq5 dosyasını MQL5/Experts içine kopyalayın, MetaEditor’da derleyin ve XAUUSD grafiğine ekleyin.', es: 'Copia AvaBridgeEA.mq5 en MQL5/Experts, compílalo en MetaEditor y añádelo al gráfico XAUUSD.' }),
+      text: tl({ fr: 'Copiez AvaBridgeEA.ex5 dans MQL5/Experts. C’est déjà compilé: redémarrez MT5, puis attachez-le au graphique XAUUSD.', en: 'Copy AvaBridgeEA.ex5 into MQL5/Experts. It is already compiled: restart MT5, then attach it to the XAUUSD chart.', de: 'Kopieren Sie AvaBridgeEA.ex5 nach MQL5/Experts. Es ist bereits kompiliert: Starten Sie MT5 neu und hängen Sie es an XAUUSD an.', tr: 'AvaBridgeEA.ex5 dosyasını MQL5/Experts içine kopyalayın. Zaten derlenmiştir: MT5’i yeniden başlatın ve XAUUSD grafiğine ekleyin.', es: 'Copia AvaBridgeEA.ex5 en MQL5/Experts. Ya está compilado: reinicia MT5 y añádelo al gráfico XAUUSD.' }),
     },
     {
       icon: Shield,
@@ -1522,7 +1522,7 @@ function AvaTradingSection() {
                     <WindowsIcon size={15} /> Windows
                   </a>
                   <a href={DOWNLOADS.ea} download className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
-                    <Terminal size={15} /> AvaBridgeEA.mq5
+                    <Terminal size={15} /> AvaBridgeEA.ex5
                   </a>
                 </div>
               </div>
@@ -1532,8 +1532,9 @@ function AvaTradingSection() {
                 </p>
                 <ol className="space-y-3 text-sm text-slate-300">
                   <li>1. {tl({ fr: 'Installez MetaTrader 5 et connectez votre compte démo ou réel.', en: 'Install MetaTrader 5 and connect your demo or real account.', de: 'Installieren Sie MetaTrader 5 und verbinden Sie Ihr Demo- oder Live-Konto.', tr: 'MetaTrader 5’i kurun ve demo veya gerçek hesabınızı bağlayın.', es: 'Instala MetaTrader 5 y conecta tu cuenta demo o real.' })}</li>
-                  <li>2. {tl({ fr: 'Ouvrez MetaEditor, placez AvaBridgeEA.mq5 dans MQL5/Experts, puis compilez.', en: 'Open MetaEditor, put AvaBridgeEA.mq5 in MQL5/Experts, then compile.', de: 'Öffnen Sie MetaEditor, legen Sie AvaBridgeEA.mq5 in MQL5/Experts ab und kompilieren Sie.', tr: 'MetaEditor’ı açın, AvaBridgeEA.mq5 dosyasını MQL5/Experts içine koyun ve derleyin.', es: 'Abre MetaEditor, coloca AvaBridgeEA.mq5 en MQL5/Experts y compila.' })}</li>
-                  <li>3. {tl({ fr: 'Ajoutez l’EA au graphique XAUUSD, activez Algo Trading, puis lancez Ava Desktop.', en: 'Attach the EA to XAUUSD, enable Algo Trading, then launch Ava Desktop.', de: 'Hängen Sie den EA an XAUUSD, aktivieren Sie Algo Trading und starten Sie Ava Desktop.', tr: 'EA’yı XAUUSD grafiğine ekleyin, Algo Trading’i açın ve Ava Desktop’ı başlatın.', es: 'Añade el EA a XAUUSD, activa Algo Trading y abre Ava Desktop.' })}</li>
+                  <li>2. {tl({ fr: 'Dans MT5, ouvrez Fichier > Ouvrir le dossier des données, puis MQL5 > Experts.', en: 'In MT5, open File > Open Data Folder, then MQL5 > Experts.', de: 'Öffnen Sie in MT5 Datei > Datenordner öffnen, dann MQL5 > Experts.', tr: 'MT5 içinde File > Open Data Folder, sonra MQL5 > Experts klasörünü açın.', es: 'En MT5, abre Archivo > Abrir carpeta de datos, luego MQL5 > Experts.' })}</li>
+                  <li>3. {tl({ fr: 'Copiez AvaBridgeEA.ex5 dans Experts. Sur macOS, si le dossier est caché dans MetaQuotes/Wine, utilisez Cmd + Shift + . dans Finder pour afficher les fichiers cachés.', en: 'Copy AvaBridgeEA.ex5 into Experts. On macOS, if the folder is hidden inside MetaQuotes/Wine, press Cmd + Shift + . in Finder to show hidden files.', de: 'Kopieren Sie AvaBridgeEA.ex5 nach Experts. Auf macOS können Sie mit Cmd + Shift + . versteckte Ordner in MetaQuotes/Wine anzeigen.', tr: 'AvaBridgeEA.ex5 dosyasını Experts içine kopyalayın. macOS’ta klasör MetaQuotes/Wine içinde gizliyse Finder’da Cmd + Shift + . kullanın.', es: 'Copia AvaBridgeEA.ex5 en Experts. En macOS, si la carpeta está oculta en MetaQuotes/Wine, pulsa Cmd + Shift + . en Finder.' })}</li>
+                  <li>4. {tl({ fr: 'Redémarrez MT5 ou rafraîchissez les Experts, ajoutez AvaBridgeEA au graphique XAUUSD, activez Algo Trading, puis lancez Ava Desktop.', en: 'Restart MT5 or refresh Experts, attach AvaBridgeEA to XAUUSD, enable Algo Trading, then launch Ava Desktop.', de: 'Starten Sie MT5 neu oder aktualisieren Sie Experts, hängen Sie AvaBridgeEA an XAUUSD, aktivieren Sie Algo Trading und starten Sie Ava Desktop.', tr: 'MT5’i yeniden başlatın veya Experts listesini yenileyin, AvaBridgeEA’yı XAUUSD grafiğine ekleyin, Algo Trading’i açın ve Ava Desktop’ı başlatın.', es: 'Reinicia MT5 o actualiza Expertos, añade AvaBridgeEA a XAUUSD, activa Algo Trading y abre Ava Desktop.' })}</li>
                 </ol>
               </div>
             </div>

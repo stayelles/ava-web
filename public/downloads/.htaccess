@@ -1,5 +1,5 @@
 <IfModule mod_headers.c>
-  <FilesMatch "\.(dmg|mq5|exe)$">
+  <FilesMatch "\.(dmg|ex5|exe)$">
     Header set Content-Disposition "attachment"
     Header set X-Content-Type-Options "nosniff"
   </FilesMatch>
@@ -9,7 +9,7 @@
   ForceType application/x-apple-diskimage
 </FilesMatch>
 
-<FilesMatch "\.mq5$">
+<FilesMatch "\.ex5$">
   ForceType application/octet-stream
 </FilesMatch>
 

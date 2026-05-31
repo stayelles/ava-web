@@ -106,7 +106,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
               <span className="text-sm font-semibold">Télécharger Ava</span>
             </a>
             <a
-              href={`${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.mq5`}
+              href={`${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.ex5`}
               target="_blank"
               rel="noopener noreferrer"
               className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors group"
@@ -122,7 +122,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
             <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Compatibilité</p>
               <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
-                Ava Desktop 1.1.21 recommande AvaBridgeEA {AVA_BRIDGE_EA_VERSION}.
+                Ava Desktop 1.1.22 recommande AvaBridgeEA {AVA_BRIDGE_EA_VERSION}.
               </p>
             </div>
           </div>

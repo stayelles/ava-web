@@ -25,14 +25,14 @@ The landing page points Ava Desktop downloads to versioned files under:
 
 `https://call-ava.com/downloads/`
 
-Keep `public/downloads/.htaccess` deployed with the site. It forces `.dmg`, `.exe`, and `.mq5` files to download instead of rendering inline in Chrome/Safari. If Mac installers or the MT5 bridge open as garbled text in the browser, fix the download headers here rather than changing the file URLs.
+Keep `public/downloads/.htaccess` deployed with the site. It forces `.dmg`, `.exe`, and `.ex5` files to download instead of rendering inline in Chrome/Safari. If Mac installers or the MT5 bridge open as garbled text in the browser, fix the download headers here rather than changing the file URLs.
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.1.6-arm64.dmg`
-- `Ava-1.1.6-x64.dmg`
-- `AvaSetup-1.1.6.exe`
-- `AvaBridgeEA-1.12.mq5`
+- `Ava-1.1.22-arm64.dmg`
+- `Ava-1.1.22-x64.dmg`
+- `AvaSetup-1.1.22.exe`
+- `AvaBridgeEA-1.15.ex5`
 
 ## macOS Signature & Notarization (Apple Developer)
 
