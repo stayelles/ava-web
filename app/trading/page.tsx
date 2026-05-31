@@ -19,7 +19,7 @@ import {
 } from "@/lib/landing-translations";
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
-const AVA_DESKTOP_VERSION = "1.1.20";
+const AVA_DESKTOP_VERSION = "1.1.21";
 const AVA_BRIDGE_EA_VERSION = "1.15";
 const DOWNLOADS = {
   macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-arm64.dmg`,
@@ -63,6 +63,44 @@ function DotGrid({ className }: { className?: string }) {
         backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)",
         backgroundSize: "28px 28px",
       }} />
+  );
+}
+
+type BGVariantType = "dots" | "grid";
+type BGMaskType = "fade-edges" | "fade-y" | "none";
+
+const maskClasses: Record<BGMaskType, string> = {
+  "fade-edges": "[mask-image:radial-gradient(ellipse_at_center,black,transparent)]",
+  "fade-y": "[mask-image:linear-gradient(to_bottom,transparent,black,transparent)]",
+  none: "",
+};
+
+function getBgImage(variant: BGVariantType, fill: string) {
+  if (variant === "dots") return `radial-gradient(${fill} 1px, transparent 1px)`;
+  return `linear-gradient(to right, ${fill} 1px, transparent 1px), linear-gradient(to bottom, ${fill} 1px, transparent 1px)`;
+}
+
+function BGPattern({
+  variant = "grid",
+  mask = "none",
+  size = 40,
+  fill = "rgba(244,63,94,0.12)",
+  className,
+}: {
+  variant?: BGVariantType;
+  mask?: BGMaskType;
+  size?: number;
+  fill?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("absolute inset-0 pointer-events-none", maskClasses[mask], className)}
+      style={{
+        backgroundImage: getBgImage(variant, fill),
+        backgroundSize: `${size}px ${size}px`,
+      }}
+    />
   );
 }
 
@@ -712,14 +750,11 @@ export default function TradingExplanationPage() {
 
         {/* ─── Hero Section ─── */}
         <section className="relative pt-32 pb-20 md:pt-40 md:pb-28 overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_24%,rgba(244,63,94,0.14),transparent_42%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_80%,rgba(148,163,184,0.08),transparent_46%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.2)_0%,rgba(2,6,23,0.92)_100%)]" />
-          <div className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)",
-              backgroundSize: "32px 32px",
-            }} />
+          <div className="absolute inset-0 bg-[#020617]" />
+          <BGPattern variant="grid" mask="fade-edges" size={44} fill="rgba(244,63,94,0.13)" className="opacity-70" />
+          <BGPattern variant="dots" mask="fade-y" size={24} fill="rgba(255,255,255,0.08)" className="opacity-35" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_40%,rgba(244,63,94,0.18),rgba(88,28,135,0.08)_32%,transparent_62%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(2,6,23,0.08)_0%,rgba(2,6,23,0.78)_58%,rgba(2,6,23,0.98)_100%)]" />
 
           <div className="max-w-6xl mx-auto px-6 relative">
             <div className="max-w-3xl mx-auto text-center">
@@ -731,7 +766,7 @@ export default function TradingExplanationPage() {
                 <h1 className="text-5xl md:text-7xl font-black tracking-tight text-white mb-6 leading-tight">
                   {tl(PAGE_T.heroH1)}
                   <br />
-                  <span className="bg-gradient-to-r from-rose-300 via-rose-500 to-white bg-clip-text text-transparent">
+                  <span className="bg-gradient-to-r from-rose-300 via-rose-500 to-fuchsia-400 bg-clip-text text-transparent">
                     {tl(PAGE_T.heroH2)}
                   </span>
                 </h1>
