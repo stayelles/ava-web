@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function CGUPage() {
   return (
-    <LegalLayout title="Conditions Générales d'Utilisation" updatedAt="Avril 2026">
+    <LegalLayout title="Conditions Générales d'Utilisation" updatedAt="Mai 2026">
       <LegalSection n={1} title="Objet et parties contractantes">
         <p>
           Les présentes Conditions Générales d&apos;Utilisation (CGU) régissent l&apos;accès et
@@ -236,7 +236,37 @@ export default function CGUPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={13} title="Permissions de l'application mobile">
+      <LegalSection n={13} title="Ava Trading — Risques financiers et responsabilité">
+        <p>
+          Ava Trading est une fonctionnalité d&apos;assistance algorithmique et d&apos;exécution
+          locale via MetaTrader 5. Elle ne constitue pas un conseil en investissement,
+          une recommandation personnalisée, une gestion de portefeuille, ni une promesse
+          de performance. Les marchés financiers sont risqués et les modèles d&apos;IA
+          peuvent se tromper, mal interpréter un signal, rencontrer un problème technique
+          ou réagir de manière inadaptée à une condition de marché.
+        </p>
+        <p className="mt-2">
+          En activant Ava Trading, vous reconnaissez expressément que vous pouvez subir
+          des pertes importantes, y compris la perte totale du capital déposé chez votre
+          broker. Vous restez seul responsable du choix du broker, du compte MT5, du symbole,
+          du levier, de la taille de lot, du capital engagé, des paramètres de risque et de
+          toute position ouverte, modifiée ou fermée par AvaBridgeEA ou par vous-même.
+        </p>
+        <ul className="list-disc list-inside space-y-1 mt-2">
+          <li>Nous conseillons un capital broker d&apos;au moins 300 USD avant utilisation.</li>
+          <li>Un effet de levier 1:1000 peut être plus adapté au fonctionnement visé si votre broker le propose, sans supprimer le risque de perte.</li>
+          <li>Les performances passées, tests, démonstrations ou captures d&apos;écran ne garantissent aucun résultat futur.</li>
+          <li>Vous devez tester en compte démo, surveiller régulièrement votre compte et arrêter Ava Trading si le risque ne vous convient pas.</li>
+        </ul>
+        <p className="mt-2">
+          Woonix LTD ne pourra être tenu responsable des pertes de trading, appels de marge,
+          erreurs de broker, glissements de prix, spreads, commissions, interruptions MT5,
+          erreurs de symbole, mauvaise configuration ou décisions prises sur la base de
+          signaux produits par Ava.
+        </p>
+      </LegalSection>
+
+      <LegalSection n={14} title="Permissions de l'application mobile">
         <p>
           L&apos;application mobile requiert certaines permissions pour fonctionner correctement :
         </p>
@@ -265,7 +295,7 @@ export default function CGUPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={14} title="Responsabilité et exclusions de garantie">
+      <LegalSection n={15} title="Responsabilité et exclusions de garantie">
         <p>
           Dans les limites autorisées par la loi applicable, Woonix LTD exclut toute
           garantie implicite de qualité marchande, d&apos;adéquation à un usage particulier
@@ -285,7 +315,7 @@ export default function CGUPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={15} title="Résiliation et suspension de compte">
+      <LegalSection n={16} title="Résiliation et suspension de compte">
         <p>
           Woonix LTD se réserve le droit de suspendre ou de résilier votre accès au service,
           avec ou sans préavis, en cas de violation des présentes CGU, d&apos;activité
@@ -300,7 +330,7 @@ export default function CGUPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={16} title="Propriété intellectuelle">
+      <LegalSection n={17} title="Propriété intellectuelle">
         <p>
           Tous les éléments d&apos;Ava — nom, logo, interface, algorithmes, contenu éditorial —
           sont protégés par les lois sur la propriété intellectuelle et appartiennent à
@@ -316,7 +346,7 @@ export default function CGUPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={17} title="Protection des données (RGPD)">
+      <LegalSection n={18} title="Protection des données (RGPD)">
         <p>
           Woonix LTD traite vos données personnelles conformément au Règlement Général sur
           la Protection des Données (RGPD - UE 2016/679) et aux lois britanniques équivalentes
@@ -326,7 +356,7 @@ export default function CGUPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={18} title="Loi applicable et juridiction">
+      <LegalSection n={19} title="Loi applicable et juridiction">
         <p>
           Les présentes CGU sont régies par le droit anglais et gallois.
           Tout litige relatif à l&apos;interprétation ou à l&apos;exécution des présentes
@@ -345,7 +375,7 @@ export default function CGUPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={19} title="Contact">
+      <LegalSection n={20} title="Contact">
         <p>
           Pour toute question relative aux présentes CGU, contactez-nous à :{' '}
           <a href="mailto:contact@call-ava.com" style={{ color: '#e11d48' }}>contact@call-ava.com</a>

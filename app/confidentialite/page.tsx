@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalLayout title="Politique de Confidentialité" updatedAt="Avril 2026">
+    <LegalLayout title="Politique de Confidentialité" updatedAt="Mai 2026">
       <LegalSection n={1} title="Responsable du traitement">
         <p>
           Le responsable du traitement de vos données personnelles est{' '}
@@ -38,6 +38,11 @@ export default function PrivacyPage() {
           <li>Tokens de notification push (pour les rappels programmés)</li>
           <li>Préférences utilisateur : langue, paramètres d&apos;application</li>
           <li>Informations techniques : type d&apos;appareil, version d&apos;application, système d&apos;exploitation</li>
+          <li>
+            Données Ava Trading nécessaires au fonctionnement local et à l&apos;amélioration :
+            plan actif, statut d&apos;accès, symbole MT5 sélectionné, paramètres de risque,
+            signaux, résultats agrégés/anonymisés et informations techniques AvaBridge
+          </li>
           <li>Données de parrainage (code referral, parrains/filleuls)</li>
           <li>
             Clé API Gemini personnelle (Plan Custom) — chiffrée AES-256-GCM avec votre PIN,
@@ -84,6 +89,7 @@ export default function PrivacyPage() {
           <li>Vous contacter pour des communications importantes relatives au service</li>
           <li>Détecter et prévenir les abus, fraudes ou violations des CGU</li>
           <li>Respecter nos obligations légales</li>
+          <li>Fournir Ava Trading, appliquer les limites par plan et améliorer les modèles de décision sans publier vos informations sensibles</li>
         </ul>
         <p className="mt-2">
           Nous ne pratiquons aucune prise de décision entièrement automatisée produisant
@@ -156,6 +162,12 @@ export default function PrivacyPage() {
           <li>
             <strong style={{ color: '#f1f5f9' }}>Resend</strong> : envoi d&apos;emails
             transactionnels (vérification de compte, notifications importantes)
+          </li>
+          <li>
+            <strong style={{ color: '#f1f5f9' }}>MetaTrader 5 / broker MT5</strong> :
+            AvaBridgeEA s&apos;exécute localement sur votre appareil et communique avec votre
+            terminal MT5. Woonix LTD ne reçoit pas vos identifiants broker et n&apos;est pas
+            responsable du traitement réalisé par votre broker.
           </li>
           <li>
             <strong style={{ color: '#f1f5f9' }}>Expo (notifications push)</strong> :
