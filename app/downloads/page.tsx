@@ -3,8 +3,28 @@ import { Apple, ArrowLeft, Download, ShieldCheck, Smartphone, Terminal } from "l
 import { SiGoogleplay } from "react-icons/si";
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
-const AVA_DESKTOP_VERSION = "1.1.12";
+const AVA_DESKTOP_VERSION = "1.1.20";
 const AVA_BRIDGE_EA_VERSION = "1.15";
+const BRIDGE_COMPATIBILITY = [
+  {
+    desktop: "1.1.20",
+    bridge: "1.15",
+    status: "Recommandé",
+    note: "TP broker actif, aucune protection broker côté stop loss, détection plus souple des symboles Gold/XAUUSD.",
+  },
+  {
+    desktop: "1.1.13 à 1.1.19",
+    bridge: "1.15",
+    status: "Accepté",
+    note: "Compatible pour Ava Trading, mise à jour Desktop conseillée pour le confort d'interface.",
+  },
+  {
+    desktop: "1.1.12 et avant",
+    bridge: "1.14 ou inférieur",
+    status: "Obsolète",
+    note: "À remplacer pour éviter les anciens comportements et profiter du TP broker actuel.",
+  },
+];
 const DOWNLOADS = [
   {
     title: "Ava iOS",
@@ -113,6 +133,42 @@ export default function DownloadsPage() {
           <p>
             Si un fichier Desktop affiche encore une erreur 404, cela signifie simplement que l'asset n'a pas encore été uploadé dans Hostinger sous ce nom exact. La page est prête, les liens fonctionneront dès que les fichiers seront présents dans <span className="font-bold text-slate-300">/downloads</span>.
           </p>
+        </div>
+
+        <div className="mx-auto mt-6 max-w-4xl rounded-3xl border border-white/10 bg-white/[0.035] p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-rose-300">Versions Ava Trading</p>
+              <h2 className="mt-1 text-2xl font-black">Compatibilité Ava Desktop / AvaBridge</h2>
+            </div>
+            <p className="max-w-md text-sm leading-relaxed text-slate-500">
+              Notes courtes pour choisir la bonne version, sans détails internes sensibles.
+            </p>
+          </div>
+          <div className="mt-5 grid gap-3">
+            {BRIDGE_COMPATIBILITY.map((item) => (
+              <div key={`${item.desktop}-${item.bridge}`} className="grid gap-3 rounded-2xl border border-white/10 bg-slate-950/55 p-4 md:grid-cols-[1fr_1fr_120px_2fr] md:items-center">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Ava Desktop</p>
+                  <p className="mt-1 font-black text-white">v{item.desktop}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">AvaBridgeEA</p>
+                  <p className="mt-1 font-black text-white">v{item.bridge}</p>
+                </div>
+                <span className={`w-fit rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest ${
+                  item.status === "Recommandé"
+                    ? "bg-emerald-500/10 text-emerald-300 border border-emerald-400/20"
+                    : item.status === "Accepté"
+                      ? "bg-blue-500/10 text-blue-300 border border-blue-400/20"
+                      : "bg-amber-500/10 text-amber-200 border border-amber-400/20"
+                }`}>
+                  {item.status}
+                </span>
+                <p className="text-sm leading-relaxed text-slate-400">{item.note}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </main>

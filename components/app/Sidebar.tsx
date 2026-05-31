@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Mic, MessageSquare, User, Crown, Users, Settings, LogOut, Download } from 'lucide-react'
+import { Mic, MessageSquare, User, Crown, Users, Settings, LogOut, Download, Terminal } from 'lucide-react'
 import Image from 'next/image'
 import type { AppTab } from './types'
 
@@ -13,6 +13,9 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'referral', label: 'Parrainage', icon: Users },
   { id: 'settings', label: 'Paramètres', icon: Settings },
 ]
+
+const DOWNLOAD_BASE_URL = 'https://call-ava.com/downloads'
+const AVA_BRIDGE_EA_VERSION = '1.15'
 
 interface Props {
   activeTab: AppTab
@@ -87,20 +90,42 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
           )
         })}
         <div className="pt-3 mt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <a
-            href="/downloads"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors group"
-            style={{
-              background: 'rgba(244,63,94,0.08)',
-              color: '#f43f5e',
-              border: '1px solid rgba(244,63,94,0.14)',
-            }}
-          >
-            <Download size={17} style={{ color: '#f43f5e', flexShrink: 0 }} />
-            <span className="text-sm font-semibold">Télécharger Ava</span>
-          </a>
+          <div className="space-y-2">
+            <a
+              href="/downloads"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors group"
+              style={{
+                background: 'rgba(244,63,94,0.08)',
+                color: '#f43f5e',
+                border: '1px solid rgba(244,63,94,0.14)',
+              }}
+            >
+              <Download size={17} style={{ color: '#f43f5e', flexShrink: 0 }} />
+              <span className="text-sm font-semibold">Télécharger Ava</span>
+            </a>
+            <a
+              href={`${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.mq5`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors group"
+              style={{
+                background: 'rgba(59,130,246,0.08)',
+                color: '#93c5fd',
+                border: '1px solid rgba(59,130,246,0.16)',
+              }}
+            >
+              <Terminal size={17} style={{ color: '#93c5fd', flexShrink: 0 }} />
+              <span className="text-sm font-semibold">AvaBridge MT5</span>
+            </a>
+            <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Compatibilité</p>
+              <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+                Ava Desktop 1.1.20 recommande AvaBridgeEA {AVA_BRIDGE_EA_VERSION}.
+              </p>
+            </div>
+          </div>
         </div>
       </nav>
 
