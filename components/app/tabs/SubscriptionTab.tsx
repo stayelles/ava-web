@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, 
   Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock,
-  CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight
+  CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight, X
 } from 'lucide-react'
 import { PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_MAX, PADDLE_PRICE_CUSTOM_PRO, PADDLE_PRICE_CUSTOM_SIMPLE, PADDLE_PRICE_CUSTOM_ULTRA, SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
@@ -360,7 +360,16 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
       })
       const result = await res.json().catch(() => ({}))
       if (!res.ok || result.error || !result.ok) {
-        setBillingError(result.error ?? 'Action Paddle impossible pour le moment.')
+        if (result.code === 'subscription_past_due') {
+          setBillingError(result.error ?? 'Paiement en retard : régularisez votre abonnement dans Paddle, puis relancez l’upgrade.')
+        } else if (result.code === 'subscription_not_active') {
+          setBillingError(result.error ?? 'Cet abonnement n’est plus actif. Souscrivez directement au nouveau plan depuis la page des offres.')
+        } else {
+          setBillingError(result.error ?? 'Action Paddle impossible pour le moment.')
+        }
+        if (result.url) {
+          setBillingMessage(String(result.url))
+        }
         return null
       }
       return result
@@ -878,7 +887,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-6 md:p-8 shadow-2xl space-y-6"
+              className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-6 md:p-8 shadow-2xl space-y-6"
               style={{
                 boxShadow: `0 20px 50px -12px ${targetPlan.accentColor}30`,
                 borderColor: `${targetPlan.accentColor}40`
@@ -889,8 +898,16 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 className="absolute top-0 left-0 right-0 h-[3px]"
                 style={{ background: `linear-gradient(90deg, transparent, ${targetPlan.accentColor}, transparent)` }}
               />
+              <button
+                type="button"
+                onClick={() => setShowUpgradeModal(false)}
+                className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="Fermer"
+              >
+                <X size={16} />
+              </button>
 
-              <div className="flex items-start gap-4">
+              <div className="flex items-start gap-4 pr-10">
                 <div 
                   className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
                   style={{ background: `${targetPlan.accentColor}15` }}
@@ -915,18 +932,30 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   La transition vers <strong>{targetPlan.label}</strong> est calculée au prorata par Paddle et reste attachée à la même subscription.
                 </p>
                 {billingError && (
-                  <p className="text-xs text-rose-300 leading-relaxed font-semibold">
-                    {billingError}
-                  </p>
+                  <div className="rounded-xl border border-rose-400/15 bg-rose-500/10 px-3 py-2">
+                    <p className="text-xs text-rose-200 leading-relaxed font-semibold">
+                      {billingError}
+                    </p>
+                    {billingMessage?.startsWith('http') && (
+                      <button
+                        type="button"
+                        onClick={() => window.open(billingMessage, '_blank', 'noopener,noreferrer')}
+                        className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-bold text-rose-100 hover:text-white"
+                      >
+                        Régulariser dans Paddle
+                        <ExternalLink size={10} />
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <button
                   type="button"
                   disabled={billingLoading}
                   onClick={changePaddlePlan}
-                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-xs text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg text-center"
+                  className="min-h-12 whitespace-nowrap flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg text-center disabled:opacity-60"
                   style={{ background: `linear-gradient(90deg, ${targetPlan.accentColor}dd, ${targetPlan.accentColor})` }}
                 >
                   <CreditCard size={14} />
@@ -936,16 +965,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   type="button"
                   disabled={billingLoading}
                   onClick={openPaddlePortal}
-                  className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-xs text-slate-200 transition-colors border border-white/5 bg-white/5 hover:bg-white/10"
+                  className="min-h-12 whitespace-nowrap flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm text-slate-200 transition-colors border border-white/5 bg-white/5 hover:bg-white/10 disabled:opacity-60"
                 >
                   Portail Paddle
                   <ExternalLink size={10} className="opacity-80" />
-                </button>
-                <button
-                  onClick={() => setShowUpgradeModal(false)}
-                  className="px-5 py-3.5 rounded-2xl font-bold text-xs text-slate-400 hover:text-white transition-colors border border-white/5 hover:bg-white/5"
-                >
-                  Fermer
                 </button>
               </div>
             </motion.div>
