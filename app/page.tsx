@@ -851,7 +851,7 @@ function Pricing() {
       highlighted: true,
       features: [
         'Tout Custom Simple inclus',
-        'Capital conseillé : 500$ à 3 000$',
+        'Capital conseillé : 500$ à 1 000$',
         'Objectif/session : 2$ à 25$',
         '2 renforts contrôlés maximum',
         'Référence perte jusqu’à -500$',
@@ -872,7 +872,7 @@ function Pricing() {
       }),
       features: [
         'Tout Custom Pro inclus',
-        'Capital conseillé : 3 000$ à 8 000$',
+        'Capital conseillé : 1 000$ à 5 000$',
         'Objectif/session : 2$ à 100$',
         '3 renforts contrôlés maximum',
         'Référence perte jusqu’à -1000$',
@@ -893,7 +893,7 @@ function Pricing() {
       }),
       features: [
         'Tout Custom Ultra inclus',
-        'Capital conseillé : 8 000$ à 20 000$+',
+        'Capital conseillé : 5 000$ à 20 000$+',
         'Objectif/session illimité, minimum 2$',
         '5 renforts contrôlés maximum',
         'Profit min jusqu’à 10$ · lot max jusqu’à 1',

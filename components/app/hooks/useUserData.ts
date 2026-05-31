@@ -150,6 +150,41 @@ export function useUserData() {
     }
   }, [login])
 
+  const requestPinReset = useCallback(async (email: string): Promise<{ ok: boolean; error?: string }> => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/pin-reset-request`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({ email: email.trim() }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok || result.error) {
+        return { ok: false, error: result.error ?? 'Impossible d’envoyer le lien' }
+      }
+      return { ok: true }
+    } catch {
+      return { ok: false, error: 'Erreur réseau' }
+    }
+  }, [])
+
+  const confirmPinReset = useCallback(async (email: string, token: string, newPin: string): Promise<{ ok: boolean; error?: string }> => {
+    if (!/^\d{4,6}$/.test(newPin)) return { ok: false, error: 'Le PIN doit contenir 4 à 6 chiffres' }
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/pin-reset-confirm`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({ email: email.trim(), token: token.trim(), pin: newPin }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok || result.error) {
+        return { ok: false, error: result.error ?? 'Lien invalide ou expiré' }
+      }
+      return { ok: true }
+    } catch {
+      return { ok: false, error: 'Erreur réseau' }
+    }
+  }, [])
+
   const logout = useCallback(() => {
     setUser(null)
     setPermissions({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false, dailyTextMessages: 10, voiceMonthlyMinutes: 3, dailyWebSearches: 0, memoryWordLimit: 150, agentDailyLimit: 0, mcpDailyLimit: 0, desktopDailyLimit: 0, canUseAvaTrading: false })
@@ -312,6 +347,6 @@ export function useUserData() {
     refreshUser, updatePin, decrementCredits, trackVoiceTime,
     customApiKey, saveApiKey, removeApiKey,
     incrementTextMessages,
-    registerRequest, registerVerify,
+    registerRequest, registerVerify, requestPinReset, confirmPinReset,
   }
 }

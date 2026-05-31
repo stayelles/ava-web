@@ -10,7 +10,7 @@ export default function AvaWebApp() {
     user, loginLoading, loginError, login, logout,
     refreshUser, updatePin, permissions, decrementCredits, trackVoiceTime,
     customApiKey, saveApiKey, removeApiKey, incrementTextMessages,
-    registerRequest, registerVerify,
+    registerRequest, registerVerify, requestPinReset, confirmPinReset,
   } = useUserData()
 
   // Fetch shared Gemini key from Edge Function — never baked into bundle
@@ -24,6 +24,8 @@ export default function AvaWebApp() {
         error={loginError}
         onRegisterRequest={registerRequest}
         onRegisterVerify={registerVerify}
+        onPinResetRequest={requestPinReset}
+        onPinResetConfirm={confirmPinReset}
       />
     )
   }

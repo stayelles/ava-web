@@ -12,10 +12,14 @@ interface Props {
   error: string
   onRegisterRequest: (email: string, pin: string, lang?: string, referralCode?: string) => Promise<{ ok: boolean; error?: string }>
   onRegisterVerify: (email: string, code: string, pin: string) => Promise<{ ok: boolean; error?: string }>
+  onPinResetRequest: (email: string) => Promise<{ ok: boolean; error?: string }>
+  onPinResetConfirm: (email: string, token: string, pin: string) => Promise<{ ok: boolean; error?: string }>
 }
 
-export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegisterVerify }: Props) {
-  const [mode, setMode] = useState<'login' | 'signup' | 'otp'>('login')
+type AuthMode = 'login' | 'signup' | 'otp' | 'reset-request' | 'reset-confirm'
+
+export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegisterVerify, onPinResetRequest, onPinResetConfirm }: Props) {
+  const [mode, setMode] = useState<AuthMode>('login')
   const [identifier, setIdentifier] = useState('')
   const [pin, setPin] = useState('')
   const [showPin, setShowPin] = useState(false)
@@ -34,6 +38,25 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
   // Local loading/error states for registration
   const [localLoading, setLocalLoading] = useState(false)
   const [localError, setLocalError] = useState('')
+  const [localSuccess, setLocalSuccess] = useState('')
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetToken, setResetToken] = useState('')
+  const [resetPin, setResetPin] = useState('')
+  const [resetPinConfirm, setResetPinConfirm] = useState('')
+  const [showResetPin, setShowResetPin] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const token = params.get('pin_token')
+    const email = params.get('email')
+    if (token && email) {
+      setResetToken(token)
+      setResetEmail(email)
+      setMode('reset-confirm')
+      setLocalError('')
+      setLocalSuccess('')
+    }
+  }, [])
 
   useEffect(() => {
     if (resendCooldown <= 0) return
@@ -89,6 +112,56 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
     }
   }
 
+  const handlePinResetRequest = async () => {
+    const email = resetEmail.trim()
+    if (!email) return
+    setLocalLoading(true)
+    setLocalError('')
+    setLocalSuccess('')
+    try {
+      const res = await onPinResetRequest(email)
+      if (!res.ok) {
+        setLocalError(res.error || 'Impossible d’envoyer le lien')
+      } else {
+        setLocalSuccess('Si ce compte existe, un lien sécurisé vient d’être envoyé par e-mail.')
+      }
+    } catch {
+      setLocalError('Erreur de connexion. Réessayez.')
+    } finally {
+      setLocalLoading(false)
+    }
+  }
+
+  const handlePinResetConfirm = async () => {
+    const email = resetEmail.trim()
+    const token = resetToken.trim()
+    const newPin = resetPin.trim()
+    if (!email || !token || !newPin) return
+    if (newPin !== resetPinConfirm.trim()) {
+      setLocalError('Les deux codes PIN ne correspondent pas')
+      return
+    }
+    setLocalLoading(true)
+    setLocalError('')
+    setLocalSuccess('')
+    try {
+      const res = await onPinResetConfirm(email, token, newPin)
+      if (!res.ok) {
+        setLocalError(res.error || 'Lien invalide ou expiré')
+      } else {
+        setIdentifier(email)
+        setPin('')
+        setLocalSuccess('PIN mis à jour. Vous pouvez vous connecter avec votre nouveau code.')
+        setMode('login')
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+    } catch {
+      setLocalError('Erreur de connexion. Réessayez.')
+    } finally {
+      setLocalLoading(false)
+    }
+  }
+
   const handleResendOtp = async () => {
     if (resendCooldown > 0) return
     setLocalLoading(true)
@@ -112,12 +185,15 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
       if (mode === 'login') handleLoginSubmit()
       else if (mode === 'signup') handleSignupSubmit()
       else if (mode === 'otp') handleOtpSubmit()
+      else if (mode === 'reset-request') handlePinResetRequest()
+      else if (mode === 'reset-confirm') handlePinResetConfirm()
     }
   }
 
-  const switchMode = (newMode: 'login' | 'signup' | 'otp') => {
+  const switchMode = (newMode: AuthMode) => {
     setMode(newMode)
     setLocalError('')
+    setLocalSuccess('')
     setOtpCode('')
   }
 
@@ -191,10 +267,10 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
               className="text-2xl font-black tracking-tight"
               style={{ color: '#fff', letterSpacing: '-0.03em' }}
             >
-              {mode === 'login' ? 'Connexion' : mode === 'signup' ? 'Créer un compte' : 'Vérification'}
+              {mode === 'login' ? 'Connexion' : mode === 'signup' ? 'Créer un compte' : mode === 'otp' ? 'Vérification' : mode === 'reset-request' ? 'Réinitialiser le PIN' : 'Créer votre PIN'}
             </h1>
             <p className="text-sm mt-1 font-medium" style={{ color: '#64748b' }}>
-              {mode === 'login' ? 'Accédez à votre assistant vocal' : mode === 'signup' ? 'Rejoignez Ava en quelques secondes' : 'Entrez le code envoyé par e-mail'}
+              {mode === 'login' ? 'Accédez à votre assistant vocal' : mode === 'signup' ? 'Rejoignez Ava en quelques secondes' : mode === 'otp' ? 'Entrez le code envoyé par e-mail' : mode === 'reset-request' ? 'Recevez un lien sécurisé par e-mail' : 'Choisissez un nouveau code sécurisé'}
             </p>
           </motion.div>
 
@@ -291,6 +367,12 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
                   </p>
                 )}
 
+                {localSuccess && (
+                  <p className="text-sm pt-1" style={{ color: '#34d399' }}>
+                    {localSuccess}
+                  </p>
+                )}
+
                 <button
                   onClick={handleLoginSubmit}
                   disabled={activeLoading}
@@ -322,6 +404,16 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
                     Créer un compte
                   </button>
                 </div>
+                <button
+                  onClick={() => {
+                    setResetEmail(identifier.includes('@') ? identifier : '')
+                    switchMode('reset-request')
+                  }}
+                  className="w-full text-xs font-semibold hover:underline"
+                  style={{ color: '#64748b' }}
+                >
+                  PIN oublié ?
+                </button>
               </motion.div>
             )}
 
@@ -578,6 +670,182 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
                     <ArrowLeft size={12} /> Modifier l&apos;adresse e-mail
                   </button>
                 </div>
+              </motion.div>
+            )}
+
+            {/* Mode demande reset PIN */}
+            {mode === 'reset-request' && (
+              <motion.div
+                key="reset-request-form"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-3"
+              >
+                <div>
+                  <label className="block text-[11px] font-bold mb-1.5 uppercase tracking-widest" style={{ color: '#475569' }}>
+                    E-mail du compte
+                  </label>
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    onKeyDown={handleKey}
+                    placeholder="votre@email.com"
+                    style={{
+                      width: '100%',
+                      padding: '13px 16px',
+                      borderRadius: 14,
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.09)',
+                      color: '#f8fafc',
+                      fontSize: 15,
+                      outline: 'none',
+                      transition: 'border-color 0.2s',
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = 'rgba(225,29,72,0.5)')}
+                    onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.09)')}
+                  />
+                </div>
+
+                {activeError && <p className="text-sm pt-1" style={{ color: '#f43f5e' }}>{activeError}</p>}
+                {localSuccess && <p className="text-sm pt-1" style={{ color: '#34d399' }}>{localSuccess}</p>}
+
+                <button
+                  onClick={handlePinResetRequest}
+                  disabled={activeLoading || !resetEmail}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm mt-2"
+                  style={{
+                    background: activeLoading || !resetEmail ? 'rgba(225,29,72,0.5)' : '#e11d48',
+                    color: '#fff',
+                    cursor: activeLoading || !resetEmail ? 'not-allowed' : 'pointer',
+                    boxShadow: activeLoading || !resetEmail ? 'none' : '0 4px 24px rgba(225,29,72,0.4)',
+                    transition: 'background 0.2s, box-shadow 0.2s',
+                  }}
+                >
+                  {activeLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Envoyer le lien <Mail size={15} /></>}
+                </button>
+
+                <button
+                  onClick={() => switchMode('login')}
+                  className="w-full text-xs hover:underline flex items-center justify-center gap-1 mt-1 font-semibold"
+                  style={{ color: '#64748b' }}
+                >
+                  <ArrowLeft size={12} /> Retour à la connexion
+                </button>
+              </motion.div>
+            )}
+
+            {/* Mode confirmation reset PIN */}
+            {mode === 'reset-confirm' && (
+              <motion.div
+                key="reset-confirm-form"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-3"
+              >
+                <div className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl text-xs text-slate-400 text-center leading-relaxed">
+                  Lien sécurisé détecté pour :<br />
+                  <strong className="text-white font-bold block mt-1">{resetEmail}</strong>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold mb-1.5 uppercase tracking-widest" style={{ color: '#475569' }}>
+                    Nouveau code PIN
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showResetPin ? 'text' : 'password'}
+                      value={resetPin}
+                      onChange={(e) => setResetPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      onKeyDown={handleKey}
+                      placeholder="••••••"
+                      inputMode="numeric"
+                      style={{
+                        width: '100%',
+                        padding: '13px 44px 13px 16px',
+                        borderRadius: 14,
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.09)',
+                        color: '#f8fafc',
+                        fontSize: 15,
+                        outline: 'none',
+                        letterSpacing: showResetPin ? '0.1em' : '0.3em',
+                        transition: 'border-color 0.2s',
+                      }}
+                      onFocus={(e) => (e.target.style.borderColor = 'rgba(225,29,72,0.5)')}
+                      onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.09)')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPin(v => !v)}
+                      style={{
+                        position: 'absolute',
+                        right: 14,
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: 0,
+                        color: 'rgba(255,255,255,0.25)',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                      tabIndex={-1}
+                    >
+                      {showResetPin ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold mb-1.5 uppercase tracking-widest" style={{ color: '#475569' }}>
+                    Confirmer le code PIN
+                  </label>
+                  <input
+                    type={showResetPin ? 'text' : 'password'}
+                    value={resetPinConfirm}
+                    onChange={(e) => setResetPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    onKeyDown={handleKey}
+                    placeholder="••••••"
+                    inputMode="numeric"
+                    style={{
+                      width: '100%',
+                      padding: '13px 16px',
+                      borderRadius: 14,
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.09)',
+                      color: '#f8fafc',
+                      fontSize: 15,
+                      outline: 'none',
+                      letterSpacing: showResetPin ? '0.1em' : '0.3em',
+                      transition: 'border-color 0.2s',
+                    }}
+                    onFocus={(e) => (e.target.style.borderColor = 'rgba(225,29,72,0.5)')}
+                    onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.09)')}
+                  />
+                </div>
+
+                {activeError && <p className="text-sm pt-1" style={{ color: '#f43f5e' }}>{activeError}</p>}
+
+                <button
+                  onClick={handlePinResetConfirm}
+                  disabled={activeLoading || !resetPin || resetPin.length < 4 || resetPin !== resetPinConfirm}
+                  className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm mt-2"
+                  style={{
+                    background: activeLoading || !resetPin || resetPin.length < 4 || resetPin !== resetPinConfirm ? 'rgba(225,29,72,0.5)' : '#e11d48',
+                    color: '#fff',
+                    cursor: activeLoading || !resetPin || resetPin.length < 4 || resetPin !== resetPinConfirm ? 'not-allowed' : 'pointer',
+                    boxShadow: activeLoading || !resetPin || resetPin.length < 4 || resetPin !== resetPinConfirm ? 'none' : '0 4px 24px rgba(225,29,72,0.4)',
+                    transition: 'background 0.2s, box-shadow 0.2s',
+                  }}
+                >
+                  {activeLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <>Mettre à jour le PIN <Shield size={15} /></>}
+                </button>
               </motion.div>
             )}
           </AnimatePresence>

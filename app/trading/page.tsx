@@ -192,14 +192,14 @@ const PAGE_T = {
     en: "Ava Trading — Automatic IA Scalping Agent for MT5",
     fr: "Ava Trading — Agent de Scalping IA Automatique pour MT5",
     de: "Ava Trading — Automatischer KI-Scalping-Agent für MT5",
-    tr: "Ava Trading — MT5 için Otomatik Yapay Zeka Scalping Botu",
+    tr: "Ava Trading — MT5 için Otomatik Yapay Zeka Scalping Ajanı",
     es: "Ava Trading — Agent de Scalping IA Automático para MT5",
   },
   heroBadge: {
     en: "Algorithmic Scalping Agent",
     fr: "Agent de Scalping Algorithmique",
     de: "Algorithmischer Scalping-Agent",
-    tr: "Algoritmik Scalping Botu",
+    tr: "Algoritmik Scalping Ajanı",
     es: "Agent de Scalping Algorítmico",
   },
   heroH1: {
@@ -236,7 +236,7 @@ const PAGE_T = {
     en: "Before configuring and launching the agent, make sure you have prepared the following elements:",
     fr: "Avant de configurer et de lancer l'agent, assurez-vous d'avoir préparé les éléments suivants :",
     de: "Stellen Sie vor dem Konfigurieren und Starten des Agenten sicher, dass Sie folgende Elemente vorbereitet haben:",
-    tr: "Botu kurup başlatmadan önce aşağıdaki unsurları hazırladığınızdan emin olun:",
+    tr: "Ajanı kurup başlatmadan önce aşağıdaki unsurları hazırladığınızdan emin olun:",
     es: "Antes de configurar y lanzar el agent, asegúrese de haber preparado los siguientes elementos:",
   },
   prereqs: [
@@ -246,7 +246,7 @@ const PAGE_T = {
         en: "A MetaTrader 5 account is required. We highly recommend starting with a Deriv Demo account to familiarize yourself with the agent's speed.",
         fr: "Un compte MetaTrader 5 est nécessaire. Nous recommandons vivement de commencer sur un compte Démo Deriv pour se familiariser avec la vitesse du agent.",
         de: "Ein MetaTrader 5-Konto ist erforderlich. Wir empfehlen dringend, mit einem Deriv-Demo-Konto zu beginnen, um sich mit der Geschwindigkeit vertraut zu machen.",
-        tr: "Bir MetaTrader 5 hesabı gereklidir. Botun hızına alışmak için kesinlikle bir Deriv Demo hesabı ile başlamanızı öneririz.",
+        tr: "Bir MetaTrader 5 hesabı gereklidir. Ajanın hızına alışmak için kesinlikle bir Deriv Demo hesabı ile başlamanızı öneririz.",
         es: "Se requiere una cuenta de MetaTrader 5. Recomendamos encarecidamente comenzar con una cuenta demo de Deriv para familiarizarse con la velocidad del agent.",
       }
     },
@@ -538,7 +538,7 @@ const PAGE_T = {
         en: "No. The 'Reset Session' (Repartir à zéro) option only resets local session metrics such as the peak profit, current session profit, and trade count back to 0. It does not affect the artificial intelligence core, machine learning weights, or the conversational coach memory. Your agent retains all its global learned intelligence.",
         fr: "Non. L'option 'Repartir à zéro' (Reset Session) réinitialise uniquement les indicateurs locaux de la session en cours (sommet de gain, profit cumulé, nombre de trades). Cela n'a aucun impact sur le modèle d'intelligence artificielle, les poids d'apprentissage automatique (ML Sync) ou la mémoire du coach. L'agent conserve toute son expérience.",
         de: "Nein. Die Option 'Sitzungs-Reset' (Repartir à zéro) setzt lediglich die lokalen Indikatoren der aktuellen Sitzung (Spitzengewinn, aufgelaufener Gewinn, Anzahl der Trades) zurück. Dies hat keine Auswirkungen auf das KI-Modell, die Lerneinstellungen (ML Sync) oder das Gedächtnis. Der Agent behält seine gesamte Erfahrung.",
-        tr: "Hayır. 'Repartir à zéro' (Oturumu Sıfırla) seçeneği yalnızca en yüksek kâr, mevcut oturum kârı ve işlem sayısı gibi yerel oturum göstergelerini sıfırlar. Yapay zeka çekirdeğini, makine öğrenimi ağırlıklarını (ML Sync) veya koç hafızasını etkilemez. Botunuz tüm küresel öğrenilmiş deneyimini korur.",
+        tr: "Hayır. 'Repartir à zéro' (Oturumu Sıfırla) seçeneği yalnızca en yüksek kâr, mevcut oturum kârı ve işlem sayısı gibi yerel oturum göstergelerini sıfırlar. Yapay zeka çekirdeğini, makine öğrenimi ağırlıklarını (ML Sync) veya koç hafızasını etkilemez. Ajanınız tüm küresel öğrenilmiş deneyimini korur.",
         es: "No. La opción 'Reiniciar sesión' (Repartir à zéro) solo restablece los indicadores locales de la sesión actual (pico de ganancias, beneficio acumulado, número de operaciones). No tiene ningún impacto en el núcleo del modelo de IA, los pesos de aprendizaje automático (ML Sync) o la memoria del coach. El agent conserva toda su experiencia.",
       }
     },
