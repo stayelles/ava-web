@@ -8,14 +8,13 @@ export const metadata: Metadata = {
 
 export default function RefundPage() {
   return (
-    <LegalLayout title="Politique de Remboursement" updatedAt="Avril 2026">
+    <LegalLayout title="Politique de Remboursement" updatedAt="Mai 2026">
       <LegalSection n={1} title="Notre engagement">
         <p>
-          Chez Woonix LTD, votre satisfaction est notre priorité. Ava propose un essai
-          gratuit de 1 jour pour vous permettre de tester le service sans engagement
-          ni paiement. Si vous souscrivez à un abonnement payant et souhaitez être
-          remboursé, vous bénéficiez d&apos;un remboursement complet, sans conditions
-          ni questions posées, dans les 14 jours suivant votre premier paiement.
+          Chez Woonix LTD, votre satisfaction est notre priorité. Si vous souscrivez
+          à un abonnement payant et souhaitez être remboursé, vous bénéficiez
+          d&apos;un remboursement complet, sans conditions ni questions posées, dans
+          les 14 jours suivant votre premier paiement.
         </p>
       </LegalSection>
 

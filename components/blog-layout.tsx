@@ -58,14 +58,14 @@ export default function BlogLayout({ title, subtitle, date, readTime, category, 
           className="mt-16 rounded-2xl p-8 text-center"
           style={{ background: 'rgba(225,29,72,0.06)', border: '1px solid rgba(225,29,72,0.15)' }}
         >
-          <p className="text-white font-bold text-xl mb-2">Try Ava for free</p>
-          <p className="text-slate-400 text-sm mb-6">No credit card required. 7-day free trial included.</p>
+          <p className="text-white font-bold text-xl mb-2">Discover Ava</p>
+          <p className="text-slate-400 text-sm mb-6">Choose the monthly plan that matches how you use Ava.</p>
           <Link
             href="/app"
             className="inline-flex items-center gap-2 px-8 py-3 rounded-xl font-bold text-white transition-all hover:scale-105"
             style={{ background: '#e11d48' }}
           >
-            Start for free →
+            View plans →
           </Link>
         </div>
       </article>

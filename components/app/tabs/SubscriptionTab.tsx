@@ -27,7 +27,6 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
     popular: false,
-    trial: null,
     accentColor: '#6366f1',
     bg: 'linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(99, 102, 241, 0.01) 100%)',
     border: 'rgba(99, 102, 241, 0.15)',
@@ -53,7 +52,6 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_PRO_STARTER,
     popular: false,
-    trial: '1 jour gratuit',
     accentColor: '#f43f5e',
     bg: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
     border: 'rgba(255, 255, 255, 0.08)',
@@ -78,7 +76,6 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_PRO,
     popular: true,
-    trial: '1 jour gratuit',
     badge: 'Recommandé',
     accentColor: '#e11d48',
     bg: 'linear-gradient(135deg, rgba(225, 29, 72, 0.05) 0%, rgba(225, 29, 72, 0.01) 100%)',
@@ -105,7 +102,6 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_ULTRA,
     popular: true,
-    trial: null,
     badge: 'Haute performance',
     accentColor: '#e11d48',
     bg: 'linear-gradient(135deg, rgba(225, 29, 72, 0.06) 0%, rgba(99, 102, 241, 0.02) 100%)',
@@ -131,7 +127,6 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_MAX,
     popular: false,
-    trial: null,
     badge: 'Capital élevé',
     accentColor: '#f43f5e',
     bg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(15, 23, 42, 0.18) 100%)',
@@ -286,10 +281,17 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const [billingLoading, setBillingLoading] = useState(false)
   const [billingError, setBillingError] = useState('')
   const [billingMessage, setBillingMessage] = useState('')
+  const [refreshedOnce, setRefreshedOnce] = useState(false)
 
   const pro = isPro(user)
   const custom = isCustomPlan(user)
   const { openCheckout } = usePaddle(onRefresh ? () => setTimeout(onRefresh!, 5000) : undefined)
+
+  useEffect(() => {
+    if (refreshedOnce) return
+    setRefreshedOnce(true)
+    onRefresh?.()
+  }, [onRefresh, refreshedOnce])
 
   const hasMobileSubscription = !!user.subscription_tier &&
     user.subscription_tier !== 'free' &&
@@ -671,12 +673,6 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                       <span className="text-xs text-slate-500 font-semibold">{plan.per}</span>
                     </div>
                     
-                    {plan.trial && plan.key !== activePlanKey && (
-                      <span className="text-[10px] font-bold text-emerald-400 block mt-2 tracking-wide">
-                        ⚡️ {plan.trial} · Annulation à tout moment
-                      </span>
-                    )}
-                    
                     {/* Description */}
                     <p className="text-xs text-slate-400 mt-5 leading-relaxed font-medium">
                       {plan.description}
@@ -781,12 +777,6 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                     <span className="text-xs text-slate-500 font-semibold">{plan.per}</span>
                   </div>
                   
-                  {plan.trial && (
-                    <span className="text-[10px] font-bold text-emerald-400 block mt-2 tracking-wide">
-                      ⚡️ {plan.trial} · Annulation à tout moment
-                    </span>
-                  )}
-                  
                   {/* Description */}
                   <p className="text-xs text-slate-400 mt-5 leading-relaxed font-medium">
                     {plan.description}
@@ -827,7 +817,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                       e.currentTarget.style.background = plan.btnBg as string
                     }}
                   >
-                    {isPriceConfigured(plan.priceId) ? (plan.trial ? 'Commencer l\'essai' : 'Souscrire') : 'Prix Paddle en attente'}
+                    {isPriceConfigured(plan.priceId) ? 'Souscrire' : 'Prix Paddle en attente'}
                   </button>
                 </div>
               </motion.div>
@@ -883,7 +873,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   Ava va modifier votre abonnement Paddle existant, sans créer de deuxième abonnement.
                 </p>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  La transition vers <strong>{targetPlan.label}</strong> est calculée au prorata par Paddle. Si vous êtes encore en période d&apos;essai, l&apos;abonnement reste attaché à la même subscription.
+                  La transition vers <strong>{targetPlan.label}</strong> est calculée au prorata par Paddle et reste attachée à la même subscription.
                 </p>
                 {billingError && (
                   <p className="text-xs text-rose-300 leading-relaxed font-semibold">

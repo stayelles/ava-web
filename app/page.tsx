@@ -1030,7 +1030,7 @@ function PricingLegacy() {
       accent: '#a78bfa', accentBg: 'rgba(167,139,250,0.06)', accentBorder: 'rgba(167,139,250,0.22)',
     },
   ]
-  const plans = allPlans.filter(p => p.id !== 'pro_starter')
+  const plans = allPlans.filter(p => p.id !== 'free' && p.id !== 'pro_starter')
 
 
   // ── Feature rows ─────────────────────────────────────────────────────────────
@@ -1193,8 +1193,6 @@ function PricingLegacy() {
   }
 
   const perMonth = tl({ fr: '/mois', en: '/mo', de: '/Mon.', tr: '/ay', es: '/mes' })
-  const trialLabel = tl({ fr: 'Aujourd\'hui : 0€', en: 'Today: $0', de: 'Heute: 0€', tr: 'Bugün: 0€', es: 'Hoy: 0€' })
-  const afterLabel = tl(T.pricing.afterTrial)
   const planGridTemplate = `180px repeat(${plans.length}, 1fr)`
 
   const [expandedMobilePlan, setExpandedMobilePlan] = useState<number | null>(1) // default Pro Starter expanded
@@ -1215,12 +1213,11 @@ function PricingLegacy() {
           <p className="text-slate-400 text-lg mt-4 max-w-xl mx-auto">
             {tl(T.pricing.subtitle)}
           </p>
-          {/* Single minimal trial badge — inspired by Stripe/Linear style */}
           <div className="flex justify-center mt-6">
             <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold"
-              style={{ background: 'rgba(8,16,26,0.85)', border: '1px solid rgba(255,255,255,0.10)', color: '#34d399' }}>
+              style={{ background: 'rgba(8,16,26,0.85)', border: '1px solid rgba(255,255,255,0.10)', color: '#fda4af' }}>
               <Sparkles size={13} className="text-emerald-400" />
-              {tl({ fr: '1 jour d\'essai gratuit · Annulez à tout moment', en: '1-day free trial · Cancel anytime', de: '1 Tag gratis testen · Jederzeit kündbar', tr: '1 günlük ücretsiz deneme · İstediğiniz zaman iptal', es: '1 día de prueba gratis · Cancela cuando quieras' })}
+              {tl(T.pricing.billingBadge)}
             </div>
           </div>
         </FadeUp>
@@ -1259,12 +1256,10 @@ function PricingLegacy() {
                     </p>
                     {plan.priceId ? (
                       <>
-                        <p className="text-[10px] font-bold mb-0.5" style={{ color: '#34d399' }}>{trialLabel}</p>
                         <p className="text-lg font-black text-white leading-none">
                           {isEuro ? plan.priceEur : plan.priceUsd}
                           <span className="text-[10px] text-white/30 font-normal ml-0.5">{perMonth}</span>
                         </p>
-                        <p className="text-[9px] text-white/25 mt-0.5">{afterLabel}</p>
                       </>
                     ) : (
                       <>
@@ -1369,7 +1364,6 @@ function PricingLegacy() {
                               {isEuro ? plan.priceEur : plan.priceUsd}
                             </span>
                             <span className="text-xs text-white/35">{perMonth}</span>
-                            <span className="text-[10px] font-semibold ml-1" style={{ color: '#34d399' }}>{trialLabel}</span>
                           </div>
                         ) : (
                           <div className="flex items-baseline gap-1.5 mt-0.5">
@@ -1433,7 +1427,7 @@ function PricingLegacy() {
                             ) : (
                               <a href="/app" className="block w-full py-3.5 rounded-2xl text-sm font-bold text-center text-white/50"
                                 style={{ border: '1px solid rgba(255,255,255,0.10)' }}>
-                                {tl({ fr: 'Commencer gratuitement', en: 'Get started free', de: 'Kostenlos starten', tr: 'Ücretsiz başla', es: 'Empezar gratis' })}
+                                {tl({ fr: 'Commencer', en: 'Get started', de: 'Loslegen', tr: 'Başla', es: 'Empezar' })}
                               </a>
                             )}
                           </div>

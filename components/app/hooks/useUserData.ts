@@ -36,6 +36,18 @@ async function fetchMemory(userId: string): Promise<string> {
   }
 }
 
+async function fetchUserProfile(userId: string): Promise<UserData | null> {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${userId}&select=${SELECT_FIELDS}`, {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
+    })
+    const data = await res.json()
+    return Array.isArray(data) && data[0] ? data[0] as UserData : null
+  } catch {
+    return null
+  }
+}
+
 export function useUserData() {
   const [user, setUser] = useState<UserData | null>(null)
   const [loginLoading, setLoginLoading] = useState(false)
@@ -62,6 +74,14 @@ export function useUserData() {
             body: JSON.stringify({ voice_minutes_used: 0, voice_quota_reset_at: u.voice_quota_reset_at }),
           }).catch(() => {})
         }
+        fetchUserProfile(u.id).then(fresh => {
+          if (!fresh) return
+          const updated = applyVoiceReset({ ...fresh, memorySummary: u.memorySummary })
+          setUser(updated)
+          setPermissions(resolvePermissions(updated))
+          const { memorySummary: _, ...toStore } = updated
+          localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
+        })
         // Refresh memory in background
         fetchMemory(u.id).then(memorySummary => {
           if (memorySummary) setUser(prev => prev ? { ...prev, memorySummary } : prev)
@@ -195,16 +215,12 @@ export function useUserData() {
   const refreshUser = useCallback(async () => {
     if (!user) return
     try {
-      const url = `${SUPABASE_URL}/rest/v1/ava_users?id=eq.${user.id}&select=${SELECT_FIELDS}`
-      const res = await fetch(url, {
-        headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
-      })
-      const data = await res.json()
-      if (Array.isArray(data) && data.length > 0) {
-        const u = { ...data[0] as UserData, memorySummary: user.memorySummary }
+      const fresh = await fetchUserProfile(user.id)
+      if (fresh) {
+        const u = { ...fresh, memorySummary: user.memorySummary }
         setUser(u)
         setPermissions(resolvePermissions(u))
-        localStorage.setItem(SESSION_KEY, JSON.stringify(data[0]))
+        localStorage.setItem(SESSION_KEY, JSON.stringify(fresh))
         // Re-fetch memory so the next session benefits from the updated summary
         fetchMemory(u.id).then(memorySummary => {
           if (memorySummary) setUser(prev => prev ? { ...prev, memorySummary } : prev)

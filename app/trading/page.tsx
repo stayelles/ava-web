@@ -153,7 +153,7 @@ function Navbar() {
         <div className="flex items-center gap-3">
           <LangSwitcher />
           <NavbarButton href="/app" variant="primary">
-            {tl({ en: 'Start For Free', fr: 'Commencer gratuitement', de: 'Kostenlos starten', tr: 'Ücretsiz Başla', es: 'Empezar gratis' })}
+            {tl({ en: 'View plans', fr: 'Voir les tarifs', de: 'Preise ansehen', tr: 'Planları gör', es: 'Ver tarifas' })}
           </NavbarButton>
         </div>
       </NavBody>
@@ -177,7 +177,7 @@ function Navbar() {
             <LangSwitcher />
           </div>
           <NavbarButton href="/app" variant="primary" className="w-full mt-2">
-            {tl({ en: 'Start For Free', fr: 'Commencer gratuitement', de: 'Kostenlos starten', tr: 'Ücretsiz Başla', es: 'Empezar gratis' })}
+            {tl({ en: 'View plans', fr: 'Voir les tarifs', de: 'Preise ansehen', tr: 'Planları gör', es: 'Ver tarifas' })}
           </NavbarButton>
         </MobileNavMenu>
       </MobileNav>
