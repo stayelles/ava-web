@@ -187,12 +187,30 @@ const planLabels: Record<string, string> = {
   custom_max: 'Custom Max',
 }
 
+const CUSTOM_PLAN_ORDER = ['custom_simple', 'custom_pro', 'custom_ultra', 'custom_max']
+
 function normalizePlanKey(plan: string | null | undefined, custom: boolean): string | null {
   if (plan === 'custom' || plan === 'custom_starter') return 'custom_simple'
   if (plan === 'pro_plus') return 'custom_pro'
   if (plan && planLabels[plan]) return plan
   if (custom) return 'custom_simple'
   return null
+}
+
+function customPlanRank(plan: string | null) {
+  return plan ? CUSTOM_PLAN_ORDER.indexOf(plan) : -1
+}
+
+function nextCustomPlan(plan: string | null) {
+  const rank = customPlanRank(plan)
+  if (rank < 0 || rank >= CUSTOM_PLAN_ORDER.length - 1) return null
+  return ALL_PLANS.find(item => item.key === CUSTOM_PLAN_ORDER[rank + 1]) ?? null
+}
+
+function isValidUpgradeTarget(currentPlan: string | null, targetPlan: string | null) {
+  const currentRank = customPlanRank(currentPlan)
+  const targetRank = customPlanRank(targetPlan)
+  return currentRank >= 0 && targetRank > currentRank
 }
 
 function isPriceConfigured(priceId: string) {
@@ -316,11 +334,13 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
   // Determine active plan key
   const activePlanKey = currentPlan
+  const nextPlan = nextCustomPlan(activePlanKey)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
-    if (params.get('upgrade') === 'custom_pro' && activePlanKey === 'custom_simple') {
-      const plan = ALL_PLANS.find(p => p.key === 'custom_pro')
+    const requestedUpgrade = params.get('upgrade')
+    if (isValidUpgradeTarget(activePlanKey, requestedUpgrade)) {
+      const plan = ALL_PLANS.find(p => p.key === requestedUpgrade)
       if (plan) {
         setTargetPlan(plan)
         setShowUpgradeModal(true)
@@ -453,7 +473,21 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   </div>
 
                   {user.subscription_source === 'paddle' && (
-                    <div className="flex-shrink-0">
+                    <div className="flex flex-col sm:flex-row flex-shrink-0 gap-3">
+                      {nextPlan && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTargetPlan(nextPlan)
+                            setShowUpgradeModal(true)
+                          }}
+                          disabled={billingLoading}
+                          className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-rose-500/20 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 disabled:opacity-60"
+                        >
+                          Passer à {nextPlan.label}
+                          <ArrowRight size={15} />
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={openPaddlePortal}
@@ -467,6 +501,11 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                     </div>
                   )}
                 </div>
+                {user.subscription_source === 'paddle' && nextPlan && (
+                  <p className="relative z-10 mt-5 text-[11px] leading-relaxed text-slate-400">
+                    Pour changer de plan, utilisez le bouton <span className="text-white font-semibold">Passer à {nextPlan.label}</span>. Le portail Paddle sert surtout au moyen de paiement, aux factures et à l’annulation.
+                  </p>
+                )}
               </motion.div>
 
               {(billingError || billingMessage) && (
