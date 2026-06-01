@@ -18,7 +18,7 @@ import {
   LANG_FLAGS, SUPPORTED_LANGS, LANG_STORAGE_KEY
 } from "@/lib/landing-translations";
 
-const AVA_DESKTOP_VERSION = "1.1.27";
+const AVA_DESKTOP_VERSION = "1.1.28";
 const AVA_BRIDGE_EA_VERSION = "1.17";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = {

@@ -2,12 +2,12 @@ import Link from "next/link";
 import { Apple, ArrowLeft, Download, ShieldCheck, Smartphone, Terminal } from "lucide-react";
 import { SiGoogleplay } from "react-icons/si";
 
-const AVA_DESKTOP_VERSION = "1.1.27";
+const AVA_DESKTOP_VERSION = "1.1.28";
 const AVA_BRIDGE_EA_VERSION = "1.17";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const BRIDGE_COMPATIBILITY = [
   {
-    desktop: "1.1.27",
+    desktop: "1.1.28",
     bridge: "1.17",
     status: "Recommandé",
     note: "Scalping actif, renforts par zones, bouton d'installation AvaBridge plus explicite et compatibilité Windows améliorée.",

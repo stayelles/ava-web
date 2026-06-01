@@ -31,9 +31,9 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.1.27-arm64.dmg`
-- `Ava-1.1.27-x64.dmg`
-- `AvaSetup-1.1.27.exe`
+- `Ava-1.1.28-arm64.dmg`
+- `Ava-1.1.28-x64.dmg`
+- `AvaSetup-1.1.28.exe`
 - `AvaBridgeEA-1.17.ex5`
 
 ## macOS Signature & Notarization (Apple Developer)
