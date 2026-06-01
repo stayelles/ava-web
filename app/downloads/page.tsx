@@ -2,19 +2,19 @@ import Link from "next/link";
 import { Apple, ArrowLeft, Download, ShieldCheck, Smartphone, Terminal } from "lucide-react";
 import { SiGoogleplay } from "react-icons/si";
 
-const AVA_DESKTOP_VERSION = "1.1.28";
-const AVA_BRIDGE_EA_VERSION = "1.17";
+const AVA_DESKTOP_VERSION = "1.1.29";
+const AVA_BRIDGE_EA_VERSION = "1.18";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const BRIDGE_COMPATIBILITY = [
   {
-    desktop: "1.1.28",
-    bridge: "1.17",
+    desktop: "1.1.29",
+    bridge: "1.18",
     status: "Recommandé",
     note: "Scalping actif, renforts par zones, bouton d'installation AvaBridge plus explicite et compatibilité Windows améliorée.",
   },
   {
     desktop: "1.1.24 à 1.1.25",
-    bridge: "1.15 à 1.17",
+    bridge: "1.15 à 1.18",
     status: "Accepté",
     note: "Compatible partiellement, mise à jour Desktop conseillée pour les renforts et l'installation AvaBridge.",
   },
