@@ -3,11 +3,11 @@ import { Apple, ArrowLeft, Download, ShieldCheck, Smartphone, Terminal } from "l
 import { SiGoogleplay } from "react-icons/si";
 
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
-const AVA_DESKTOP_VERSION = "1.1.23";
+const AVA_DESKTOP_VERSION = "1.1.24";
 const AVA_BRIDGE_EA_VERSION = "1.15";
 const BRIDGE_COMPATIBILITY = [
   {
-    desktop: "1.1.23",
+    desktop: "1.1.24",
     bridge: "1.15",
     status: "Recommandé",
     note: "TP broker actif, aucune protection broker côté stop loss, détection plus souple des symboles Gold/XAUUSD.",

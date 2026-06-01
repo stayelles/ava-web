@@ -122,7 +122,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
             <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Compatibilité</p>
               <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
-                Ava Desktop 1.1.23 recommande AvaBridgeEA {AVA_BRIDGE_EA_VERSION}.
+                Ava Desktop 1.1.24 recommande AvaBridgeEA {AVA_BRIDGE_EA_VERSION}.
               </p>
             </div>
           </div>
