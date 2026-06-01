@@ -27,7 +27,7 @@ The landing page points Ava Desktop downloads to versioned files under:
 
 Keep `public/downloads/.htaccess` deployed with the site. It forces `.dmg`, `.exe`, and `.ex5` files to download instead of rendering inline in Chrome/Safari. If Mac installers or the MT5 bridge open as garbled text in the browser, fix the download headers here rather than changing the file URLs.
 
-Large Desktop artifacts must not be committed to git. The Hostinger deploy workflow downloads the required Desktop release assets from `stayelles/ava-desktop` into `out/downloads` before FTP upload. If `stayelles/ava-desktop` is private and GitHub Actions cannot read the release with `github.token`, add a repo secret named `DESKTOP_RELEASE_TOKEN` with read access to the desktop release assets.
+Large Desktop artifacts must not be committed to git. The Hostinger deploy workflow downloads the required Desktop release assets from the current `stayelles/ava-web` release into `out/downloads` before FTP upload. Keep the web release tag in `.github/workflows/deploy.yml` aligned with `package.json` when publishing new download assets.
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
