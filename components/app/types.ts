@@ -8,6 +8,13 @@ export interface UserData {
   paddle_subscription_id?: string | null
   subscription_plan?: string | null    // 'pro_starter' | 'custom_simple' | 'custom_pro' | 'custom_ultra' | 'custom_max' | legacy 'pro_plus' | 'custom'
   subscription_tier?: string | null   // RevenueCat: 'free' | 'starter' | 'pro' | 'ultra'
+  ava_trading_trial_used?: boolean | null
+  ava_trading_trial_started_at?: string | null
+  ava_trading_trial_plan?: string | null
+  ava_trading_trial_subscription_id?: string | null
+  plan_switch_count?: number | null
+  last_plan_change_at?: string | null
+  subscription_abuse_flag?: boolean | null
   text_messages_used?: number
   text_quota_reset_at?: string | null
   referral_code: string | null

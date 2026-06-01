@@ -32,20 +32,24 @@ import {
 import {
   PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_PRO,
   PADDLE_PRICE_CUSTOM_SIMPLE,
+  PADDLE_PRICE_CUSTOM_PRO_TRIAL,
+  PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL,
   PADDLE_PRICE_CUSTOM_ULTRA,
   PADDLE_PRICE_CUSTOM_MAX,
 } from "@/components/app/constants";
-import { usePaddle } from "@/components/app/hooks/usePaddle";
 
+const AVA_DESKTOP_VERSION = "1.1.27";
+const AVA_BRIDGE_EA_VERSION = "1.17";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
-const AVA_DESKTOP_VERSION = "1.1.24";
-const AVA_BRIDGE_EA_VERSION = "1.15";
 const DOWNLOADS = {
   macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-arm64.dmg`,
   macIntel: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-x64.dmg`,
   windows: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_VERSION}.exe`,
   ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.ex5`,
 };
+
+const planCheckoutUrl = (plan: string) =>
+  `/app?tab=subscription&plan=${encodeURIComponent(plan)}`;
 
 // ─── Language context ──────────────────────────────────────────────────────────
 
@@ -811,15 +815,16 @@ type FUnit = 'pd' | 'pm' | 'w' | 'steps' | ''
 
 function Pricing() {
   const tl = useTl()
-  const { openCheckout } = usePaddle()
 
   const plans = [
     {
       id: 'custom_simple',
       name: 'Custom Simple',
-      price: '$27.99',
+      price: '$39.99',
       priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
+      trialPriceId: PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL,
       badge: tl({ fr: 'Départ prudent', en: 'Careful start', de: 'Vorsichtiger Start', tr: 'Dikkatli başlangıç', es: 'Inicio prudente' }),
+      trial: tl({ fr: 'Essai gratuit 1 jour', en: '1-day free trial', de: '1 Tag kostenlos testen', tr: '1 gün ücretsiz deneme', es: 'Prueba gratis 1 día' }),
       description: tl({
         fr: 'Pour tester Ava Trading sur petit capital avec des limites prudentes.',
         en: 'For trying Ava Trading with a smaller capital and careful limits.',
@@ -840,7 +845,9 @@ function Pricing() {
       name: 'Custom Pro',
       price: '$99.99',
       priceId: PADDLE_PRICE_CUSTOM_PRO,
+      trialPriceId: PADDLE_PRICE_CUSTOM_PRO_TRIAL,
       badge: tl({ fr: 'Recommandé', en: 'Recommended', de: 'Empfohlen', tr: 'Önerilen', es: 'Recomendado' }),
+      trial: tl({ fr: 'Essai gratuit 1 jour', en: '1-day free trial', de: '1 Tag kostenlos testen', tr: '1 gün ücretsiz deneme', es: 'Prueba gratis 1 día' }),
       description: tl({
         fr: 'Pour capital intermédiaire avec plus de liberté sur les objectifs.',
         en: 'For mid-sized capital with more freedom on session targets.',
@@ -901,7 +908,9 @@ function Pricing() {
     },
   ]
 
-  const onPlanClick = (priceId: string) => openCheckout(priceId)
+  const onPlanClick = (planId: string) => {
+    window.location.href = planCheckoutUrl(planId)
+  }
 
   return (
     <section id="pricing" className="relative py-24 sm:py-32 overflow-hidden">
@@ -915,7 +924,7 @@ function Pricing() {
             {tl({ fr: 'Choisissez votre niveau Ava Trading', en: 'Choose your Ava Trading level', de: 'Wählen Sie Ihr Ava-Trading-Level', tr: 'Ava Trading seviyenizi seçin', es: 'Elija su nivel de Ava Trading' })}
           </h2>
           <p className="text-slate-400 text-lg mt-4 max-w-2xl mx-auto">
-            {tl({ fr: 'Quatre plans Custom, quatre niveaux de capital et de limites. Le prix final peut être affiché localement par Paddle au paiement.', en: 'Four Custom plans, four levels of capital and limits. Paddle may show the final localized price at checkout.', de: 'Vier Custom-Pläne, vier Kapital- und Limitstufen. Paddle kann den lokalisierten Endpreis im Checkout anzeigen.', tr: 'Dört Custom plan, dört sermaye ve limit seviyesi. Paddle ödeme sırasında yerel fiyatı gösterebilir.', es: 'Cuatro planes Custom, cuatro niveles de capital y límites. Paddle puede mostrar el precio local al pagar.' })}
+            {tl({ fr: 'Custom Simple et Custom Pro incluent un essai gratuit de 1 jour avec carte obligatoire. Si le compte a déjà utilisé son essai, Ava affiche directement l’abonnement normal.', en: 'Custom Simple and Custom Pro include a 1-day free trial with card required. If the account already used its trial, Ava shows the normal subscription.', de: 'Custom Simple und Custom Pro enthalten 1 Tag kostenlose Testphase mit erforderlicher Karte. Wenn der Account den Test bereits genutzt hat, zeigt Ava das normale Abo.', tr: 'Custom Simple ve Custom Pro kart zorunlu 1 günlük ücretsiz deneme içerir. Hesap denemeyi kullandıysa Ava normal aboneliği gösterir.', es: 'Custom Simple y Custom Pro incluyen 1 día gratis con tarjeta obligatoria. Si la cuenta ya usó la prueba, Ava muestra la suscripción normal.' })}
           </p>
         </FadeUp>
 
@@ -926,29 +935,30 @@ function Pricing() {
                 <motion.button
                   key={plan.id}
                   type="button"
-                  onClick={() => onPlanClick(plan.priceId)}
+                  onClick={() => onPlanClick(plan.id)}
                   whileHover={{ y: -4 }}
                   whileTap={{ scale: 0.985 }}
                   className={cn(
-                    "group text-left rounded-[28px] border p-5 sm:p-6 min-h-[430px] flex flex-col transition-colors",
+                    "group relative text-left rounded-[28px] border p-5 pt-14 sm:p-6 sm:pt-14 min-h-[470px] flex flex-col transition-colors",
                     plan.highlighted
                       ? "border-rose-400/45 bg-[linear-gradient(145deg,rgba(244,63,94,0.16),rgba(15,23,42,0.72))] shadow-2xl shadow-rose-950/40"
                       : "border-white/10 bg-white/[0.035] hover:border-rose-400/30 hover:bg-white/[0.055]"
                   )}
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-rose-300">
-                        {plan.badge}
+                  <span className="absolute left-5 top-5 inline-flex max-w-[calc(100%-2.5rem)] items-center rounded-full border border-white/10 bg-white/[0.06] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-rose-300 sm:left-6 sm:top-6">
+                    {plan.badge}
+                  </span>
+
+                  <div>
+                    <h3 className="text-xl font-black text-white">{plan.name}</h3>
+                    {plan.trial && (
+                      <span className="mt-3 inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-black text-emerald-200">
+                        {plan.trial}
                       </span>
-                      <h3 className="mt-5 text-xl font-black text-white">{plan.name}</h3>
-                    </div>
-                    <span className="rounded-2xl bg-white text-slate-950 px-4 py-2 text-xs font-black group-hover:bg-rose-400 group-hover:text-white transition-colors">
-                      {tl(T.pricing.cta)}
-                    </span>
+                    )}
                   </div>
 
-                  <div className="mt-7">
+                  <div className="mt-6">
                     <span className="text-4xl sm:text-5xl font-black tracking-tight text-white">{plan.price}</span>
                     <span className="ml-1 text-sm font-semibold text-slate-500">/mois</span>
                     <p className="mt-4 min-h-[66px] text-sm leading-relaxed text-slate-400">{plan.description}</p>
@@ -967,8 +977,10 @@ function Pricing() {
                     ))}
                   </ul>
 
-                  <div className="mt-auto pt-6 text-[11px] font-bold uppercase tracking-widest text-slate-600 group-hover:text-rose-300 transition-colors">
-                    {tl({ fr: 'Cliquer sur la carte pour choisir', en: 'Click the card to choose', de: 'Karte anklicken zum Auswählen', tr: 'Seçmek için karta tıklayın', es: 'Haga clic para elegir' })}
+                  <div className="mt-auto pt-6">
+                    <span className="flex w-full items-center justify-center rounded-2xl bg-white px-4 py-3 text-xs font-black text-slate-950 transition-colors group-hover:bg-rose-400 group-hover:text-white">
+                      {plan.trial ? plan.trial : tl(T.pricing.cta)}
+                    </span>
                   </div>
                 </motion.button>
               ))}
@@ -988,7 +1000,6 @@ function Pricing() {
 
 function PricingLegacy() {
   const tl = useTl()
-  const { openCheckout } = usePaddle()
 
   // ── Currency detection ──────────────────────────────────────────────────────
   const [isEuro, setIsEuro] = useState(true)
@@ -1018,7 +1029,7 @@ function PricingLegacy() {
     {
       id: 'custom_simple',
       name: 'Custom Simple',
-      priceEur: '22,90€', priceUsd: '15 000 FCFA',
+      priceEur: '39,99€', priceUsd: '$39.99',
       priceId: PADDLE_PRICE_CUSTOM_SIMPLE, popular: false, badge: null,
       accent: '#818cf8', accentBg: 'rgba(129,140,248,0.06)', accentBorder: 'rgba(129,140,248,0.22)',
     },
@@ -1307,7 +1318,9 @@ function PricingLegacy() {
                     style={{ background: plan.accentBg, border: `1px solid ${plan.accentBorder}`, borderTop: 'none' }}>
                     {plan.priceId ? (
                       <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                        onClick={() => openCheckout(plan.priceId!)}
+                        onClick={() => {
+                          window.location.href = planCheckoutUrl(plan.id)
+                        }}
                         className="w-full py-2.5 rounded-xl text-[11px] font-extrabold text-white transition-all"
                         style={plan.popular
                           ? { background: plan.accent, boxShadow: `0 0 20px ${plan.accent}50` }
@@ -1416,7 +1429,9 @@ function PricingLegacy() {
                           <div className="px-5 pb-5 pt-2">
                             {plan.priceId ? (
                               <motion.button whileTap={{ scale: 0.97 }}
-                                onClick={() => openCheckout(plan.priceId!)}
+                                onClick={() => {
+                                  window.location.href = planCheckoutUrl(plan.id)
+                                }}
                                 className="w-full py-3.5 rounded-2xl text-sm font-extrabold text-white transition-all"
                                 style={plan.popular
                                   ? { background: plan.accent, boxShadow: `0 4px 24px ${plan.accent}50` }

@@ -18,9 +18,9 @@ import {
   LANG_FLAGS, SUPPORTED_LANGS, LANG_STORAGE_KEY
 } from "@/lib/landing-translations";
 
+const AVA_DESKTOP_VERSION = "1.1.27";
+const AVA_BRIDGE_EA_VERSION = "1.17";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
-const AVA_DESKTOP_VERSION = "1.1.24";
-const AVA_BRIDGE_EA_VERSION = "1.15";
 const DOWNLOADS = {
   macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-arm64.dmg`,
   macIntel: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-x64.dmg`,
@@ -717,15 +717,15 @@ export default function TradingExplanationPage() {
   const tradingPlans = [
     {
       name: "Custom Simple",
-      price: "$27.99",
+      price: "$39.99",
       tag: "Prudent",
-      features: ["Capital : 200$ à 500$", "Objectif/session : 2$ à 5$", "1 renfort contrôlé", "Référence perte jusqu’à -250$"],
+      features: ["Essai gratuit 1 jour", "Capital : 200$ à 500$", "Objectif/session : 2$ à 5$", "1 renfort contrôlé"],
     },
     {
       name: "Custom Pro",
       price: "$99.99",
       tag: "Recommandé",
-      features: ["Capital : 500$ à 3 000$", "Objectif/session : 2$ à 25$", "2 renforts contrôlés", "Référence perte jusqu’à -500$"],
+      features: ["Essai gratuit 1 jour", "Capital : 500$ à 3 000$", "Objectif/session : 2$ à 25$", "2 renforts contrôlés"],
     },
     {
       name: "Custom Ultra",

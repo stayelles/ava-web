@@ -2,21 +2,21 @@ import Link from "next/link";
 import { Apple, ArrowLeft, Download, ShieldCheck, Smartphone, Terminal } from "lucide-react";
 import { SiGoogleplay } from "react-icons/si";
 
+const AVA_DESKTOP_VERSION = "1.1.27";
+const AVA_BRIDGE_EA_VERSION = "1.17";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
-const AVA_DESKTOP_VERSION = "1.1.24";
-const AVA_BRIDGE_EA_VERSION = "1.15";
 const BRIDGE_COMPATIBILITY = [
   {
-    desktop: "1.1.24",
-    bridge: "1.15",
+    desktop: "1.1.27",
+    bridge: "1.17",
     status: "Recommandé",
-    note: "TP broker actif, aucune protection broker côté stop loss, détection plus souple des symboles Gold/XAUUSD.",
+    note: "Scalping actif, renforts par zones, bouton d'installation AvaBridge plus explicite et compatibilité Windows améliorée.",
   },
   {
-    desktop: "1.1.13 à 1.1.20",
-    bridge: "1.15",
+    desktop: "1.1.24 à 1.1.25",
+    bridge: "1.15 à 1.17",
     status: "Accepté",
-    note: "Compatible pour Ava Trading, mise à jour Desktop conseillée pour le confort d'interface.",
+    note: "Compatible partiellement, mise à jour Desktop conseillée pour les renforts et l'installation AvaBridge.",
   },
   {
     desktop: "1.1.12 et avant",

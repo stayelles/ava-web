@@ -20,6 +20,11 @@
 # production
 /build
 
+# large desktop release assets are hosted from GitHub releases, not committed
+/public/downloads/*.dmg
+/public/downloads/*.exe
+/public/downloads/*.ex5
+
 # misc
 .DS_Store
 *.pem

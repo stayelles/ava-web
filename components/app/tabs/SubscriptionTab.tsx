@@ -7,7 +7,17 @@ import {
   Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock,
   CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight, X
 } from 'lucide-react'
-import { PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_MAX, PADDLE_PRICE_CUSTOM_PRO, PADDLE_PRICE_CUSTOM_SIMPLE, PADDLE_PRICE_CUSTOM_ULTRA, SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
+import {
+  PADDLE_PRICE_PRO_STARTER,
+  PADDLE_PRICE_CUSTOM_MAX,
+  PADDLE_PRICE_CUSTOM_PRO,
+  PADDLE_PRICE_CUSTOM_PRO_TRIAL,
+  PADDLE_PRICE_CUSTOM_SIMPLE,
+  PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL,
+  PADDLE_PRICE_CUSTOM_ULTRA,
+  SUPABASE_HEADERS,
+  SUPABASE_URL,
+} from '../constants'
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
 import { usePaddle } from '../hooks/usePaddle'
@@ -23,9 +33,10 @@ const ALL_PLANS = [
   {
     key: 'custom_simple',
     label: 'Custom Simple',
-    price: '$27.99',
+    price: '$39.99',
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
+    trialPriceId: PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL,
     popular: false,
     accentColor: '#6366f1',
     bg: 'linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(99, 102, 241, 0.01) 100%)',
@@ -75,6 +86,7 @@ const ALL_PLANS = [
     price: '$99.99',
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_PRO,
+    trialPriceId: PADDLE_PRICE_CUSTOM_PRO_TRIAL,
     popular: true,
     badge: 'Recommandé',
     accentColor: '#e11d48',
@@ -188,6 +200,7 @@ const planLabels: Record<string, string> = {
 }
 
 const CUSTOM_PLAN_ORDER = ['custom_simple', 'custom_pro', 'custom_ultra', 'custom_max']
+const TRIAL_PLANS = new Set(['custom_simple', 'custom_pro'])
 
 function normalizePlanKey(plan: string | null | undefined, custom: boolean): string | null {
   if (plan === 'custom' || plan === 'custom_starter') return 'custom_simple'
@@ -215,6 +228,10 @@ function isValidUpgradeTarget(currentPlan: string | null, targetPlan: string | n
 
 function isPriceConfigured(priceId: string) {
   return priceId.startsWith('pri_')
+}
+
+function isKnownPlan(plan: string | null) {
+  return !!plan && ALL_PLANS.some(item => item.key === plan)
 }
 
 function VoiceQuotaBar({ user, pro }: { user: UserData; pro: boolean }) {
@@ -300,6 +317,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const [billingError, setBillingError] = useState('')
   const [billingMessage, setBillingMessage] = useState('')
   const [refreshedOnce, setRefreshedOnce] = useState(false)
+  const [selectedPlanKey, setSelectedPlanKey] = useState<string | null>(null)
 
   const pro = isPro(user)
   const custom = isCustomPlan(user)
@@ -320,6 +338,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const activePlanLabel = currentPlan ? planLabels[currentPlan] ?? null : null
 
   const isSubscribed = pro || custom
+  const trialAvailable = !user.ava_trading_trial_used
 
   // Define accent colors for current plan
   const planAccent = activePlanLabel === 'Custom Pro'
@@ -339,6 +358,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const requestedUpgrade = params.get('upgrade')
+    const requestedPlan = params.get('plan')
+    if (isKnownPlan(requestedPlan)) {
+      setSelectedPlanKey(requestedPlan)
+    }
     if (isValidUpgradeTarget(activePlanKey, requestedUpgrade)) {
       const plan = ALL_PLANS.find(p => p.key === requestedUpgrade)
       if (plan) {
@@ -347,6 +370,22 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
       }
     }
   }, [activePlanKey])
+
+  const checkoutLabel = (plan: typeof ALL_PLANS[number]) => {
+    if (TRIAL_PLANS.has(plan.key) && trialAvailable) return 'Essai gratuit 1 jour'
+    return 'Souscrire'
+  }
+
+  const startCheckout = (plan: typeof ALL_PLANS[number]) => {
+    const priceId = TRIAL_PLANS.has(plan.key) && trialAvailable && plan.trialPriceId
+      ? plan.trialPriceId
+      : plan.priceId
+    if (!isPriceConfigured(priceId)) return
+    if (TRIAL_PLANS.has(plan.key) && trialAvailable) {
+      setBillingMessage('Paddle ouvrira l’essai gratuit avec carte obligatoire. Vous serez facture automatiquement apres 24h si vous n’annulez pas.')
+    }
+    openCheckout(priceId, user.email)
+  }
 
   const callPaddleSubscription = async (action: 'portal' | 'upgrade', plan?: string) => {
     setBillingLoading(true)
@@ -790,8 +829,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 className="rounded-3xl overflow-hidden flex flex-col justify-between p-7 relative transition-all duration-300 group hover:translate-y-[-4px]"
                 style={{
                   background: plan.bg,
-                  border: `1px solid ${plan.border}`,
-                  boxShadow: plan.glow !== 'none' ? `0 15px 40px -10px ${plan.glow}` : 'none',
+                  border: plan.key === selectedPlanKey ? `2px solid ${plan.accentColor}` : `1px solid ${plan.border}`,
+                  boxShadow: plan.key === selectedPlanKey
+                    ? `0 0 28px -5px ${plan.accentColor}45`
+                    : plan.glow !== 'none' ? `0 15px 40px -10px ${plan.glow}` : 'none',
                 }}
               >
                 {/* Popular badge */}
@@ -845,9 +886,16 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
                 {/* Subscribing CTA Button */}
                 <div className="mt-8 pt-4">
+                  {TRIAL_PLANS.has(plan.key) && (
+                    <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">
+                      {trialAvailable
+                        ? 'Essai gratuit unique Ava Trading : 1 jour'
+                        : 'Essai gratuit deja utilise'}
+                    </p>
+                  )}
                   <button
-                    onClick={() => isPriceConfigured(plan.priceId) && openCheckout(plan.priceId, user.email)}
-                    disabled={!isPriceConfigured(plan.priceId)}
+                    onClick={() => startCheckout(plan)}
+                    disabled={!isPriceConfigured(plan.priceId) || billingLoading}
                     className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 cursor-pointer"
                     style={{
                       background: plan.btnBg,
@@ -865,7 +913,9 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                       e.currentTarget.style.background = plan.btnBg as string
                     }}
                   >
-                    {isPriceConfigured(plan.priceId) ? 'Souscrire' : 'Prix Paddle en attente'}
+                    {billingLoading && TRIAL_PLANS.has(plan.key) && trialAvailable
+                      ? 'Activation...'
+                      : isPriceConfigured(plan.priceId) ? checkoutLabel(plan) : 'Prix Paddle en attente'}
                   </button>
                 </div>
               </motion.div>

@@ -5,6 +5,14 @@
   </FilesMatch>
 </IfModule>
 
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^Ava-1\.1\.(24|25|26)-arm64\.dmg$ /downloads/Ava-1.1.27-arm64.dmg [R=302,L]
+  RewriteRule ^Ava-1\.1\.(24|25|26)-x64\.dmg$ /downloads/Ava-1.1.27-x64.dmg [R=302,L]
+  RewriteRule ^AvaSetup-1\.1\.(24|25|26)\.exe$ /downloads/AvaSetup-1.1.27.exe [R=302,L]
+  RewriteRule ^AvaBridgeEA-1\.(15|16)\.ex5$ /downloads/AvaBridgeEA-1.17.ex5 [R=302,L]
+</IfModule>
+
 <FilesMatch "\.dmg$">
   ForceType application/x-apple-diskimage
 </FilesMatch>

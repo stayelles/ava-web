@@ -10,7 +10,7 @@ import { SubscriptionTab } from './tabs/SubscriptionTab'
 import { ReferralTab } from './tabs/ReferralTab'
 import { SettingsTab } from './tabs/SettingsTab'
 import type { AppTab, AppSettings, UserData, AvaPermissions } from './types'
-import { isPro } from './types'
+import { isCustomPlan, isPro } from './types'
 
 interface Props {
   user: UserData
@@ -33,12 +33,18 @@ const LANG_STORAGE_KEY = 'ava_language'
 const DEFAULT_SETTINGS: AppSettings = { language: 'en', webSearch: false }
 
 export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits, onTrackVoiceTime, customApiKey, sharedGeminiKey, onSaveApiKey, onRemoveApiKey, onIncrementTextMessages }: Props) {
-  const [activeTab, setActiveTab] = useState<AppTab>('voice')
+  const shouldStartOnSubscription = !isPro(user) && !isCustomPlan(user)
+  const [activeTab, setActiveTab] = useState<AppTab>(shouldStartOnSubscription ? 'subscription' : 'voice')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const tab = params.get('tab') as AppTab | null
+    const plan = params.get('plan')
+    if (plan) {
+      setActiveTab('subscription')
+      return
+    }
     if (tab && ['voice', 'chat', 'profile', 'subscription', 'referral', 'settings'].includes(tab)) {
       setActiveTab(tab)
     }
