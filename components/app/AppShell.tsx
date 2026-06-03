@@ -148,6 +148,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
           )}
           {activeTab === 'settings' && (
             <SettingsTab
+              user={user}
               settings={settings}
               onSettingsChange={handleSettingsChange}
               isPro={isPro(user)}

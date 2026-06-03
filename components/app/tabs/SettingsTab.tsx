@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Globe, Search, Info, Lock, Key } from 'lucide-react'
-import type { AppSettings } from '../types'
+import { AlertTriangle, Globe, Search, Info, Lock, Key, Power } from 'lucide-react'
+import type { AppSettings, UserData } from '../types'
+import { sendAvaTradingStop, waitForRemoteCommand } from '../services/remoteCommand'
 
 interface Props {
+  user: UserData
   settings: AppSettings
   onSettingsChange: (s: AppSettings) => void
   isPro: boolean
@@ -26,13 +28,15 @@ const LANGUAGES = [
 ]
 
 export function SettingsTab({
-  settings, onSettingsChange, isPro, onGoToSubscription,
+  user, settings, onSettingsChange, isPro, onGoToSubscription,
   canUseCustomApiKey, geminiKeyHint, customApiKey, onSaveApiKey, onRemoveApiKey,
 }: Props) {
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [pinInput, setPinInput]       = useState('')
   const [apiKeySaving, setApiKeySaving] = useState(false)
   const [apiKeyMsg, setApiKeyMsg]     = useState('')
+  const [remoteStopLoading, setRemoteStopLoading] = useState(false)
+  const [remoteStopMsg, setRemoteStopMsg] = useState('')
 
   const handleSaveKey = async () => {
     if (!apiKeyInput.trim() || !pinInput.trim() || !onSaveApiKey) return
@@ -47,6 +51,31 @@ export function SettingsTab({
     } else {
       setApiKeyMsg(result.error ?? 'Erreur lors de la sauvegarde.')
     }
+  }
+
+  const handleRemoteStop = async () => {
+    if (remoteStopLoading) return
+    const confirmed = window.confirm("Arreter Ava Trading sur l'ordinateur lie ? Ava stoppera l'agent et ne prendra plus de nouvelles positions.")
+    if (!confirmed) return
+
+    setRemoteStopLoading(true)
+    setRemoteStopMsg('')
+    const sent = await sendAvaTradingStop(user.id)
+    if (!sent.id) {
+      setRemoteStopLoading(false)
+      setRemoteStopMsg(sent.error === 'DESKTOP_NOT_PAIRED'
+        ? "Aucun Desktop lie a ce compte. Ouvrez Ava Desktop puis associez-le a ce compte."
+        : sent.error ?? "Impossible d'envoyer l'arret distant.")
+      return
+    }
+
+    const done = await waitForRemoteCommand(user.id, sent.id)
+    setRemoteStopLoading(false)
+    if (done.status === 'done') {
+      setRemoteStopMsg(done.result ?? 'Ava Trading arretee a distance.')
+      return
+    }
+    setRemoteStopMsg(done.error ?? "Commande envoyee, mais Ava Desktop n'a pas encore confirme.")
   }
 
   return (
@@ -137,6 +166,44 @@ export function SettingsTab({
               />
             </button>
           </div>
+        </div>
+      </motion.div>
+
+      {/* Emergency Desktop stop */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.08 }}
+        className="rounded-2xl overflow-hidden"
+        style={{ background: 'rgba(127,29,29,0.13)', border: '1px solid rgba(248,113,113,0.22)' }}
+      >
+        <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(248,113,113,0.12)' }}>
+          <AlertTriangle size={13} style={{ color: '#f87171' }} />
+          <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#f87171' }}>
+            Arret d'urgence Ava Trading
+          </p>
+        </div>
+        <div className="px-4 py-4 space-y-3">
+          <p className="text-xs" style={{ color: '#fca5a5' }}>
+            Envoie un ordre direct au Desktop lie pour stopper l'agent trading et bloquer les nouvelles prises de position.
+          </p>
+          <button
+            onClick={handleRemoteStop}
+            disabled={remoteStopLoading}
+            className="w-full py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            style={{ background: '#dc2626', color: '#fff' }}
+          >
+            <Power size={15} />
+            {remoteStopLoading ? 'Arret en cours...' : 'Arreter Ava Trading maintenant'}
+          </button>
+          {remoteStopMsg && (
+            <p
+              className="text-xs font-semibold"
+              style={{ color: remoteStopMsg.toLowerCase().includes('arretee') ? '#34d399' : '#fca5a5' }}
+            >
+              {remoteStopMsg}
+            </p>
+          )}
         </div>
       </motion.div>
 

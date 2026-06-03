@@ -17,6 +17,10 @@ import {
   PADDLE_PRICE_CUSTOM_ULTRA,
   SUPABASE_HEADERS,
   SUPABASE_URL,
+  WISE_PAYMENT_LINK_CUSTOM_MAX,
+  WISE_PAYMENT_LINK_CUSTOM_PRO,
+  WISE_PAYMENT_LINK_CUSTOM_SIMPLE,
+  WISE_PAYMENT_LINK_CUSTOM_ULTRA,
 } from '../constants'
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
@@ -37,6 +41,7 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
     trialPriceId: PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL,
+    wisePaymentUrl: WISE_PAYMENT_LINK_CUSTOM_SIMPLE,
     popular: false,
     accentColor: '#6366f1',
     bg: 'linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(99, 102, 241, 0.01) 100%)',
@@ -62,6 +67,7 @@ const ALL_PLANS = [
     price: '39,99€',
     per: '/mois',
     priceId: PADDLE_PRICE_PRO_STARTER,
+    wisePaymentUrl: null,
     popular: false,
     accentColor: '#f43f5e',
     bg: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
@@ -87,6 +93,7 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_PRO,
     trialPriceId: PADDLE_PRICE_CUSTOM_PRO_TRIAL,
+    wisePaymentUrl: WISE_PAYMENT_LINK_CUSTOM_PRO,
     popular: true,
     badge: 'Recommandé',
     accentColor: '#e11d48',
@@ -113,6 +120,7 @@ const ALL_PLANS = [
     price: '$399.99',
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_ULTRA,
+    wisePaymentUrl: WISE_PAYMENT_LINK_CUSTOM_ULTRA,
     popular: true,
     badge: 'Haute performance',
     accentColor: '#e11d48',
@@ -138,6 +146,7 @@ const ALL_PLANS = [
     price: '$999.99',
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_MAX,
+    wisePaymentUrl: WISE_PAYMENT_LINK_CUSTOM_MAX,
     popular: false,
     badge: 'Capital élevé',
     accentColor: '#f43f5e',
@@ -228,6 +237,10 @@ function isValidUpgradeTarget(currentPlan: string | null, targetPlan: string | n
 
 function isPriceConfigured(priceId: string) {
   return priceId.startsWith('pri_')
+}
+
+function isWisePaymentConfigured(url: string | null | undefined): url is string {
+  return !!url && url.startsWith('https://wise.com/pay/')
 }
 
 function isKnownPlan(plan: string | null) {
@@ -372,19 +385,35 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   }, [activePlanKey])
 
   const checkoutLabel = (plan: typeof ALL_PLANS[number]) => {
-    if (TRIAL_PLANS.has(plan.key) && trialAvailable) return 'Essai gratuit 1 jour'
-    return 'Souscrire'
+    if (TRIAL_PLANS.has(plan.key) && trialAvailable) return 'Payer avec Wise'
+    return 'Payer avec Wise'
   }
 
   const startCheckout = (plan: typeof ALL_PLANS[number]) => {
+    const wisePaymentUrl = plan.wisePaymentUrl
+    if (isWisePaymentConfigured(wisePaymentUrl)) {
+      setBillingError('')
+      setBillingMessage(`Paiement Wise ouvert pour ${plan.label}. Votre plan sera active apres verification du paiement.`)
+      window.open(wisePaymentUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
+
     const priceId = TRIAL_PLANS.has(plan.key) && trialAvailable && plan.trialPriceId
       ? plan.trialPriceId
       : plan.priceId
     if (!isPriceConfigured(priceId)) return
-    if (TRIAL_PLANS.has(plan.key) && trialAvailable) {
-      setBillingMessage('Paddle ouvrira l’essai gratuit avec carte obligatoire. Vous serez facture automatiquement apres 24h si vous n’annulez pas.')
-    }
     openCheckout(priceId, user.email)
+  }
+
+  const openWisePlanPayment = (plan: typeof ALL_PLANS[number]) => {
+    const wisePaymentUrl = plan.wisePaymentUrl
+    if (!isWisePaymentConfigured(wisePaymentUrl)) {
+      setBillingError('Lien Wise indisponible pour cette formule.')
+      return
+    }
+    setBillingError('')
+    setBillingMessage(`Paiement Wise ouvert pour ${plan.label}. Votre changement sera active apres verification du paiement.`)
+    window.open(wisePaymentUrl, '_blank', 'noopener,noreferrer')
   }
 
   const callPaddleSubscription = async (action: 'portal' | 'upgrade', plan?: string) => {
@@ -503,7 +532,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                         Abonnement Actif
                       </span>
                       <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-white/5 border border-white/10 text-slate-400">
-                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'gumroad' ? 'Gumroad' : 'Mobile'}
+                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'gumroad' ? 'Gumroad' : user.subscription_source === 'wise' ? 'Wise' : 'Mobile'}
                       </span>
                     </div>
 
@@ -526,8 +555,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                         <button
                           type="button"
                           onClick={() => {
-                            setTargetPlan(nextPlan)
-                            setShowUpgradeModal(true)
+                            openWisePlanPayment(nextPlan)
                           }}
                           disabled={billingLoading}
                           className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-rose-500/20 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 disabled:opacity-60"
@@ -551,7 +579,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 </div>
                 {user.subscription_source === 'paddle' && nextPlan && (
                   <p className="relative z-10 mt-5 text-[11px] leading-relaxed text-slate-400">
-                    Pour changer de plan, utilisez le bouton <span className="text-white font-semibold">Passer à {nextPlan.label}</span>. Le portail Paddle sert surtout au moyen de paiement, aux factures et à l’annulation.
+                    Pour changer de plan, utilisez le paiement Wise. Le portail Paddle reste disponible pour consulter les anciennes factures ou gerer un abonnement Paddle existant.
                   </p>
                 )}
               </motion.div>
@@ -665,7 +693,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
               {/* Quota Usage Meter */}
               <VoiceQuotaBar user={user} pro={pro} />
 
-              {/* Paddle Subscription Detail / Info Panel */}
+              {/* Billing Detail / Info Panel */}
               <motion.div
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -677,7 +705,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   <h4 className="text-xs font-bold uppercase tracking-wider">Aide & Facturation</h4>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Notre plateforme utilise Paddle comme processeur de paiement sécurisé agréé. Toutes vos transactions sont protégées, conformes PCI-DSS et cryptées de bout en bout.
+                  Les nouveaux paiements sont temporairement traités via Wise. Votre accès est activé après vérification du paiement, et Paddle reste disponible pour les abonnements déjà existants.
                 </p>
                 <div className="pt-2">
                   <a 
@@ -787,11 +815,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                     ) : (
                       <button
                         onClick={() => {
-                          if (!isPriceConfigured(plan.priceId)) return
-                          setTargetPlan(plan)
-                          setShowUpgradeModal(true)
+                          if (!isWisePaymentConfigured(plan.wisePaymentUrl)) return
+                          openWisePlanPayment(plan)
                         }}
-                        disabled={!isPriceConfigured(plan.priceId)}
+                        disabled={!isWisePaymentConfigured(plan.wisePaymentUrl)}
                         className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 cursor-pointer"
                         style={{
                           background: plan.btnBg,
@@ -805,7 +832,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                           e.currentTarget.style.background = plan.btnBg as string
                         }}
                       >
-                        {isPriceConfigured(plan.priceId) ? 'Changer de formule' : 'Prix Paddle en attente'}
+                        {isWisePaymentConfigured(plan.wisePaymentUrl) ? 'Payer avec Wise' : 'Lien Wise en attente'}
                       </button>
                     )}
                   </div>
@@ -888,14 +915,12 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 <div className="mt-8 pt-4">
                   {TRIAL_PLANS.has(plan.key) && (
                     <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                      {trialAvailable
-                        ? 'Essai gratuit unique Ava Trading : 1 jour'
-                        : 'Essai gratuit deja utilise'}
+                      Activation apres verification du paiement
                     </p>
                   )}
                   <button
                     onClick={() => startCheckout(plan)}
-                    disabled={!isPriceConfigured(plan.priceId) || billingLoading}
+                    disabled={!isWisePaymentConfigured(plan.wisePaymentUrl) || billingLoading}
                     className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 cursor-pointer"
                     style={{
                       background: plan.btnBg,
@@ -913,9 +938,9 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                       e.currentTarget.style.background = plan.btnBg as string
                     }}
                   >
-                    {billingLoading && TRIAL_PLANS.has(plan.key) && trialAvailable
+                    {billingLoading
                       ? 'Activation...'
-                      : isPriceConfigured(plan.priceId) ? checkoutLabel(plan) : 'Prix Paddle en attente'}
+                      : isWisePaymentConfigured(plan.wisePaymentUrl) ? checkoutLabel(plan) : 'Lien Wise en attente'}
                   </button>
                 </div>
               </motion.div>
@@ -976,10 +1001,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
               <div className="rounded-2xl bg-white/5 border border-white/5 p-4 space-y-2.5">
                 <p className="text-xs text-slate-300 leading-relaxed font-semibold">
-                  Ava va modifier votre abonnement Paddle existant, sans créer de deuxième abonnement.
+                  Ava va ouvrir le paiement Wise correspondant à cette formule.
                 </p>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  La transition vers <strong>{targetPlan.label}</strong> est calculée au prorata par Paddle et reste attachée à la même subscription.
+                  La transition vers <strong>{targetPlan.label}</strong> sera activée après vérification du paiement. Paddle reste conservé en arrière-plan pour les abonnements existants.
                 </p>
                 {billingError && (
                   <div className="rounded-xl border border-rose-400/15 bg-rose-500/10 px-3 py-2">
@@ -1004,12 +1029,12 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 <button
                   type="button"
                   disabled={billingLoading}
-                  onClick={changePaddlePlan}
+                  onClick={() => openWisePlanPayment(targetPlan)}
                   className="min-h-12 whitespace-nowrap flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg text-center disabled:opacity-60"
                   style={{ background: `linear-gradient(90deg, ${targetPlan.accentColor}dd, ${targetPlan.accentColor})` }}
                 >
                   <CreditCard size={14} />
-                  {billingLoading ? 'Modification...' : `Passer à ${targetPlan.label}`}
+                  {billingLoading ? 'Ouverture...' : `Payer ${targetPlan.label} avec Wise`}
                 </button>
                 <button
                   type="button"
