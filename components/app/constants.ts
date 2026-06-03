@@ -33,6 +33,12 @@ export const PADDLE_PRICE_CUSTOM_SIMPLE = 'pri_01kntn3ymketw85ga6fr03q6f5'  // 3
 export const PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL = 'pri_01kt14k9n6gpsk2379ycbf0rj4' // 39,99$/mois — Custom Simple, 1 jour d'essai
 export const PADDLE_PRICE_CUSTOM = PADDLE_PRICE_CUSTOM_SIMPLE              // alias legacy
 
+// ── Wise payment links (fallback actif pendant l'indisponibilite Paddle) ─────
+export const WISE_PAYMENT_LINK_CUSTOM_SIMPLE = 'https://wise.com/pay/r/fdg688vHbw_ay0Q'
+export const WISE_PAYMENT_LINK_CUSTOM_PRO = 'https://wise.com/pay/r/8h9unPwemY1c8PI'
+export const WISE_PAYMENT_LINK_CUSTOM_ULTRA = 'https://wise.com/pay/r/FtI9nOk5GXGQt5w'
+export const WISE_PAYMENT_LINK_CUSTOM_MAX = 'https://wise.com/pay/r/9bs7nFROogFoHKY'
+
 // ── Gumroad (legacy / fallback) ───────────────────────────────────────────────
 export const GUMROAD_URL = 'https://woonixltd.gumroad.com/l/avam1'
 export const GUMROAD_QUARTERLY_URL = 'https://woonixltd.gumroad.com/l/avam1?quarterly=true&wanted=true'

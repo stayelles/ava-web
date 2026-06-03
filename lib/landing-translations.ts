@@ -158,11 +158,11 @@ export const T = {
     label:       { en: 'Pricing', fr: 'Tarifs', de: 'Preise', tr: 'Fiyatlandırma', es: 'Precios' } as TL,
     h:           { en: 'Choose your Ava plan', fr: 'Choisissez votre plan Ava', de: 'Wählen Sie Ihren Ava-Plan', tr: 'Ava planınızı seçin', es: 'Elige tu plan Ava' } as TL,
     subtitle: {
-      en: 'Transparent monthly plans, billed immediately by Paddle. Cancel anytime.',
-      fr: 'Des plans mensuels transparents, facturés directement par Paddle. Annulez à tout moment.',
-      de: 'Transparente Monatspläne, direkt über Paddle abgerechnet. Jederzeit kündbar.',
-      tr: 'Paddle tarafından anında faturalandırılan şeffaf aylık planlar. İstediğiniz zaman iptal edin.',
-      es: 'Planes mensuales transparentes, facturados directamente por Paddle. Cancela cuando quieras.',
+      en: 'Transparent monthly plans with secure payment. Cancel anytime.',
+      fr: 'Des plans mensuels transparents avec paiement sécurisé. Annulez à tout moment.',
+      de: 'Transparente Monatspläne mit sicherer Zahlung. Jederzeit kündbar.',
+      tr: 'Güvenli ödeme ile şeffaf aylık planlar. İstediğiniz zaman iptal edin.',
+      es: 'Planes mensuales transparentes con pago seguro. Cancela cuando quieras.',
     } as TL,
     billingBadge: { en: 'Monthly subscription · Cancel anytime', fr: 'Abonnement mensuel · Annulation à tout moment', de: 'Monatliches Abo · Jederzeit kündbar', tr: 'Aylık abonelik · İstediğiniz zaman iptal', es: 'Suscripción mensual · Cancela cuando quieras' } as TL,
     todayZero:   { en: 'Billed now', fr: 'Facturé maintenant', de: 'Jetzt abgerechnet', tr: 'Şimdi faturalandırılır', es: 'Facturado ahora' } as TL,
@@ -258,11 +258,11 @@ export const T = {
       {
         q: { en: 'Can I cancel anytime?', fr: 'Puis-je annuler à tout moment ?', de: 'Kann ich jederzeit kündigen?', tr: 'İstediğim zaman iptal edebilir miyim?', es: '¿Puedo cancelar cuando quiera?' } as TL,
         a: {
-          en: 'Yes. Subscriptions are billed monthly by Paddle and can be managed or cancelled from your account billing page.',
-          fr: 'Oui. Les abonnements sont facturés mensuellement par Paddle et peuvent être gérés ou annulés depuis la page de facturation de votre compte.',
-          de: 'Ja. Abonnements werden monatlich über Paddle abgerechnet und können in Ihrem Konto verwaltet oder gekündigt werden.',
-          tr: 'Evet. Abonelikler Paddle tarafından aylık faturalandırılır ve hesap faturalandırma sayfanızdan yönetilebilir veya iptal edilebilir.',
-          es: 'Sí. Las suscripciones se facturan mensualmente con Paddle y se pueden gestionar o cancelar desde la página de facturación de tu cuenta.',
+          en: 'Yes. Subscriptions are monthly and can be managed from your Ava account or by contacting support when payment was completed through Wise.',
+          fr: 'Oui. Les abonnements sont mensuels et peuvent être gérés depuis votre compte Ava ou via le support lorsque le paiement a été effectué avec Wise.',
+          de: 'Ja. Abonnements sind monatlich und können über Ihr Ava-Konto oder den Support verwaltet werden, wenn die Zahlung über Wise erfolgt ist.',
+          tr: 'Evet. Abonelikler aylıktır; Wise ile ödeme yaptıysanız Ava hesabınızdan veya destek üzerinden yönetilebilir.',
+          es: 'Sí. Las suscripciones son mensuales y se pueden gestionar desde tu cuenta Ava o contactando con soporte si el pago se hizo con Wise.',
         } as TL,
       },
       {
