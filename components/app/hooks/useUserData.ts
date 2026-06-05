@@ -11,6 +11,17 @@ function nextMonthReset(): string {
   return new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
 }
 
+const USAGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/user-usage`
+
+async function updateUserUsage(action: string, userId: string, payload: Record<string, unknown> = {}) {
+  const res = await fetch(USAGE_FUNCTION_URL, {
+    method: 'POST',
+    headers: SUPABASE_HEADERS,
+    body: JSON.stringify({ action, user_id: userId, ...payload }),
+  })
+  return res.json()
+}
+
 // Check if monthly reset is needed and return corrected user object
 function applyVoiceReset(u: UserData): UserData {
   const resetAt = u.voice_quota_reset_at ? new Date(u.voice_quota_reset_at) : null
@@ -68,11 +79,7 @@ export function useUserData() {
         if (u.voice_minutes_used !== raw.voice_minutes_used) {
           const { memorySummary: _, ...toStore } = u
           localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
-          fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${u.id}`, {
-            method: 'PATCH',
-            headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
-            body: JSON.stringify({ voice_minutes_used: 0, voice_quota_reset_at: u.voice_quota_reset_at }),
-          }).catch(() => {})
+          updateUserUsage('track_voice', u.id, { duration_seconds: 0 }).catch(() => {})
         }
         fetchUserProfile(u.id).then(fresh => {
           if (!fresh) return
@@ -262,12 +269,16 @@ export function useUserData() {
     const { memorySummary: _, ...toStore } = updated
     localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
 
-    // Persist to Supabase (best-effort, non-blocking)
-    fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${user.id}`, {
-      method: 'PATCH',
-      headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
-      body: JSON.stringify({ free_daily_credits: newFree, credits: newPaid }),
-    }).catch(() => {})
+    updateUserUsage('spend_credits', user.id, { amount: 1 })
+      .then(data => {
+        if (!data?.ok || !data?.success) return
+        setUser(current => current ? {
+          ...current,
+          credits: Number(data.credits ?? current.credits ?? 0),
+          free_daily_credits: Number(data.free_daily_credits ?? current.free_daily_credits ?? 0),
+        } : current)
+      })
+      .catch(() => {})
   }, [user])
 
   // Add voice session duration (seconds) to monthly counter
@@ -286,14 +297,16 @@ export function useUserData() {
     setUser(updated)
     const { memorySummary: _, ...toStore } = updated
     localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
-    fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${user.id}`, {
-      method: 'PATCH',
-      headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
-      body: JSON.stringify({
-        voice_minutes_used: updated.voice_minutes_used,
-        voice_quota_reset_at: updated.voice_quota_reset_at,
-      }),
-    }).catch(() => {})
+    updateUserUsage('track_voice', user.id, { duration_seconds: durationSeconds })
+      .then(data => {
+        if (!data?.ok) return
+        setUser(current => current ? {
+          ...current,
+          voice_minutes_used: Number(data.voice_minutes_used ?? current.voice_minutes_used ?? 0),
+          voice_quota_reset_at: data.voice_quota_reset_at ?? current.voice_quota_reset_at ?? null,
+        } : current)
+      })
+      .catch(() => {})
   }, [user])
 
   const saveApiKey = useCallback(async (apiKey: string, pin: string): Promise<{ ok: boolean; error?: string }> => {
@@ -349,11 +362,16 @@ export function useUserData() {
       ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
       : user.text_quota_reset_at!
     setUser(u => u ? { ...u, text_messages_used: newUsed, text_quota_reset_at: nextReset } : u)
-    fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${user.id}`, {
-      method: 'PATCH',
-      headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
-      body: JSON.stringify({ text_messages_used: newUsed, text_quota_reset_at: nextReset }),
-    }).catch(() => {})
+    updateUserUsage('increment_text', user.id)
+      .then(data => {
+        if (!data?.ok) return
+        setUser(current => current ? {
+          ...current,
+          text_messages_used: Number(data.text_messages_used ?? current.text_messages_used ?? 0),
+          text_quota_reset_at: data.text_quota_reset_at ?? current.text_quota_reset_at ?? null,
+        } : current)
+      })
+      .catch(() => {})
     return { blocked: false }
   }, [user, permissions])
 
