@@ -39,6 +39,14 @@ export const WISE_PAYMENT_LINK_CUSTOM_PRO = 'https://wise.com/pay/r/8h9unPwemY1c
 export const WISE_PAYMENT_LINK_CUSTOM_ULTRA = 'https://wise.com/pay/r/FtI9nOk5GXGQt5w'
 export const WISE_PAYMENT_LINK_CUSTOM_MAX = 'https://wise.com/pay/r/9bs7nFROogFoHKY'
 
+// ── PayPal subscriptions ─────────────────────────────────────────────────────
+// Client ID is public for PayPal JS SDK. The secret stays only in Supabase secrets.
+export const PAYPAL_CLIENT_ID = 'BAAwepkqckhjrEtVykgbsdDrg-AY4uJ1jswVBmVlh9gFtAlDWAxjxZDvn680BtmyCODW3iHwG-KaF6xx7Q'
+export const PAYPAL_PLAN_CUSTOM_SIMPLE = 'P-2HA315584U6551445NIS7E4Y'
+export const PAYPAL_PLAN_CUSTOM_PRO = 'P-39J61113695412401NIS7RPY'
+export const PAYPAL_PLAN_CUSTOM_ULTRA = 'P-48C56027AC837360PNIS7TFY'
+export const PAYPAL_PLAN_CUSTOM_MAX = 'P-39N47930FW8613245NIS7UMI'
+
 // ── Gumroad (legacy / fallback) ───────────────────────────────────────────────
 export const GUMROAD_URL = 'https://woonixltd.gumroad.com/l/avam1'
 export const GUMROAD_QUARTERLY_URL = 'https://woonixltd.gumroad.com/l/avam1?quarterly=true&wanted=true'
