@@ -50,13 +50,13 @@ const ALL_PLANS = [
     btnBg: 'rgba(99, 102, 241, 0.08)',
     btnHoverBg: 'rgba(99, 102, 241, 0.15)',
     btnColor: '#818cf8',
-    description: 'Pour démarrer avec Ava Trading sur petit capital, avec une configuration prudente.',
+    description: 'Pour démarrer avec Ava Desktop, une clé API personnelle et une configuration prudente.',
     features: [
-      'Capital conseillé : 200$ à 500$',
-      'Objectif/session : 2$ à 5$',
-      '1 renfort contrôlé maximum',
-      'Référence perte jusqu’à -250$',
-      'AvaBridge inclus',
+      'Ava Desktop inclus',
+      'Clé API Gemini personnelle',
+      'Limites prudentes par défaut',
+      'Automatisations essentielles',
+      'Support standard',
       'Clé API Gemini personnelle',
       'Support standard',
     ]
@@ -103,13 +103,13 @@ const ALL_PLANS = [
     btnBg: 'linear-gradient(90deg, #f43f5e 0%, #e11d48 100%)',
     btnHoverBg: 'linear-gradient(90deg, #fb7185 0%, #f43f5e 100%)',
     btnColor: '#fff',
-    description: 'Pour capital intermédiaire, avec plus de liberté sur les objectifs et réglages trading.',
+    description: 'Pour usage avancé, avec plus de liberté sur les objectifs et réglages.',
     features: [
-      'Capital conseillé : 500$ à 1 000$',
-      'Objectif/session : 2$ à 25$',
-      '2 renforts contrôlés maximum',
-      'Référence perte jusqu’à -500$',
-      'AvaBridge auto-installable',
+      'Limites personnalisées',
+      'Automatisations avancées',
+      'Configuration plus flexible',
+      'Support prioritaire',
+      'Ava Desktop inclus',
       'Clé API Gemini personnelle',
       'Support prioritaire',
     ]
@@ -122,7 +122,7 @@ const ALL_PLANS = [
     priceId: PADDLE_PRICE_CUSTOM_ULTRA,
     wisePaymentUrl: WISE_PAYMENT_LINK_CUSTOM_ULTRA,
     popular: true,
-    badge: 'Haute performance',
+    badge: 'Usage intensif',
     accentColor: '#e11d48',
     bg: 'linear-gradient(135deg, rgba(225, 29, 72, 0.06) 0%, rgba(99, 102, 241, 0.02) 100%)',
     border: 'rgba(225, 29, 72, 0.28)',
@@ -130,13 +130,13 @@ const ALL_PLANS = [
     btnBg: 'linear-gradient(90deg, #f43f5e 0%, #e11d48 100%)',
     btnHoverBg: 'linear-gradient(90deg, #fb7185 0%, #f43f5e 100%)',
     btnColor: '#fff',
-    description: 'Pour gros scalping avec capital solide, suivi plus strict et stratégie plus ambitieuse.',
+    description: 'Pour usage intensif, limites élevées et accompagnement plus poussé.',
     features: [
-      'Capital conseillé : 1 000$ à 5 000$',
-      'Objectif/session : 2$ à 100$',
-      '3 renforts contrôlés maximum',
-      'Référence perte jusqu’à -1000$',
-      'Diagnostic AvaBridge prioritaire',
+      'Tout Custom Pro inclus',
+      'Limites élevées',
+      'Automatisations étendues',
+      'Configuration avancée',
+      'Support renforcé',
       'Support très prioritaire',
     ]
   },
@@ -148,7 +148,7 @@ const ALL_PLANS = [
     priceId: PADDLE_PRICE_CUSTOM_MAX,
     wisePaymentUrl: WISE_PAYMENT_LINK_CUSTOM_MAX,
     popular: false,
-    badge: 'Capital élevé',
+    badge: 'Volume élevé',
     accentColor: '#f43f5e',
     bg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(15, 23, 42, 0.18) 100%)',
     border: 'rgba(244, 63, 94, 0.35)',
@@ -156,13 +156,13 @@ const ALL_PLANS = [
     btnBg: 'linear-gradient(90deg, #e11d48 0%, #be123c 100%)',
     btnHoverBg: 'linear-gradient(90deg, #fb7185 0%, #e11d48 100%)',
     btnColor: '#fff',
-    description: 'Le plan maximal pour capital important, avec accompagnement et limites sur mesure.',
+    description: 'Le plan maximal pour volumes élevés, accompagnement et limites sur mesure.',
     features: [
-      'Capital conseillé : 5 000$ à 20 000$+',
-      'Objectif/session illimité, minimum 2$',
-      '5 renforts contrôlés maximum',
-      'Référence perte sans plafond',
-      'Profit min jusqu’à 10$ et lot max jusqu’à 1',
+      'Tout Custom Ultra inclus',
+      'Limites maximales',
+      'Automatisations premium',
+      'Configuration complète',
+      'Accompagnement prioritaire',
       'Accompagnement direct',
       'Support maximal',
     ]
@@ -190,7 +190,7 @@ const CUSTOM_FEATURES = [
   { icon: Monitor, text: '∞ Contrôle à distance illimité', val: 'Illimité' },
   { icon: Brain, text: '∞ Vision écran illimitée', val: 'Illimité' },
   { icon: Cpu, text: '∞ Auto-amélioration IA — aucune limite d\'étapes', val: 'Illimité' },
-  { icon: Monitor, text: 'Ava Trading Desktop inclus', val: 'Inclus' },
+  { icon: Monitor, text: 'Ava Desktop inclus', val: 'Inclus' },
   { icon: Bell, text: '∞ Rappels push illimités', val: 'Illimité' },
   { icon: Layers, text: '∞ Intégrations MCP illimitées', val: 'Illimité' },
   { icon: Key, text: 'Votre propre clé API Gemini (Google AI Studio)', val: 'Requis' },
@@ -480,7 +480,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         <p className="text-sm text-slate-400 max-w-xl leading-relaxed">
           {isSubscribed 
             ? 'Suivez vos quotas de consommation, configurez vos clés API et gérez votre facturation sécurisée.' 
-            : 'Sélectionnez la formule adaptée à votre profil pour débloquer la voix, le chat et le trading sans restrictions.'
+            : 'Sélectionnez la formule adaptée à votre profil pour débloquer la voix, le chat et les automatisations avancées.'
           }
         </p>
       </div>

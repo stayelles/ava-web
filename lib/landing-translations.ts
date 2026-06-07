@@ -268,11 +268,11 @@ export const T = {
       {
         q: { en: 'What are the differences between plans?', fr: 'Quelles sont les différences entre les plans ?', de: 'Was sind die Unterschiede zwischen den Plänen?', tr: 'Planlar arasındaki farklar neler?', es: '¿Cuáles son las diferencias entre los planes?' } as TL,
         a: {
-          en: 'Free gives 3 voice minutes/month and 10 messages/day. Pro Starter (€39.99/mo) adds 200 voice minutes, 250 messages, web search, reminders, and MCP integrations. Custom Simple unlocks Ava Trading at 15,000 FCFA/month. Custom Pro (€99.99/mo) raises limits to unlimited and also includes Ava Trading.',
-          fr: 'Le plan Gratuit offre 3 min de voix/mois et 10 messages/jour. Pro Starter (39,99€/mois) ajoute 200 min de voix, 250 messages, recherche web, rappels et intégrations MCP. Custom Simple déverrouille Ava Trading à 15 000 FCFA/mois. Custom Pro (99,99€/mois) passe les limites en illimité et inclut aussi Ava Trading.',
-          de: 'Kostenlos bietet 3 Sprachminuten/Monat und 10 Nachrichten/Tag. Pro Starter (39,99€/Mon.) fügt 200 Sprachminuten, 250 Nachrichten, Websuche, Erinnerungen und MCP-Integrationen hinzu. Custom Simple schaltet Ava Trading für 15.000 FCFA/Monat frei. Custom Pro (99,99€/Mon.) macht die Limits unbegrenzt und enthält ebenfalls Ava Trading.',
-          tr: 'Ücretsiz plan ayda 3 dk ses ve günlük 10 mesaj sunar. Pro Starter (€39,99/ay) 200 dk ses, 250 mesaj, web arama, hatırlatıcılar ve MCP entegrasyonları ekler. Custom Simple, Ava Trading’i ayda 15.000 FCFA ile açar. Custom Pro (€99,99/ay) limitleri sınırsız yapar ve Ava Trading’i de içerir.',
-          es: 'El plan Gratuito ofrece 3 min de voz/mes y 10 mensajes/día. Pro Starter (39,99€/mes) añade 200 min de voz, 250 mensajes, búsqueda web, recordatorios e integraciones MCP. Custom Simple desbloquea Ava Trading por 15.000 FCFA/mes. Custom Pro (99,99€/mes) deja los límites ilimitados e incluye Ava Trading.',
+          en: 'Free gives 3 voice minutes/month and 10 messages/day. Pro Starter (€39.99/mo) adds 200 voice minutes, 250 messages, web search, reminders, and MCP integrations. Custom Simple adds Ava Desktop access with careful limits. Custom Pro (€99.99/mo) raises limits to unlimited and adds advanced configuration.',
+          fr: 'Le plan Gratuit offre 3 min de voix/mois et 10 messages/jour. Pro Starter (39,99€/mois) ajoute 200 min de voix, 250 messages, recherche web, rappels et intégrations MCP. Custom Simple ajoute Ava Desktop avec des limites prudentes. Custom Pro (99,99€/mois) passe les limites en illimité et ajoute la configuration avancée.',
+          de: 'Kostenlos bietet 3 Sprachminuten/Monat und 10 Nachrichten/Tag. Pro Starter (39,99€/Mon.) fügt 200 Sprachminuten, 250 Nachrichten, Websuche, Erinnerungen und MCP-Integrationen hinzu. Custom Simple ergänzt Ava Desktop mit vorsichtigen Limits. Custom Pro (99,99€/Mon.) macht die Limits unbegrenzt und ergänzt erweiterte Konfiguration.',
+          tr: 'Ücretsiz plan ayda 3 dk ses ve günlük 10 mesaj sunar. Pro Starter (€39,99/ay) 200 dk ses, 250 mesaj, web arama, hatırlatıcılar ve MCP entegrasyonları ekler. Custom Simple, dikkatli limitlerle Ava Desktop erişimi ekler. Custom Pro (€99,99/ay) limitleri sınırsız yapar ve gelişmiş yapılandırma ekler.',
+          es: 'El plan Gratuito ofrece 3 min de voz/mes y 10 mensajes/día. Pro Starter (39,99€/mes) añade 200 min de voz, 250 mensajes, búsqueda web, recordatorios e integraciones MCP. Custom Simple añade Ava Desktop con límites prudentes. Custom Pro (99,99€/mes) deja los límites ilimitados y añade configuración avanzada.',
         } as TL,
       },
       {
@@ -292,11 +292,11 @@ export const T = {
     h1:       { en: 'Supercharge your', fr: 'Boostez votre', de: 'Steigern Sie Ihre', tr: 'Günlük', es: 'Potencia tu' } as TL,
     h2:       { en: 'daily productivity', fr: 'productivité quotidienne', de: 'tägliche Produktivität', tr: 'üretkenliğinizi artırın', es: 'productividad diaria' } as TL,
     subtitle: {
-      en: 'Voice, chat, desktop actions and Ava Trading in plans designed for real usage.',
-      fr: 'Voix, chat, actions desktop et Ava Trading dans des plans pensés pour une vraie utilisation.',
-      de: 'Sprache, Chat, Desktop-Aktionen und Ava Trading in Plänen für echte Nutzung.',
-      tr: 'Gerçek kullanım için tasarlanmış planlarda ses, sohbet, masaüstü işlemleri ve Ava Trading.',
-      es: 'Voz, chat, acciones de escritorio y Ava Trading en planes pensados para uso real.',
+      en: 'Voice, chat, desktop actions and advanced automations in plans designed for real usage.',
+      fr: 'Voix, chat, actions desktop et automatisations avancées dans des plans pensés pour une vraie utilisation.',
+      de: 'Sprache, Chat, Desktop-Aktionen und erweiterte Automatisierungen in Plänen für echte Nutzung.',
+      tr: 'Gerçek kullanım için tasarlanmış planlarda ses, sohbet, masaüstü işlemleri ve gelişmiş otomasyonlar.',
+      es: 'Voz, chat, acciones de escritorio y automatizaciones avanzadas en planes pensados para uso real.',
     } as TL,
   },
   footer: {
