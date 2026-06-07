@@ -32,8 +32,6 @@ import {
 import {
   PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_PRO,
   PADDLE_PRICE_CUSTOM_SIMPLE,
-  PADDLE_PRICE_CUSTOM_PRO_TRIAL,
-  PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL,
   PADDLE_PRICE_CUSTOM_ULTRA,
   PADDLE_PRICE_CUSTOM_MAX,
 } from "@/components/app/constants";
@@ -819,9 +817,7 @@ function Pricing() {
       name: 'Custom Simple',
       price: '$39.99',
       priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
-      trialPriceId: PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL,
       badge: tl({ fr: 'Départ prudent', en: 'Careful start', de: 'Vorsichtiger Start', tr: 'Dikkatli başlangıç', es: 'Inicio prudente' }),
-      trial: tl({ fr: 'Essai gratuit 1 jour', en: '1-day free trial', de: '1 Tag kostenlos testen', tr: '1 gün ücretsiz deneme', es: 'Prueba gratis 1 día' }),
       description: tl({
         fr: 'Pour démarrer avec Ava Desktop, votre clé API personnelle et des limites prudentes.',
         en: 'For starting with Ava Desktop, your personal API key and careful limits.',
@@ -842,9 +838,7 @@ function Pricing() {
       name: 'Custom Pro',
       price: '$99.99',
       priceId: PADDLE_PRICE_CUSTOM_PRO,
-      trialPriceId: PADDLE_PRICE_CUSTOM_PRO_TRIAL,
       badge: tl({ fr: 'Recommandé', en: 'Recommended', de: 'Empfohlen', tr: 'Önerilen', es: 'Recomendado' }),
-      trial: tl({ fr: 'Essai gratuit 1 jour', en: '1-day free trial', de: '1 Tag kostenlos testen', tr: '1 gün ücretsiz deneme', es: 'Prueba gratis 1 día' }),
       description: tl({
         fr: 'Pour une utilisation plus avancée avec plus de liberté sur les objectifs et réglages.',
         en: 'For more advanced usage with more freedom on goals and settings.',
@@ -921,7 +915,7 @@ function Pricing() {
             {tl({ fr: 'Choisissez votre niveau Ava', en: 'Choose your Ava level', de: 'Wählen Sie Ihr Ava-Level', tr: 'Ava seviyenizi seçin', es: 'Elija su nivel de Ava' })}
           </h2>
           <p className="text-slate-400 text-lg mt-4 max-w-2xl mx-auto">
-            {tl({ fr: 'Custom Simple et Custom Pro incluent un essai gratuit de 1 jour avec carte obligatoire. Si le compte a déjà utilisé son essai, Ava affiche directement l’abonnement normal.', en: 'Custom Simple and Custom Pro include a 1-day free trial with card required. If the account already used its trial, Ava shows the normal subscription.', de: 'Custom Simple und Custom Pro enthalten 1 Tag kostenlose Testphase mit erforderlicher Karte. Wenn der Account den Test bereits genutzt hat, zeigt Ava das normale Abo.', tr: 'Custom Simple ve Custom Pro kart zorunlu 1 günlük ücretsiz deneme içerir. Hesap denemeyi kullandıysa Ava normal aboneliği gösterir.', es: 'Custom Simple y Custom Pro incluyen 1 día gratis con tarjeta obligatoria. Si la cuenta ya usó la prueba, Ava muestra la suscripción normal.' })}
+            {tl({ fr: 'Les plans Custom ajoutent Ava Desktop, une clé API personnelle et des limites adaptées à votre usage.', en: 'Custom plans add Ava Desktop, a personal API key and limits adapted to your usage.', de: 'Custom-Pläne ergänzen Ava Desktop, einen persönlichen API-Schlüssel und passende Limits für Ihre Nutzung.', tr: 'Custom planlar Ava Desktop, kişisel API anahtarı ve kullanımınıza uygun limitler ekler.', es: 'Los planes Custom añaden Ava Desktop, una clave API personal y límites adaptados a tu uso.' })}
           </p>
         </FadeUp>
 
@@ -948,11 +942,6 @@ function Pricing() {
 
                   <div>
                     <h3 className="text-xl font-black text-white">{plan.name}</h3>
-                    {plan.trial && (
-                      <span className="mt-3 inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-black text-emerald-200">
-                        {plan.trial}
-                      </span>
-                    )}
                   </div>
 
                   <div className="mt-6">
@@ -976,7 +965,7 @@ function Pricing() {
 
                   <div className="mt-auto pt-6">
                     <span className="flex w-full items-center justify-center rounded-2xl bg-white px-4 py-3 text-xs font-black text-slate-950 transition-colors group-hover:bg-rose-400 group-hover:text-white">
-                      {plan.trial ? plan.trial : tl(T.pricing.cta)}
+                      {tl(T.pricing.cta)}
                     </span>
                   </div>
                 </motion.button>

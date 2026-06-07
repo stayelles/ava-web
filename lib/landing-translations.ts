@@ -258,11 +258,11 @@ export const T = {
       {
         q: { en: 'Can I cancel anytime?', fr: 'Puis-je annuler à tout moment ?', de: 'Kann ich jederzeit kündigen?', tr: 'İstediğim zaman iptal edebilir miyim?', es: '¿Puedo cancelar cuando quiera?' } as TL,
         a: {
-          en: 'Yes. Subscriptions are monthly and can be managed from your Ava account or by contacting support when payment was completed through Wise.',
-          fr: 'Oui. Les abonnements sont mensuels et peuvent être gérés depuis votre compte Ava ou via le support lorsque le paiement a été effectué avec Wise.',
-          de: 'Ja. Abonnements sind monatlich und können über Ihr Ava-Konto oder den Support verwaltet werden, wenn die Zahlung über Wise erfolgt ist.',
-          tr: 'Evet. Abonelikler aylıktır; Wise ile ödeme yaptıysanız Ava hesabınızdan veya destek üzerinden yönetilebilir.',
-          es: 'Sí. Las suscripciones son mensuales y se pueden gestionar desde tu cuenta Ava o contactando con soporte si el pago se hizo con Wise.',
+          en: 'Yes. Subscriptions are monthly and can be managed from your Ava account or by contacting support.',
+          fr: 'Oui. Les abonnements sont mensuels et peuvent être gérés depuis votre compte Ava ou via le support.',
+          de: 'Ja. Abonnements sind monatlich und können über Ihr Ava-Konto oder den Support verwaltet werden.',
+          tr: 'Evet. Abonelikler aylıktır ve Ava hesabınızdan ya da destek üzerinden yönetilebilir.',
+          es: 'Sí. Las suscripciones son mensuales y se pueden gestionar desde tu cuenta Ava o contactando con soporte.',
         } as TL,
       },
       {
