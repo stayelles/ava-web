@@ -345,7 +345,9 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const hasMobileSubscription = !!user.subscription_tier &&
     user.subscription_tier !== 'free' &&
     user.subscription_source !== 'gumroad' &&
-    user.subscription_source !== 'paddle'
+    user.subscription_source !== 'paddle' &&
+    user.subscription_source !== 'paypal' &&
+    user.subscription_source !== 'wise'
 
   const currentPlan = normalizePlanKey(user.subscription_plan, custom)
   const activePlanLabel = currentPlan ? planLabels[currentPlan] ?? null : null
@@ -532,7 +534,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                         Abonnement Actif
                       </span>
                       <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-white/5 border border-white/10 text-slate-400">
-                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'gumroad' ? 'Gumroad' : user.subscription_source === 'wise' ? 'Wise' : 'Mobile'}
+                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'paypal' ? 'PayPal' : user.subscription_source === 'gumroad' ? 'Gumroad' : user.subscription_source === 'wise' ? 'Wise' : 'Mobile'}
                       </span>
                     </div>
 
