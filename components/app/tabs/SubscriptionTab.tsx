@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, 
@@ -11,20 +11,31 @@ import {
   PADDLE_PRICE_PRO_STARTER,
   PADDLE_PRICE_CUSTOM_MAX,
   PADDLE_PRICE_CUSTOM_PRO,
-  PADDLE_PRICE_CUSTOM_PRO_TRIAL,
   PADDLE_PRICE_CUSTOM_SIMPLE,
-  PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL,
   PADDLE_PRICE_CUSTOM_ULTRA,
+  PAYPAL_CLIENT_ID,
+  PAYPAL_PLAN_CUSTOM_MAX,
+  PAYPAL_PLAN_CUSTOM_PRO,
+  PAYPAL_PLAN_CUSTOM_SIMPLE,
+  PAYPAL_PLAN_CUSTOM_ULTRA,
   SUPABASE_HEADERS,
   SUPABASE_URL,
-  WISE_PAYMENT_LINK_CUSTOM_MAX,
-  WISE_PAYMENT_LINK_CUSTOM_PRO,
-  WISE_PAYMENT_LINK_CUSTOM_SIMPLE,
-  WISE_PAYMENT_LINK_CUSTOM_ULTRA,
 } from '../constants'
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
-import { usePaddle } from '../hooks/usePaddle'
+
+declare global {
+  interface Window {
+    paypal?: {
+      Buttons: (options: {
+        style?: Record<string, unknown>
+        createSubscription: (_data: unknown, actions: { subscription: { create: (payload: Record<string, unknown>) => Promise<string> } }) => Promise<string>
+        onApprove: (data: Record<string, unknown>) => void
+        onError: (error: unknown) => void
+      }) => { render: (container: HTMLElement) => Promise<void> }
+    }
+  }
+}
 
 interface Props {
   user: UserData
@@ -40,8 +51,7 @@ const ALL_PLANS = [
     price: '$39.99',
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
-    trialPriceId: PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL,
-    wisePaymentUrl: WISE_PAYMENT_LINK_CUSTOM_SIMPLE,
+    paypalPlanId: PAYPAL_PLAN_CUSTOM_SIMPLE,
     popular: false,
     accentColor: '#6366f1',
     bg: 'linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(99, 102, 241, 0.01) 100%)',
@@ -50,13 +60,13 @@ const ALL_PLANS = [
     btnBg: 'rgba(99, 102, 241, 0.08)',
     btnHoverBg: 'rgba(99, 102, 241, 0.15)',
     btnColor: '#818cf8',
-    description: 'Pour démarrer avec Ava Trading sur petit capital, avec une configuration prudente.',
+    description: 'Pour démarrer avec Ava Desktop, une clé API personnelle et une configuration prudente.',
     features: [
-      'Capital conseillé : 200$ à 500$',
-      'Objectif/session : 2$ à 5$',
-      '1 renfort contrôlé maximum',
-      'Référence perte jusqu’à -250$',
-      'AvaBridge inclus',
+      'Ava Desktop inclus',
+      'Clé API Gemini personnelle',
+      'Limites prudentes par défaut',
+      'Automatisations essentielles',
+      'Support standard',
       'Clé API Gemini personnelle',
       'Support standard',
     ]
@@ -67,7 +77,7 @@ const ALL_PLANS = [
     price: '39,99€',
     per: '/mois',
     priceId: PADDLE_PRICE_PRO_STARTER,
-    wisePaymentUrl: null,
+    paypalPlanId: null,
     popular: false,
     accentColor: '#f43f5e',
     bg: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
@@ -92,8 +102,7 @@ const ALL_PLANS = [
     price: '$99.99',
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_PRO,
-    trialPriceId: PADDLE_PRICE_CUSTOM_PRO_TRIAL,
-    wisePaymentUrl: WISE_PAYMENT_LINK_CUSTOM_PRO,
+    paypalPlanId: PAYPAL_PLAN_CUSTOM_PRO,
     popular: true,
     badge: 'Recommandé',
     accentColor: '#e11d48',
@@ -103,13 +112,13 @@ const ALL_PLANS = [
     btnBg: 'linear-gradient(90deg, #f43f5e 0%, #e11d48 100%)',
     btnHoverBg: 'linear-gradient(90deg, #fb7185 0%, #f43f5e 100%)',
     btnColor: '#fff',
-    description: 'Pour capital intermédiaire, avec plus de liberté sur les objectifs et réglages trading.',
+    description: 'Pour usage avancé, avec plus de liberté sur les objectifs et réglages.',
     features: [
-      'Capital conseillé : 500$ à 1 000$',
-      'Objectif/session : 2$ à 25$',
-      '2 renforts contrôlés maximum',
-      'Référence perte jusqu’à -500$',
-      'AvaBridge auto-installable',
+      'Limites personnalisées',
+      'Automatisations avancées',
+      'Configuration plus flexible',
+      'Support prioritaire',
+      'Ava Desktop inclus',
       'Clé API Gemini personnelle',
       'Support prioritaire',
     ]
@@ -120,9 +129,9 @@ const ALL_PLANS = [
     price: '$399.99',
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_ULTRA,
-    wisePaymentUrl: WISE_PAYMENT_LINK_CUSTOM_ULTRA,
+    paypalPlanId: PAYPAL_PLAN_CUSTOM_ULTRA,
     popular: true,
-    badge: 'Haute performance',
+    badge: 'Usage intensif',
     accentColor: '#e11d48',
     bg: 'linear-gradient(135deg, rgba(225, 29, 72, 0.06) 0%, rgba(99, 102, 241, 0.02) 100%)',
     border: 'rgba(225, 29, 72, 0.28)',
@@ -130,13 +139,13 @@ const ALL_PLANS = [
     btnBg: 'linear-gradient(90deg, #f43f5e 0%, #e11d48 100%)',
     btnHoverBg: 'linear-gradient(90deg, #fb7185 0%, #f43f5e 100%)',
     btnColor: '#fff',
-    description: 'Pour gros scalping avec capital solide, suivi plus strict et stratégie plus ambitieuse.',
+    description: 'Pour usage intensif, limites élevées et accompagnement plus poussé.',
     features: [
-      'Capital conseillé : 1 000$ à 5 000$',
-      'Objectif/session : 2$ à 100$',
-      '3 renforts contrôlés maximum',
-      'Référence perte jusqu’à -1000$',
-      'Diagnostic AvaBridge prioritaire',
+      'Tout Custom Pro inclus',
+      'Limites élevées',
+      'Automatisations étendues',
+      'Configuration avancée',
+      'Support renforcé',
       'Support très prioritaire',
     ]
   },
@@ -146,9 +155,9 @@ const ALL_PLANS = [
     price: '$999.99',
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_MAX,
-    wisePaymentUrl: WISE_PAYMENT_LINK_CUSTOM_MAX,
+    paypalPlanId: PAYPAL_PLAN_CUSTOM_MAX,
     popular: false,
-    badge: 'Capital élevé',
+    badge: 'Volume élevé',
     accentColor: '#f43f5e',
     bg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(15, 23, 42, 0.18) 100%)',
     border: 'rgba(244, 63, 94, 0.35)',
@@ -156,13 +165,13 @@ const ALL_PLANS = [
     btnBg: 'linear-gradient(90deg, #e11d48 0%, #be123c 100%)',
     btnHoverBg: 'linear-gradient(90deg, #fb7185 0%, #e11d48 100%)',
     btnColor: '#fff',
-    description: 'Le plan maximal pour capital important, avec accompagnement et limites sur mesure.',
+    description: 'Le plan maximal pour volumes élevés, accompagnement et limites sur mesure.',
     features: [
-      'Capital conseillé : 5 000$ à 20 000$+',
-      'Objectif/session illimité, minimum 2$',
-      '5 renforts contrôlés maximum',
-      'Référence perte sans plafond',
-      'Profit min jusqu’à 10$ et lot max jusqu’à 1',
+      'Tout Custom Ultra inclus',
+      'Limites maximales',
+      'Automatisations premium',
+      'Configuration complète',
+      'Accompagnement prioritaire',
       'Accompagnement direct',
       'Support maximal',
     ]
@@ -190,7 +199,7 @@ const CUSTOM_FEATURES = [
   { icon: Monitor, text: '∞ Contrôle à distance illimité', val: 'Illimité' },
   { icon: Brain, text: '∞ Vision écran illimitée', val: 'Illimité' },
   { icon: Cpu, text: '∞ Auto-amélioration IA — aucune limite d\'étapes', val: 'Illimité' },
-  { icon: Monitor, text: 'Ava Trading Desktop inclus', val: 'Inclus' },
+  { icon: Monitor, text: 'Ava Desktop inclus', val: 'Inclus' },
   { icon: Bell, text: '∞ Rappels push illimités', val: 'Illimité' },
   { icon: Layers, text: '∞ Intégrations MCP illimitées', val: 'Illimité' },
   { icon: Key, text: 'Votre propre clé API Gemini (Google AI Studio)', val: 'Requis' },
@@ -209,7 +218,6 @@ const planLabels: Record<string, string> = {
 }
 
 const CUSTOM_PLAN_ORDER = ['custom_simple', 'custom_pro', 'custom_ultra', 'custom_max']
-const TRIAL_PLANS = new Set(['custom_simple', 'custom_pro'])
 
 function normalizePlanKey(plan: string | null | undefined, custom: boolean): string | null {
   if (plan === 'custom' || plan === 'custom_starter') return 'custom_simple'
@@ -235,12 +243,31 @@ function isValidUpgradeTarget(currentPlan: string | null, targetPlan: string | n
   return currentRank >= 0 && targetRank > currentRank
 }
 
-function isPriceConfigured(priceId: string) {
-  return priceId.startsWith('pri_')
+function isPayPalPlanConfigured(planId: string | null | undefined): planId is string {
+  return !!planId && planId.startsWith('P-')
 }
 
-function isWisePaymentConfigured(url: string | null | undefined): url is string {
-  return !!url && url.startsWith('https://wise.com/pay/')
+function loadPayPalSdk(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve()
+  if (window.paypal) return Promise.resolve()
+
+  const existing = document.getElementById('paypal-subscriptions-sdk') as HTMLScriptElement | null
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      existing.addEventListener('load', () => resolve(), { once: true })
+      existing.addEventListener('error', () => reject(new Error('PayPal SDK indisponible')), { once: true })
+    })
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.id = 'paypal-subscriptions-sdk'
+    script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(PAYPAL_CLIENT_ID)}&vault=true&intent=subscription&components=buttons&currency=EUR`
+    script.async = true
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error('PayPal SDK indisponible'))
+    document.body.appendChild(script)
+  })
 }
 
 function isKnownPlan(plan: string | null) {
@@ -331,11 +358,11 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const [billingMessage, setBillingMessage] = useState('')
   const [refreshedOnce, setRefreshedOnce] = useState(false)
   const [selectedPlanKey, setSelectedPlanKey] = useState<string | null>(null)
+  const [paypalPlan, setPaypalPlan] = useState<typeof ALL_PLANS[number] | null>(null)
+  const paypalButtonRef = useRef<HTMLDivElement | null>(null)
 
   const pro = isPro(user)
   const custom = isCustomPlan(user)
-  const { openCheckout } = usePaddle(onRefresh ? () => setTimeout(onRefresh!, 5000) : undefined)
-
   useEffect(() => {
     if (refreshedOnce) return
     setRefreshedOnce(true)
@@ -345,14 +372,14 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const hasMobileSubscription = !!user.subscription_tier &&
     user.subscription_tier !== 'free' &&
     user.subscription_source !== 'gumroad' &&
-    user.subscription_source !== 'paddle'
+    user.subscription_source !== 'paddle' &&
+    user.subscription_source !== 'paypal' &&
+    user.subscription_source !== 'wise'
 
   const currentPlan = normalizePlanKey(user.subscription_plan, custom)
   const activePlanLabel = currentPlan ? planLabels[currentPlan] ?? null : null
 
   const isSubscribed = pro || custom
-  const trialAvailable = !user.ava_trading_trial_used
-
   // Define accent colors for current plan
   const planAccent = activePlanLabel === 'Custom Pro'
     ? '#e11d48'
@@ -385,36 +412,59 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   }, [activePlanKey])
 
   const checkoutLabel = (plan: typeof ALL_PLANS[number]) => {
-    if (TRIAL_PLANS.has(plan.key) && trialAvailable) return 'Payer avec Wise'
-    return 'Payer avec Wise'
+    return isPayPalPlanConfigured(plan.paypalPlanId) ? 'Payer avec PayPal' : 'Paiement en attente'
   }
 
   const startCheckout = (plan: typeof ALL_PLANS[number]) => {
-    const wisePaymentUrl = plan.wisePaymentUrl
-    if (isWisePaymentConfigured(wisePaymentUrl)) {
+    if (isPayPalPlanConfigured(plan.paypalPlanId)) {
       setBillingError('')
-      setBillingMessage(`Paiement Wise ouvert pour ${plan.label}. Votre plan sera active apres verification du paiement.`)
-      window.open(wisePaymentUrl, '_blank', 'noopener,noreferrer')
+      setBillingMessage('')
+      setPaypalPlan(plan)
       return
     }
 
-    const priceId = TRIAL_PLANS.has(plan.key) && trialAvailable && plan.trialPriceId
-      ? plan.trialPriceId
-      : plan.priceId
-    if (!isPriceConfigured(priceId)) return
-    openCheckout(priceId, user.email)
+    setBillingError('PayPal est indisponible pour cette formule.')
   }
 
-  const openWisePlanPayment = (plan: typeof ALL_PLANS[number]) => {
-    const wisePaymentUrl = plan.wisePaymentUrl
-    if (!isWisePaymentConfigured(wisePaymentUrl)) {
-      setBillingError('Lien Wise indisponible pour cette formule.')
-      return
-    }
+  useEffect(() => {
+    if (!paypalPlan || !paypalButtonRef.current || !isPayPalPlanConfigured(paypalPlan.paypalPlanId)) return
+
+    let cancelled = false
+    paypalButtonRef.current.innerHTML = ''
     setBillingError('')
-    setBillingMessage(`Paiement Wise ouvert pour ${plan.label}. Votre changement sera active apres verification du paiement.`)
-    window.open(wisePaymentUrl, '_blank', 'noopener,noreferrer')
-  }
+
+    loadPayPalSdk()
+      .then(() => {
+        if (cancelled || !paypalButtonRef.current || !window.paypal || !isPayPalPlanConfigured(paypalPlan.paypalPlanId)) return
+        return window.paypal.Buttons({
+          style: {
+            layout: 'vertical',
+            shape: 'pill',
+            label: 'subscribe',
+          },
+          createSubscription: (_data, actions) => actions.subscription.create({
+            plan_id: paypalPlan.paypalPlanId,
+            custom_id: user.email,
+          }),
+          onApprove: () => {
+            setBillingMessage(`Abonnement PayPal ${paypalPlan.label} confirme. Ava active votre acces des que PayPal envoie la confirmation.`)
+            setPaypalPlan(null)
+            setTimeout(() => onRefresh?.(), 5000)
+          },
+          onError: (error) => {
+            console.error('[PayPal]', error)
+            setBillingError('PayPal a refuse ou interrompu le paiement. Reessayez dans quelques instants.')
+          },
+        }).render(paypalButtonRef.current)
+      })
+      .catch(() => {
+        if (!cancelled) setBillingError('Chargement PayPal impossible pour le moment. Reessayez dans quelques instants.')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [onRefresh, paypalPlan, user.email])
 
   const callPaddleSubscription = async (action: 'portal' | 'upgrade', plan?: string) => {
     setBillingLoading(true)
@@ -478,7 +528,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         <p className="text-sm text-slate-400 max-w-xl leading-relaxed">
           {isSubscribed 
             ? 'Suivez vos quotas de consommation, configurez vos clés API et gérez votre facturation sécurisée.' 
-            : 'Sélectionnez la formule adaptée à votre profil pour débloquer la voix, le chat et le trading sans restrictions.'
+            : 'Sélectionnez la formule adaptée à votre profil pour débloquer la voix, le chat et les automatisations avancées.'
           }
         </p>
       </div>
@@ -532,7 +582,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                         Abonnement Actif
                       </span>
                       <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-white/5 border border-white/10 text-slate-400">
-                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'gumroad' ? 'Gumroad' : user.subscription_source === 'wise' ? 'Wise' : 'Mobile'}
+                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'paypal' ? 'PayPal' : user.subscription_source === 'gumroad' ? 'Gumroad' : user.subscription_source === 'wise' ? 'Wise' : 'Mobile'}
                       </span>
                     </div>
 
@@ -555,7 +605,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                         <button
                           type="button"
                           onClick={() => {
-                            openWisePlanPayment(nextPlan)
+                            startCheckout(nextPlan)
                           }}
                           disabled={billingLoading}
                           className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-rose-500/20 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 disabled:opacity-60"
@@ -579,7 +629,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 </div>
                 {user.subscription_source === 'paddle' && nextPlan && (
                   <p className="relative z-10 mt-5 text-[11px] leading-relaxed text-slate-400">
-                    Pour changer de plan, utilisez le paiement Wise. Le portail Paddle reste disponible pour consulter les anciennes factures ou gerer un abonnement Paddle existant.
+                    Pour changer de plan, utilisez PayPal. Le portail Paddle reste disponible pour consulter les anciennes factures ou gerer un abonnement Paddle existant.
                   </p>
                 )}
               </motion.div>
@@ -705,7 +755,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   <h4 className="text-xs font-bold uppercase tracking-wider">Aide & Facturation</h4>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Les nouveaux paiements sont temporairement traités via Wise. Votre accès est activé après vérification du paiement, et Paddle reste disponible pour les abonnements déjà existants.
+                  Les nouveaux paiements sont traités via PayPal. PayPal active automatiquement l&apos;abonnement après confirmation, et Paddle reste disponible pour les abonnements déjà existants.
                 </p>
                 <div className="pt-2">
                   <a 
@@ -815,10 +865,9 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                     ) : (
                       <button
                         onClick={() => {
-                          if (!isWisePaymentConfigured(plan.wisePaymentUrl)) return
-                          openWisePlanPayment(plan)
+                          startCheckout(plan)
                         }}
-                        disabled={!isWisePaymentConfigured(plan.wisePaymentUrl)}
+                        disabled={!isPayPalPlanConfigured(plan.paypalPlanId)}
                         className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 cursor-pointer"
                         style={{
                           background: plan.btnBg,
@@ -832,7 +881,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                           e.currentTarget.style.background = plan.btnBg as string
                         }}
                       >
-                        {isWisePaymentConfigured(plan.wisePaymentUrl) ? 'Payer avec Wise' : 'Lien Wise en attente'}
+                        {checkoutLabel(plan)}
                       </button>
                     )}
                   </div>
@@ -913,14 +962,9 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
                 {/* Subscribing CTA Button */}
                 <div className="mt-8 pt-4">
-                  {TRIAL_PLANS.has(plan.key) && (
-                    <p className="mb-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                      Activation apres verification du paiement
-                    </p>
-                  )}
                   <button
                     onClick={() => startCheckout(plan)}
-                    disabled={!isWisePaymentConfigured(plan.wisePaymentUrl) || billingLoading}
+                    disabled={!isPayPalPlanConfigured(plan.paypalPlanId) || billingLoading}
                     className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 cursor-pointer"
                     style={{
                       background: plan.btnBg,
@@ -940,7 +984,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   >
                     {billingLoading
                       ? 'Activation...'
-                      : isWisePaymentConfigured(plan.wisePaymentUrl) ? checkoutLabel(plan) : 'Lien Wise en attente'}
+                      : checkoutLabel(plan)}
                   </button>
                 </div>
               </motion.div>
@@ -952,6 +996,42 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
           </p>
         </div>
       )}
+
+      {/* PayPal subscription modal */}
+      <AnimatePresence>
+        {paypalPlan && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-6 md:p-8 shadow-2xl space-y-6"
+            >
+              <button
+                type="button"
+                onClick={() => setPaypalPlan(null)}
+                className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="Fermer"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="space-y-2 pr-10">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Paiement securise PayPal</p>
+                <h3 className="text-2xl font-black text-white tracking-tight">{paypalPlan.label}</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  PayPal confirmera l&apos;abonnement automatiquement. Ava activera ensuite votre acces sur le compte {user.email}.
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                <div ref={paypalButtonRef} />
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Upgrade / subscription change warning modal */}
       <AnimatePresence>
@@ -1001,10 +1081,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
               <div className="rounded-2xl bg-white/5 border border-white/5 p-4 space-y-2.5">
                 <p className="text-xs text-slate-300 leading-relaxed font-semibold">
-                  Ava va ouvrir le paiement Wise correspondant à cette formule.
+                  Ava va ouvrir le paiement PayPal correspondant à cette formule.
                 </p>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  La transition vers <strong>{targetPlan.label}</strong> sera activée après vérification du paiement. Paddle reste conservé en arrière-plan pour les abonnements existants.
+                  La transition vers <strong>{targetPlan.label}</strong> sera activée automatiquement après confirmation PayPal. Paddle reste conservé en arrière-plan pour les abonnements existants.
                 </p>
                 {billingError && (
                   <div className="rounded-xl border border-rose-400/15 bg-rose-500/10 px-3 py-2">
@@ -1029,12 +1109,15 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 <button
                   type="button"
                   disabled={billingLoading}
-                  onClick={() => openWisePlanPayment(targetPlan)}
+                  onClick={() => {
+                    setShowUpgradeModal(false)
+                    startCheckout(targetPlan)
+                  }}
                   className="min-h-12 whitespace-nowrap flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-lg text-center disabled:opacity-60"
                   style={{ background: `linear-gradient(90deg, ${targetPlan.accentColor}dd, ${targetPlan.accentColor})` }}
                 >
                   <CreditCard size={14} />
-                  {billingLoading ? 'Ouverture...' : `Payer ${targetPlan.label} avec Wise`}
+                  {billingLoading ? 'Ouverture...' : `Payer ${targetPlan.label} avec PayPal`}
                 </button>
                 <button
                   type="button"

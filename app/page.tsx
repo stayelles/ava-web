@@ -32,20 +32,16 @@ import {
 import {
   PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_PRO,
   PADDLE_PRICE_CUSTOM_SIMPLE,
-  PADDLE_PRICE_CUSTOM_PRO_TRIAL,
-  PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL,
   PADDLE_PRICE_CUSTOM_ULTRA,
   PADDLE_PRICE_CUSTOM_MAX,
 } from "@/components/app/constants";
 
 const AVA_DESKTOP_VERSION = "1.1.29";
-const AVA_BRIDGE_EA_VERSION = "1.18";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = {
   macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-arm64.dmg`,
   macIntel: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-x64.dmg`,
   windows: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_VERSION}.exe`,
-  ea: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.ex5`,
 };
 
 const planCheckoutUrl = (plan: string) =>
@@ -181,7 +177,6 @@ function Navbar() {
   const NAV_ITEMS = [
     { name: tl(T.nav.features), link: "#features" },
     { name: tl(T.nav.pricing),  link: "#pricing" },
-    { name: "Ava Trading",      link: "/trading" },
     { name: tl(T.nav.download), link: "#download" },
     { name: tl(T.nav.blog),     link: "/blog" },
   ];
@@ -822,22 +817,20 @@ function Pricing() {
       name: 'Custom Simple',
       price: '$39.99',
       priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
-      trialPriceId: PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL,
       badge: tl({ fr: 'Départ prudent', en: 'Careful start', de: 'Vorsichtiger Start', tr: 'Dikkatli başlangıç', es: 'Inicio prudente' }),
-      trial: tl({ fr: 'Essai gratuit 1 jour', en: '1-day free trial', de: '1 Tag kostenlos testen', tr: '1 gün ücretsiz deneme', es: 'Prueba gratis 1 día' }),
       description: tl({
-        fr: 'Pour tester Ava Trading sur petit capital avec des limites prudentes.',
-        en: 'For trying Ava Trading with a smaller capital and careful limits.',
-        de: 'Für Ava Trading mit kleinerem Kapital und vorsichtigen Limits.',
-        tr: 'Ava Trading’i küçük sermaye ve dikkatli limitlerle denemek için.',
-        es: 'Para probar Ava Trading con capital pequeño y límites prudentes.',
+        fr: 'Pour démarrer avec Ava Desktop, votre clé API personnelle et des limites prudentes.',
+        en: 'For starting with Ava Desktop, your personal API key and careful limits.',
+        de: 'Für den Einstieg mit Ava Desktop, Ihrem persönlichen API-Schlüssel und vorsichtigen Limits.',
+        tr: 'Ava Desktop, kişisel API anahtarınız ve dikkatli limitlerle başlamak için.',
+        es: 'Para empezar con Ava Desktop, tu clave API personal y límites prudentes.',
       }),
       features: [
-        'Capital conseillé : 200$ à 500$',
-        'Objectif/session : 2$ à 5$',
-        '1 renfort contrôlé maximum',
-        'Référence perte jusqu’à -250$',
-        'AvaBridge inclus',
+        'Ava Desktop inclus',
+        'Clé API Gemini personnelle',
+        'Limites prudentes par défaut',
+        'Automatisations essentielles',
+        'Support standard',
       ],
     },
     {
@@ -845,23 +838,21 @@ function Pricing() {
       name: 'Custom Pro',
       price: '$99.99',
       priceId: PADDLE_PRICE_CUSTOM_PRO,
-      trialPriceId: PADDLE_PRICE_CUSTOM_PRO_TRIAL,
       badge: tl({ fr: 'Recommandé', en: 'Recommended', de: 'Empfohlen', tr: 'Önerilen', es: 'Recomendado' }),
-      trial: tl({ fr: 'Essai gratuit 1 jour', en: '1-day free trial', de: '1 Tag kostenlos testen', tr: '1 gün ücretsiz deneme', es: 'Prueba gratis 1 día' }),
       description: tl({
-        fr: 'Pour capital intermédiaire avec plus de liberté sur les objectifs.',
-        en: 'For mid-sized capital with more freedom on session targets.',
-        de: 'Für mittleres Kapital mit mehr Freiheit bei Sitzungszielen.',
-        tr: 'Orta sermaye ve daha esnek seans hedefleri için.',
-        es: 'Para capital intermedio con más libertad en objetivos.',
+        fr: 'Pour une utilisation plus avancée avec plus de liberté sur les objectifs et réglages.',
+        en: 'For more advanced usage with more freedom on goals and settings.',
+        de: 'Für fortgeschrittenere Nutzung mit mehr Freiheit bei Zielen und Einstellungen.',
+        tr: 'Hedefler ve ayarlar üzerinde daha fazla özgürlük isteyen gelişmiş kullanım için.',
+        es: 'Para un uso más avanzado con más libertad en objetivos y ajustes.',
       }),
       highlighted: true,
       features: [
         'Tout Custom Simple inclus',
-        'Capital conseillé : 500$ à 1 000$',
-        'Objectif/session : 2$ à 25$',
-        '2 renforts contrôlés maximum',
-        'Référence perte jusqu’à -500$',
+        'Limites personnalisées',
+        'Automatisations avancées',
+        'Configuration plus flexible',
+        'Support prioritaire',
       ],
     },
     {
@@ -871,18 +862,18 @@ function Pricing() {
       priceId: PADDLE_PRICE_CUSTOM_ULTRA,
       badge: tl({ fr: 'Haute performance', en: 'High performance', de: 'Hohe Leistung', tr: 'Yüksek performans', es: 'Alto rendimiento' }),
       description: tl({
-        fr: 'Pour gros scalping avec capital solide et suivi plus ambitieux.',
-        en: 'For stronger scalping with solid capital and more ambitious limits.',
-        de: 'Für stärkeres Scalping mit solidem Kapital und höheren Limits.',
-        tr: 'Güçlü sermaye ve daha iddialı limitlerle scalping için.',
-        es: 'Para scalping más fuerte con capital sólido y límites ambiciosos.',
+        fr: 'Pour usage intensif, limites élevées et accompagnement plus poussé.',
+        en: 'For intensive usage, higher limits and closer support.',
+        de: 'Für intensive Nutzung, höhere Limits und engere Betreuung.',
+        tr: 'Yoğun kullanım, daha yüksek limitler ve daha yakın destek için.',
+        es: 'Para uso intensivo, límites más altos y soporte más cercano.',
       }),
       features: [
         'Tout Custom Pro inclus',
-        'Capital conseillé : 1 000$ à 5 000$',
-        'Objectif/session : 2$ à 100$',
-        '3 renforts contrôlés maximum',
-        'Référence perte jusqu’à -1000$',
+        'Limites élevées',
+        'Automatisations étendues',
+        'Support renforcé',
+        'Configuration avancée',
       ],
     },
     {
@@ -892,18 +883,18 @@ function Pricing() {
       priceId: PADDLE_PRICE_CUSTOM_MAX,
       badge: tl({ fr: 'Capital élevé', en: 'Large capital', de: 'Hohes Kapital', tr: 'Yüksek sermaye', es: 'Capital alto' }),
       description: tl({
-        fr: 'Le plan maximal pour capital important, limites hautes et accompagnement.',
-        en: 'The maximum plan for larger capital, higher limits and closer support.',
-        de: 'Der maximale Plan für großes Kapital, hohe Limits und engere Betreuung.',
-        tr: 'Büyük sermaye, yüksek limitler ve yakın destek için maksimum plan.',
-        es: 'El plan máximo para capital grande, límites altos y soporte cercano.',
+        fr: 'Le plan maximal pour volumes élevés, limites hautes et accompagnement prioritaire.',
+        en: 'The maximum plan for high-volume usage, higher limits and priority support.',
+        de: 'Der maximale Plan für hohe Nutzung, höhere Limits und priorisierten Support.',
+        tr: 'Yüksek hacimli kullanım, yüksek limitler ve öncelikli destek için maksimum plan.',
+        es: 'El plan máximo para uso de alto volumen, límites altos y soporte prioritario.',
       }),
       features: [
         'Tout Custom Ultra inclus',
-        'Capital conseillé : 5 000$ à 20 000$+',
-        'Objectif/session illimité, minimum 2$',
-        '5 renforts contrôlés maximum',
-        'Profit min jusqu’à 10$ · lot max jusqu’à 1',
+        'Limites maximales',
+        'Automatisations premium',
+        'Accompagnement prioritaire',
+        'Configuration complète',
       ],
     },
   ]
@@ -921,10 +912,10 @@ function Pricing() {
             {tl(T.pricing.label)}
           </p>
           <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">
-            {tl({ fr: 'Choisissez votre niveau Ava Trading', en: 'Choose your Ava Trading level', de: 'Wählen Sie Ihr Ava-Trading-Level', tr: 'Ava Trading seviyenizi seçin', es: 'Elija su nivel de Ava Trading' })}
+            {tl({ fr: 'Choisissez votre niveau Ava', en: 'Choose your Ava level', de: 'Wählen Sie Ihr Ava-Level', tr: 'Ava seviyenizi seçin', es: 'Elija su nivel de Ava' })}
           </h2>
           <p className="text-slate-400 text-lg mt-4 max-w-2xl mx-auto">
-            {tl({ fr: 'Custom Simple et Custom Pro incluent un essai gratuit de 1 jour avec carte obligatoire. Si le compte a déjà utilisé son essai, Ava affiche directement l’abonnement normal.', en: 'Custom Simple and Custom Pro include a 1-day free trial with card required. If the account already used its trial, Ava shows the normal subscription.', de: 'Custom Simple und Custom Pro enthalten 1 Tag kostenlose Testphase mit erforderlicher Karte. Wenn der Account den Test bereits genutzt hat, zeigt Ava das normale Abo.', tr: 'Custom Simple ve Custom Pro kart zorunlu 1 günlük ücretsiz deneme içerir. Hesap denemeyi kullandıysa Ava normal aboneliği gösterir.', es: 'Custom Simple y Custom Pro incluyen 1 día gratis con tarjeta obligatoria. Si la cuenta ya usó la prueba, Ava muestra la suscripción normal.' })}
+            {tl({ fr: 'Les plans Custom ajoutent Ava Desktop, une clé API personnelle et des limites adaptées à votre usage.', en: 'Custom plans add Ava Desktop, a personal API key and limits adapted to your usage.', de: 'Custom-Pläne ergänzen Ava Desktop, einen persönlichen API-Schlüssel und passende Limits für Ihre Nutzung.', tr: 'Custom planlar Ava Desktop, kişisel API anahtarı ve kullanımınıza uygun limitler ekler.', es: 'Los planes Custom añaden Ava Desktop, una clave API personal y límites adaptados a tu uso.' })}
           </p>
         </FadeUp>
 
@@ -951,11 +942,6 @@ function Pricing() {
 
                   <div>
                     <h3 className="text-xl font-black text-white">{plan.name}</h3>
-                    {plan.trial && (
-                      <span className="mt-3 inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-black text-emerald-200">
-                        {plan.trial}
-                      </span>
-                    )}
                   </div>
 
                   <div className="mt-6">
@@ -979,7 +965,7 @@ function Pricing() {
 
                   <div className="mt-auto pt-6">
                     <span className="flex w-full items-center justify-center rounded-2xl bg-white px-4 py-3 text-xs font-black text-slate-950 transition-colors group-hover:bg-rose-400 group-hover:text-white">
-                      {plan.trial ? plan.trial : tl(T.pricing.cta)}
+                      {tl(T.pricing.cta)}
                     </span>
                   </div>
                 </motion.button>
@@ -990,7 +976,7 @@ function Pricing() {
 
         <FadeUp delay={0.22}>
           <p className="text-center text-xs text-slate-600 mt-6 max-w-2xl mx-auto">
-            {tl({ fr: 'Ava Trading reste un outil à risque: choisissez un plan adapté à votre capital et ne tradez jamais un capital que vous ne pouvez pas perdre.', en: 'Ava Trading remains risky: choose a plan that matches your capital and never trade money you cannot afford to lose.', de: 'Ava Trading bleibt risikoreich: Wählen Sie einen Plan passend zu Ihrem Kapital.', tr: 'Ava Trading risk içerir: sermayenize uygun planı seçin.', es: 'Ava Trading implica riesgo: elija un plan adaptado a su capital.' })}
+            {tl({ fr: 'Choisissez une formule adaptée à votre usage. Les fonctionnalités avancées demandent une configuration responsable.', en: 'Choose a plan that fits your usage. Advanced features require responsible configuration.', de: 'Wählen Sie einen Plan, der zu Ihrer Nutzung passt. Erweiterte Funktionen erfordern verantwortungsvolle Konfiguration.', tr: 'Kullanımınıza uygun bir plan seçin. Gelişmiş özellikler sorumlu yapılandırma gerektirir.', es: 'Elige un plan adaptado a tu uso. Las funciones avanzadas requieren una configuración responsable.' })}
           </p>
         </FadeUp>
       </div>
@@ -1094,26 +1080,26 @@ function PricingLegacy() {
       vals: [false, false, true, true], unit: '',
     },
     {
-      label: tl({ fr: 'Ava Trading Desktop', en: 'Ava Trading Desktop', de: 'Ava Trading Desktop', tr: 'Ava Trading Desktop', es: 'Ava Trading Desktop' }),
-      sub: tl({ fr: 'agent MT5, bridge, apprentissage global', en: 'MT5 agent, bridge, global learning', de: 'MT5-Agent, Bridge, globales Lernen', tr: 'MT5 ajanı, bridge, global öğrenme', es: 'agent MT5, bridge, aprendizaje global' }),
+      label: tl({ fr: 'Ava Desktop avancé', en: 'Advanced Ava Desktop', de: 'Erweitertes Ava Desktop', tr: 'Gelişmiş Ava Desktop', es: 'Ava Desktop avanzado' }),
+      sub: tl({ fr: 'automatisations, réglages et support', en: 'automations, settings and support', de: 'Automatisierungen, Einstellungen und Support', tr: 'otomasyonlar, ayarlar ve destek', es: 'automatizaciones, ajustes y soporte' }),
       vals: [false, false, true, true], unit: '', isHeader: true,
     },
     {
-      label: tl({ fr: 'Mode d\'exécution', en: 'Execution mode', de: 'Ausführungsmodus', tr: 'Çalışma modu', es: 'Modo de ejecución' }),
-      vals: [false, false, 'EA Bridge', 'EA Bridge'], unit: '',
+      label: tl({ fr: 'Mode avancé', en: 'Advanced mode', de: 'Erweiterter Modus', tr: 'Gelişmiş mod', es: 'Modo avanzado' }),
+      vals: [false, false, true, true], unit: '',
     },
     {
-      label: tl({ fr: 'Lot de trading', en: 'Trading lot size', de: 'Lotgröße', tr: 'İşlem lotu', es: 'Lote de trading' }),
+      label: tl({ fr: 'Limites personnalisées', en: 'Custom limits', de: 'Individuelle Limits', tr: 'Özel limitler', es: 'Límites personalizados' }),
       vals: [false, false,
-        tl({ fr: '0.01 (fixe)', en: '0.01 (fixed)', de: '0.01 (fest)', tr: '0.01 (sabit)', es: '0.01 (fijo)' }),
-        tl({ fr: 'jusqu\'à 0.02', en: 'up to 0.02', de: 'bis 0.02', tr: '0.02\'ye kadar', es: 'hasta 0.02' }),
+        tl({ fr: 'prudentes', en: 'careful', de: 'vorsichtig', tr: 'dikkatli', es: 'prudentes' }),
+        tl({ fr: 'flexibles', en: 'flexible', de: 'flexibel', tr: 'esnek', es: 'flexibles' }),
       ], unit: '',
     },
     {
-      label: tl({ fr: 'Profit minimum par trade', en: 'Minimum profit per trade', de: 'Mindestgewinn pro Trade', tr: 'İşlem başına min. kâr', es: 'Beneficio mínimo por operación' }),
+      label: tl({ fr: 'Objectifs de session', en: 'Session goals', de: 'Sitzungsziele', tr: 'Oturum hedefleri', es: 'Objetivos de sesión' }),
       vals: [false, false,
-        tl({ fr: '0.09$ (fixe)', en: '$0.09 (fixed)', de: '0.09$ (fest)', tr: '0.09$ (sabit)', es: '0.09$ (fijo)' }),
-        tl({ fr: 'jusqu\'à 0.20$', en: 'up to $0.20', de: 'bis 0.20$', tr: '0.20$\'a kadar', es: 'hasta 0.20$' }),
+        tl({ fr: 'standard', en: 'standard', de: 'standard', tr: 'standart', es: 'estándar' }),
+        tl({ fr: 'avancés', en: 'advanced', de: 'erweitert', tr: 'gelişmiş', es: 'avanzados' }),
       ], unit: '',
     },
     {
@@ -1466,100 +1452,6 @@ function PricingLegacy() {
   )
 }
 
-// ─── Ava Trading ──────────────────────────────────────────────────────────────
-
-function AvaTradingSection() {
-  const tl = useTl()
-  const steps = [
-    {
-      icon: Monitor,
-      title: tl({ fr: 'Installer Ava Desktop', en: 'Install Ava Desktop', de: 'Ava Desktop installieren', tr: 'Ava Desktop kur', es: 'Instalar Ava Desktop' }),
-      text: tl({ fr: 'Téléchargez la version Mac ou Windows depuis Ava, sans passer par GitHub.', en: 'Download the Mac or Windows build from Ava without leaving for GitHub.', de: 'Laden Sie die Mac- oder Windows-Version direkt von Ava herunter.', tr: 'Mac veya Windows sürümünü GitHub’a gitmeden Ava’dan indirin.', es: 'Descarga la versión Mac o Windows desde Ava sin ir a GitHub.' }),
-    },
-    {
-      icon: Terminal,
-      title: tl({ fr: 'Ajouter le bridge MT5', en: 'Add the MT5 bridge', de: 'MT5-Bridge hinzufügen', tr: 'MT5 bridge ekle', es: 'Añadir el bridge MT5' }),
-      text: tl({ fr: 'Copiez AvaBridgeEA.ex5 dans MQL5/Experts. C’est déjà compilé: redémarrez MT5, puis attachez-le au graphique XAUUSD.', en: 'Copy AvaBridgeEA.ex5 into MQL5/Experts. It is already compiled: restart MT5, then attach it to the XAUUSD chart.', de: 'Kopieren Sie AvaBridgeEA.ex5 nach MQL5/Experts. Es ist bereits kompiliert: Starten Sie MT5 neu und hängen Sie es an XAUUSD an.', tr: 'AvaBridgeEA.ex5 dosyasını MQL5/Experts içine kopyalayın. Zaten derlenmiştir: MT5’i yeniden başlatın ve XAUUSD grafiğine ekleyin.', es: 'Copia AvaBridgeEA.ex5 en MQL5/Experts. Ya está compilado: reinicia MT5 y añádelo al gráfico XAUUSD.' }),
-    },
-    {
-      icon: Shield,
-      title: tl({ fr: 'Accès protégé', en: 'Protected access', de: 'Geschützter Zugriff', tr: 'Korumalı erişim', es: 'Acceso protegido' }),
-      text: tl({ fr: 'Ava Desktop reste téléchargeable pour tous. Le module Ava Trading se déverrouille seulement avec Custom Simple ou Custom Pro actif.', en: 'Ava Desktop stays downloadable for everyone. Ava Trading unlocks only with active Custom Simple or Custom Pro.', de: 'Ava Desktop bleibt für alle downloadbar. Ava Trading wird nur mit aktivem Custom Simple oder Custom Pro freigeschaltet.', tr: 'Ava Desktop herkes tarafından indirilebilir. Ava Trading yalnızca aktif Custom Simple veya Custom Pro ile açılır.', es: 'Ava Desktop se puede descargar para todos. Ava Trading solo se desbloquea con Custom Simple o Custom Pro activo.' }),
-    },
-  ]
-
-  return (
-    <section id="trading" className="relative py-24 sm:py-32 overflow-hidden">
-      <DotGrid className="opacity-30" />
-      <div className="relative max-w-6xl mx-auto px-6">
-        <FadeUp className="text-center mb-14">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">Ava Trading</p>
-          <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
-            {tl({ fr: 'Scalping MT5 avec apprentissage global Ava', en: 'MT5 scalping with Ava global learning', de: 'MT5-Scalping mit globalem Ava-Lernen', tr: 'Ava global öğrenme ile MT5 scalping', es: 'Scalping MT5 con aprendizaje global Ava' })}
-          </h2>
-          <p className="text-slate-400 text-lg mt-4 max-w-2xl mx-auto">
-            {tl({ fr: "Une installation guidée pour Mac et Windows: Ava Desktop, le bridge MT5, puis l'agent de trading verrouillé par abonnement Custom.", en: 'A guided setup for Mac and Windows: Ava Desktop, the MT5 bridge, then the Custom-locked trading agent.', de: 'Geführte Einrichtung für Mac und Windows: Ava Desktop, MT5-Bridge und der per Custom-Abo geschützte Trading-Agent.', tr: 'Mac ve Windows için yönlendirmeli kurulum: Ava Desktop, MT5 bridge ve Custom aboneliğine bağlı trading ajanı.', es: 'Instalación guiada para Mac y Windows: Ava Desktop, bridge MT5 y agente protegido por plan Custom.' })}
-          </p>
-        </FadeUp>
-
-        <div className="grid lg:grid-cols-3 gap-4 mb-8">
-          {steps.map((step, index) => (
-            <FadeUp key={step.title} delay={index * 0.06}>
-              <div className="h-full rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-xl p-6">
-                <div className="w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mb-5">
-                  <step.icon size={20} className="text-rose-400" />
-                </div>
-                <h3 className="text-white font-black text-lg mb-2">{step.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{step.text}</p>
-              </div>
-            </FadeUp>
-          ))}
-        </div>
-
-        <FadeUp delay={0.16}>
-          <div className="rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-xl p-6 sm:p-8">
-            <div className="grid lg:grid-cols-[1fr_1.1fr] gap-8 items-start">
-              <div>
-                <h3 className="text-white font-black text-2xl mb-3">
-                  {tl({ fr: 'Téléchargements Ava Trading', en: 'Ava Trading downloads', de: 'Ava Trading Downloads', tr: 'Ava Trading indirmeleri', es: 'Descargas Ava Trading' })}
-                </h3>
-                <p className="text-slate-400 leading-relaxed mb-6">
-                  {tl({ fr: 'Les fichiers sont servis depuis call-ava.com/downloads avec des noms versionnés pour garder les anciennes versions disponibles.', en: 'Files are served from call-ava.com/downloads with versioned names so older builds stay available.', de: 'Dateien werden über call-ava.com/downloads mit versionierten Namen bereitgestellt.', tr: 'Dosyalar eski sürümleri korumak için sürüm adlarıyla call-ava.com/downloads üzerinden sunulur.', es: 'Los archivos se sirven desde call-ava.com/downloads con nombres versionados.' })}
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <a href={DOWNLOADS.macArm} download className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white text-sm font-bold transition-colors">
-                    <SiApple size={15} /> Mac Apple Silicon
-                  </a>
-                  <a href={DOWNLOADS.macIntel} download className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
-                    <Cpu size={15} /> Mac Intel
-                  </a>
-                  <a href={DOWNLOADS.windows} download className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
-                    <WindowsIcon size={15} /> Windows
-                  </a>
-                  <a href={DOWNLOADS.ea} download className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/10 text-white text-sm font-bold transition-colors">
-                    <Terminal size={15} /> AvaBridgeEA.ex5
-                  </a>
-                </div>
-              </div>
-              <div className="rounded-2xl bg-slate-950/70 border border-white/10 p-5">
-                <p className="text-[10px] uppercase tracking-widest font-bold text-white/35 mb-4">
-                  {tl({ fr: 'Installation MT5', en: 'MT5 setup', de: 'MT5 Einrichtung', tr: 'MT5 kurulumu', es: 'Instalación MT5' })}
-                </p>
-                <ol className="space-y-3 text-sm text-slate-300">
-                  <li>1. {tl({ fr: 'Installez MetaTrader 5 et connectez votre compte démo ou réel.', en: 'Install MetaTrader 5 and connect your demo or real account.', de: 'Installieren Sie MetaTrader 5 und verbinden Sie Ihr Demo- oder Live-Konto.', tr: 'MetaTrader 5’i kurun ve demo veya gerçek hesabınızı bağlayın.', es: 'Instala MetaTrader 5 y conecta tu cuenta demo o real.' })}</li>
-                  <li>2. {tl({ fr: 'Dans MT5, ouvrez Fichier > Ouvrir le dossier des données, puis MQL5 > Experts.', en: 'In MT5, open File > Open Data Folder, then MQL5 > Experts.', de: 'Öffnen Sie in MT5 Datei > Datenordner öffnen, dann MQL5 > Experts.', tr: 'MT5 içinde File > Open Data Folder, sonra MQL5 > Experts klasörünü açın.', es: 'En MT5, abre Archivo > Abrir carpeta de datos, luego MQL5 > Experts.' })}</li>
-                  <li>3. {tl({ fr: 'Copiez AvaBridgeEA.ex5 dans Experts. Sur macOS, si le dossier est caché dans MetaQuotes/Wine, utilisez Cmd + Shift + . dans Finder pour afficher les fichiers cachés.', en: 'Copy AvaBridgeEA.ex5 into Experts. On macOS, if the folder is hidden inside MetaQuotes/Wine, press Cmd + Shift + . in Finder to show hidden files.', de: 'Kopieren Sie AvaBridgeEA.ex5 nach Experts. Auf macOS können Sie mit Cmd + Shift + . versteckte Ordner in MetaQuotes/Wine anzeigen.', tr: 'AvaBridgeEA.ex5 dosyasını Experts içine kopyalayın. macOS’ta klasör MetaQuotes/Wine içinde gizliyse Finder’da Cmd + Shift + . kullanın.', es: 'Copia AvaBridgeEA.ex5 en Experts. En macOS, si la carpeta está oculta en MetaQuotes/Wine, pulsa Cmd + Shift + . en Finder.' })}</li>
-                  <li>4. {tl({ fr: 'Redémarrez MT5 ou rafraîchissez les Experts, ajoutez AvaBridgeEA au graphique XAUUSD, activez Algo Trading, puis lancez Ava Desktop.', en: 'Restart MT5 or refresh Experts, attach AvaBridgeEA to XAUUSD, enable Algo Trading, then launch Ava Desktop.', de: 'Starten Sie MT5 neu oder aktualisieren Sie Experts, hängen Sie AvaBridgeEA an XAUUSD, aktivieren Sie Algo Trading und starten Sie Ava Desktop.', tr: 'MT5’i yeniden başlatın veya Experts listesini yenileyin, AvaBridgeEA’yı XAUUSD grafiğine ekleyin, Algo Trading’i açın ve Ava Desktop’ı başlatın.', es: 'Reinicia MT5 o actualiza Expertos, añade AvaBridgeEA a XAUUSD, activa Algo Trading y abre Ava Desktop.' })}</li>
-                </ol>
-              </div>
-            </div>
-          </div>
-        </FadeUp>
-      </div>
-    </section>
-  )
-}
-
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
 
 function FAQ() {
@@ -1692,7 +1584,6 @@ function Footer() {
                 ["Mac (Apple Silicon)", DOWNLOADS.macArm],
                 ["Mac (Intel)", DOWNLOADS.macIntel],
                 ["Windows", DOWNLOADS.windows],
-                [`AvaBridgeEA ${AVA_BRIDGE_EA_VERSION}`, DOWNLOADS.ea],
               ].map(([l, h]) => (
                 <li key={l}><a href={h} className="text-white/35 hover:text-white text-sm transition-colors">{l}</a></li>
               ))}
@@ -1764,7 +1655,6 @@ export default function Page() {
         <Integrations />
         <Testimonials />
         <Showcase />
-        <AvaTradingSection />
         <Pricing />
         <FAQ />
         <FinalCTA />

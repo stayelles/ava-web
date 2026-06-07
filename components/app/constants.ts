@@ -23,21 +23,21 @@ export const PADDLE_CLIENT_TOKEN = 'live_3f4f6ba16c07c4dfd3064cf21fd'
 // ── Ava Pro plans ─────────────────────────────────────────────────────────────
 export const PADDLE_PRICE_PRO_STARTER = 'pri_01knq7394vkf1g4vf67dvk4fn4'  // 39,99€/mois — Pro Starter
 export const PADDLE_PRICE_CUSTOM_PRO   = 'pri_01kntnb5pnck8pc5vcb31z0en7'  // 99,99$/mois — Custom Pro
-export const PADDLE_PRICE_CUSTOM_PRO_TRIAL = 'pri_01kt14ee61g0w7fhd6p166p1ke' // 99,99$/mois — Custom Pro, 1 jour d'essai
 export const PADDLE_PRICE_CUSTOM_ULTRA = 'pri_01kssqd2yckjv3rx33j2kjvnq7'  // 399,99$/mois — Custom Ultra
 export const PADDLE_PRICE_CUSTOM_MAX   = 'pri_01kswjq9qc93fzdcffhbw3f972'  // 999,99$/mois — Custom Max
 export const PADDLE_PRICE_PRO_PLUS     = PADDLE_PRICE_CUSTOM_PRO            // alias legacy
 
 // ── Ava Custom plan ───────────────────────────────────────────────────────────
 export const PADDLE_PRICE_CUSTOM_SIMPLE = 'pri_01kntn3ymketw85ga6fr03q6f5'  // 39,99$/mois — Custom Simple
-export const PADDLE_PRICE_CUSTOM_SIMPLE_TRIAL = 'pri_01kt14k9n6gpsk2379ycbf0rj4' // 39,99$/mois — Custom Simple, 1 jour d'essai
 export const PADDLE_PRICE_CUSTOM = PADDLE_PRICE_CUSTOM_SIMPLE              // alias legacy
 
-// ── Wise payment links (fallback actif pendant l'indisponibilite Paddle) ─────
-export const WISE_PAYMENT_LINK_CUSTOM_SIMPLE = 'https://wise.com/pay/r/fdg688vHbw_ay0Q'
-export const WISE_PAYMENT_LINK_CUSTOM_PRO = 'https://wise.com/pay/r/8h9unPwemY1c8PI'
-export const WISE_PAYMENT_LINK_CUSTOM_ULTRA = 'https://wise.com/pay/r/FtI9nOk5GXGQt5w'
-export const WISE_PAYMENT_LINK_CUSTOM_MAX = 'https://wise.com/pay/r/9bs7nFROogFoHKY'
+// ── PayPal subscriptions ─────────────────────────────────────────────────────
+// Client ID is public for PayPal JS SDK. The secret stays only in Supabase secrets.
+export const PAYPAL_CLIENT_ID = 'BAAwepkqckhjrEtVykgbsdDrg-AY4uJ1jswVBmVlh9gFtAlDWAxjxZDvn680BtmyCODW3iHwG-KaF6xx7Q'
+export const PAYPAL_PLAN_CUSTOM_SIMPLE = 'P-2HA315584U6551445NIS7E4Y'
+export const PAYPAL_PLAN_CUSTOM_PRO = 'P-39J61113695412401NIS7RPY'
+export const PAYPAL_PLAN_CUSTOM_ULTRA = 'P-48C56027AC837360PNIS7TFY'
+export const PAYPAL_PLAN_CUSTOM_MAX = 'P-39N47930FW8613245NIS7UMI'
 
 // ── Gumroad (legacy / fallback) ───────────────────────────────────────────────
 export const GUMROAD_URL = 'https://woonixltd.gumroad.com/l/avam1'
