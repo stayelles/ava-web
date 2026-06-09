@@ -412,7 +412,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   }, [activePlanKey])
 
   const checkoutLabel = (plan: typeof ALL_PLANS[number]) => {
-    return isPayPalPlanConfigured(plan.paypalPlanId) ? 'Payer avec PayPal' : 'Paiement en attente'
+    return isPayPalPlanConfigured(plan.paypalPlanId) ? `Obtenir ${plan.label.replace(/^Custom\s+/i, '')}` : 'Paiement en attente'
   }
 
   const startCheckout = (plan: typeof ALL_PLANS[number]) => {
@@ -1117,7 +1117,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   style={{ background: `linear-gradient(90deg, ${targetPlan.accentColor}dd, ${targetPlan.accentColor})` }}
                 >
                   <CreditCard size={14} />
-                  {billingLoading ? 'Ouverture...' : `Payer ${targetPlan.label} avec PayPal`}
+                  {billingLoading ? 'Ouverture...' : `Obtenir ${targetPlan.label.replace(/^Custom\s+/i, '')}`}
                 </button>
                 <button
                   type="button"

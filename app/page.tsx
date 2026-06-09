@@ -903,6 +903,8 @@ function Pricing() {
     window.location.href = planCheckoutUrl(planId)
   }
 
+  const planCta = (planName: string) => `${tl(T.pricing.cta)} ${planName.replace(/^Custom\s+/i, '')}`
+
   return (
     <section id="pricing" className="relative py-24 sm:py-32 overflow-hidden">
       <DotGrid className="opacity-30" />
@@ -965,7 +967,7 @@ function Pricing() {
 
                   <div className="mt-auto pt-6">
                     <span className="flex w-full items-center justify-center rounded-2xl bg-white px-4 py-3 text-xs font-black text-slate-950 transition-colors group-hover:bg-rose-400 group-hover:text-white">
-                      {tl(T.pricing.cta)}
+                      {planCta(plan.name)}
                     </span>
                   </div>
                 </motion.button>
@@ -1028,6 +1030,7 @@ function PricingLegacy() {
     },
   ]
   const plans = allPlans.filter(p => p.id !== 'free' && p.id !== 'pro_starter')
+  const planCta = (planName: string) => `${tl(T.pricing.cta)} ${planName.replace(/^Custom\s+/i, '')}`
 
 
   // ── Feature rows ─────────────────────────────────────────────────────────────
@@ -1312,7 +1315,7 @@ function PricingLegacy() {
                           ? { background: plan.accent, boxShadow: `0 0 20px ${plan.accent}50` }
                           : { border: `1px solid ${plan.accent}55`, color: plan.accent, background: `${plan.accent}0a` }
                         }>
-                        {tl(T.pricing.cta)}
+                        {planCta(plan.name)}
                       </motion.button>
                     ) : (
                       <a href="/app" className="block w-full py-2.5 rounded-xl text-[11px] font-bold text-center transition-all"
@@ -1423,7 +1426,7 @@ function PricingLegacy() {
                                   ? { background: plan.accent, boxShadow: `0 4px 24px ${plan.accent}50` }
                                   : { border: `1px solid ${plan.accent}55`, color: plan.accent, background: `${plan.accent}0a` }
                                 }>
-                                {tl(T.pricing.cta)}
+                                {planCta(plan.name)}
                               </motion.button>
                             ) : (
                               <a href="/app" className="block w-full py-3.5 rounded-2xl text-sm font-bold text-center text-white/50"

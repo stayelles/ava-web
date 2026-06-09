@@ -18,7 +18,7 @@ export const T = {
     pricing:  { en: 'Pricing',    fr: 'Tarifs',           de: 'Preise',     tr: 'Fiyatlar',   es: 'Precios' } as TL,
     download: { en: 'Download',   fr: 'Télécharger',      de: 'Download',   tr: 'İndir',      es: 'Descargar' } as TL,
     blog:     { en: 'Blog',       fr: 'Blog',              de: 'Blog',       tr: 'Blog',       es: 'Blog' } as TL,
-    cta:      { en: 'View plans', fr: 'Voir les tarifs', de: 'Preise ansehen', tr: 'Planları gör', es: 'Ver tarifas' } as TL,
+    cta:      { en: 'Sign in', fr: 'Se connecter', de: 'Einloggen', tr: 'Giriş yap', es: 'Iniciar sesión' } as TL,
   },
   hero: {
     badge:    { en: 'Your AI Voice Companion', fr: 'Votre compagnon vocal IA', de: 'Ihr KI-Sprachbegleiter', tr: 'Sesli Yapay Zeka Asistanı', es: 'Tu compañero de voz IA' } as TL,
@@ -168,7 +168,7 @@ export const T = {
     todayZero:   { en: 'Billed now', fr: 'Facturé maintenant', de: 'Jetzt abgerechnet', tr: 'Şimdi faturalandırılır', es: 'Facturado ahora' } as TL,
     afterTrial:  { en: 'per month', fr: 'par mois', de: 'pro Monat', tr: 'aylık', es: 'al mes' } as TL,
     mostPopular: { en: 'Most Popular', fr: 'Le plus populaire', de: 'Beliebtester', tr: 'En Popüler', es: 'Más popular' } as TL,
-    cta:         { en: 'Subscribe', fr: 'Souscrire', de: 'Abonnieren', tr: 'Abone ol', es: 'Suscribirse' } as TL,
+    cta:         { en: 'Get', fr: 'Obtenir', de: 'Holen', tr: 'Al', es: 'Obtener' } as TL,
     noCard: {
       en: 'Secure card payment · Cancel anytime · Refund within 14 days, no questions asked',
       fr: 'Paiement sécurisé par carte · Annulez à tout moment · Remboursement sous 14 jours, sans conditions',
