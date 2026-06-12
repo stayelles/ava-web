@@ -226,43 +226,13 @@ export default function CGUPage() {
       <LegalSection n={12} title="Intelligence artificielle et limites du service">
         <p>
           Les réponses fournies par Ava sont générées par intelligence artificielle et présentées
-          à titre informatif uniquement. <strong style={{ color: '#f8fafc' }}>Ava est une intelligence artificielle qui peut faire des erreurs et n&apos;est pas parfaite.</strong> Elles ne constituent en aucun cas un conseil professionnel (médical, juridique, financier, de trading, de placement, ou autre) et ne doivent pas être interprétées comme tel.
+          à titre informatif uniquement. <strong style={{ color: '#f8fafc' }}>Ava est une intelligence artificielle qui peut faire des erreurs et n&apos;est pas parfaite.</strong> Elles ne constituent en aucun cas un conseil professionnel (médical, juridique, financier, de placement, ou autre) et ne doivent pas être interprétées comme tel.
         </p>
         <p className="mt-2">
           Woonix LTD ne garantit pas l&apos;exactitude, la complétude ou l&apos;adéquation des
           réponses générées par l&apos;IA. Le service est fourni{' '}
           <strong style={{ color: '#f1f5f9' }}>&quot;en l&apos;état&quot;</strong>{' '}
           sans garantie d&apos;aucune sorte, expresse ou implicite. <strong style={{ color: '#f8fafc' }}>L&apos;utilisateur est le seul et unique responsable de ce qu&apos;il fait de ces informations, des actions entreprises et de tout usage des fonctionnalités d&apos;Ava.</strong>
-        </p>
-      </LegalSection>
-
-      <LegalSection n={13} title="Ava Trading — Risques financiers et responsabilité">
-        <p>
-          Ava Trading est une fonctionnalité d&apos;assistance algorithmique et d&apos;exécution
-          locale via MetaTrader 5. Elle ne constitue pas un conseil en investissement,
-          une recommandation personnalisée, une gestion de portefeuille, ni une promesse
-          de performance. Les marchés financiers sont risqués et les modèles d&apos;IA
-          peuvent se tromper, mal interpréter un signal, rencontrer un problème technique
-          ou réagir de manière inadaptée à une condition de marché.
-        </p>
-        <p className="mt-2">
-          En activant Ava Trading, vous reconnaissez expressément que vous pouvez subir
-          des pertes importantes, y compris la perte totale du capital déposé chez votre
-          broker. Vous restez seul responsable du choix du broker, du compte MT5, du symbole,
-          du levier, de la taille de lot, du capital engagé, des paramètres de risque et de
-          toute position ouverte, modifiée ou fermée par AvaBridgeEA ou par vous-même.
-        </p>
-        <ul className="list-disc list-inside space-y-1 mt-2">
-          <li>Nous conseillons un capital broker d&apos;au moins 300 USD avant utilisation.</li>
-          <li>Un effet de levier 1:1000 peut être plus adapté au fonctionnement visé si votre broker le propose, sans supprimer le risque de perte.</li>
-          <li>Les performances passées, tests, démonstrations ou captures d&apos;écran ne garantissent aucun résultat futur.</li>
-          <li>Vous devez tester en compte démo, surveiller régulièrement votre compte et arrêter Ava Trading si le risque ne vous convient pas.</li>
-        </ul>
-        <p className="mt-2">
-          Woonix LTD ne pourra être tenu responsable des pertes de trading, appels de marge,
-          erreurs de broker, glissements de prix, spreads, commissions, interruptions MT5,
-          erreurs de symbole, mauvaise configuration ou décisions prises sur la base de
-          signaux produits par Ava.
         </p>
       </LegalSection>
 
