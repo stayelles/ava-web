@@ -5,7 +5,7 @@ import { motion, useInView, AnimatePresence } from "framer-motion";
 import {
   Mic2, Monitor, Brain, Bell, Zap, Check, Apple, Smartphone,
   Sparkles, Shield, Terminal, Star, ChevronDown, Layers, Wifi,
-  ArrowRight, Lock, Globe, Cpu,
+  Cpu,
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
 
@@ -20,7 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { Spotlight } from "@/components/ui/spotlight";
 import { cn } from "@/lib/utils";
 import Iphone15Pro from "@/components/magicui/iphone-15-pro";
-import { BorderBeam } from "@/components/magicui/border-beam";
 import {
   Navbar as ResizableNavbar, NavBody, NavItems, MobileNav, NavbarLogo,
   NavbarButton, MobileNavHeader, MobileNavToggle, MobileNavMenu,
@@ -30,8 +29,7 @@ import {
   T, LANG_FLAGS, SUPPORTED_LANGS, LANG_STORAGE_KEY,
 } from "@/lib/landing-translations";
 import {
-  PADDLE_PRICE_PRO_STARTER, PADDLE_PRICE_CUSTOM_PRO,
-  PADDLE_PRICE_CUSTOM_SIMPLE,
+  PADDLE_PRICE_CUSTOM_PRO, PADDLE_PRICE_CUSTOM_SIMPLE,
   PADDLE_PRICE_CUSTOM_ULTRA,
   PADDLE_PRICE_CUSTOM_MAX,
 } from "@/components/app/constants";
@@ -233,7 +231,7 @@ function PhoneScreen() {
         <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5, duration: 0.5 }}
           className="self-start max-w-[78%] bg-white/[0.07] border border-white/10 rounded-2xl rounded-tl-none px-3 py-2">
-          <p className="text-white/85 text-[11px] leading-relaxed">Bonjour ! Comment puis-je t'aider ?</p>
+          <p className="text-white/85 text-[11px] leading-relaxed">Bonjour ! Comment puis-je t&apos;aider ?</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.85, duration: 0.5 }}
@@ -243,7 +241,7 @@ function PhoneScreen() {
         <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 1.2, duration: 0.5 }}
           className="self-start max-w-[78%] bg-white/[0.07] border border-white/10 rounded-2xl rounded-tl-none px-3 py-2">
-          <p className="text-white/85 text-[11px] leading-relaxed">J'ouvre Spotify et lance tes morceaux favoris 🎵</p>
+          <p className="text-white/85 text-[11px] leading-relaxed">J&apos;ouvre Spotify et lance tes morceaux favoris 🎵</p>
         </motion.div>
       </div>
       <div className="px-4 pb-4">
@@ -416,21 +414,21 @@ const DIFF_ICONS = [Mic2, Monitor, Brain];
 const DIFF_COLORS_KEYS = ["rose", "indigo", "violet"];
 const DIFF_VISUALS = [
   (
-    <div className="flex items-end gap-0.5 h-8 w-full">
+    <div key="voice-wave" className="flex items-end gap-0.5 h-8 w-full">
       {Array.from({ length: 28 }, (_, i) => Math.abs(Math.sin(i * 0.55) * 18 + 6)).map((h, i) => (
         <div key={i} className="flex-1 rounded-full bg-rose-500/50" style={{ height: h }} />
       ))}
     </div>
   ),
   (
-    <div className="rounded-xl bg-black/50 border border-white/[0.08] px-3 py-2.5 text-left font-mono text-[10px] space-y-1">
+    <div key="automation-terminal" className="rounded-xl bg-black/50 border border-white/[0.08] px-3 py-2.5 text-left font-mono text-[10px] space-y-1">
       <p className="text-emerald-400">$ open -a &quot;Spotify&quot;</p>
       <p className="text-white/30">Launching...</p>
       <p className="text-emerald-400">✓ Done in 0.4s</p>
     </div>
   ),
   (
-    <div className="flex flex-wrap gap-1.5">
+    <div key="memory-tags" className="flex flex-wrap gap-1.5">
       {["Développeur", "Paris", "Préfère FR", "MacBook M3"].map(t => (
         <span key={t} className="px-2 py-0.5 rounded-full bg-violet-500/12 border border-violet-500/20 text-[10px] text-violet-300">{t}</span>
       ))}
@@ -790,24 +788,6 @@ function Showcase() {
 
 // ─── Pricing ──────────────────────────────────────────────────────────────────
 
-interface PlanDef {
-  id: string
-  name: string
-  priceEur: string
-  priceUsd: string
-  priceId: string | null
-  popular: boolean
-  badge: string | null
-  accent: string
-  accentBg: string
-  accentBorder: string
-}
-
-// 'ul' = illimité/unlimited, false = unavailable, true = check, number = value
-// Unit type: 'pd' per day, 'pm' per month, 'w' words, 'steps' AI steps
-type FV = false | true | number | 'ul' | string
-type FUnit = 'pd' | 'pm' | 'w' | 'steps' | ''
-
 function Pricing() {
   const tl = useTl()
 
@@ -881,13 +861,13 @@ function Pricing() {
       name: 'Custom Max',
       price: '$999.99',
       priceId: PADDLE_PRICE_CUSTOM_MAX,
-      badge: tl({ fr: 'Capital élevé', en: 'Large capital', de: 'Hohes Kapital', tr: 'Yüksek sermaye', es: 'Capital alto' }),
+      badge: tl({ fr: 'Niveau maximal', en: 'Maximum level', de: 'Maximales Niveau', tr: 'Maksimum seviye', es: 'Nivel máximo' }),
       description: tl({
-        fr: 'Le plan maximal pour volumes élevés, limites hautes et accompagnement prioritaire.',
-        en: 'The maximum plan for high-volume usage, higher limits and priority support.',
-        de: 'Der maximale Plan für hohe Nutzung, höhere Limits und priorisierten Support.',
-        tr: 'Yüksek hacimli kullanım, yüksek limitler ve öncelikli destek için maksimum plan.',
-        es: 'El plan máximo para uso de alto volumen, límites altos y soporte prioritario.',
+        fr: 'Le plan maximal pour usage intensif, limites hautes et accompagnement prioritaire.',
+        en: 'The maximum plan for intensive usage, higher limits and priority support.',
+        de: 'Der maximale Plan für intensive Nutzung, höhere Limits und priorisierten Support.',
+        tr: 'Yoğun kullanım, yüksek limitler ve öncelikli destek için maksimum plan.',
+        es: 'El plan máximo para uso intensivo, límites altos y soporte prioritario.',
       }),
       features: [
         'Tout Custom Ultra inclus',
@@ -900,7 +880,7 @@ function Pricing() {
   ]
 
   const onPlanClick = (planId: string) => {
-    window.location.href = planCheckoutUrl(planId)
+    window.location.assign(planCheckoutUrl(planId))
   }
 
   const planCta = (planName: string) => `${tl(T.pricing.cta)} ${planName.replace(/^Custom\s+/i, '')}`
@@ -924,7 +904,7 @@ function Pricing() {
         <FadeUp delay={0.08}>
           <div className="overflow-x-auto pb-3">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-w-0 lg:min-w-[1040px]">
-              {plans.map((plan, index) => (
+              {plans.map((plan) => (
                 <motion.button
                   key={plan.id}
                   type="button"
@@ -981,475 +961,6 @@ function Pricing() {
             {tl({ fr: 'Choisissez une formule adaptée à votre usage. Les fonctionnalités avancées demandent une configuration responsable.', en: 'Choose a plan that fits your usage. Advanced features require responsible configuration.', de: 'Wählen Sie einen Plan, der zu Ihrer Nutzung passt. Erweiterte Funktionen erfordern verantwortungsvolle Konfiguration.', tr: 'Kullanımınıza uygun bir plan seçin. Gelişmiş özellikler sorumlu yapılandırma gerektirir.', es: 'Elige un plan adaptado a tu uso. Las funciones avanzadas requieren una configuración responsable.' })}
           </p>
         </FadeUp>
-      </div>
-    </section>
-  )
-}
-
-function PricingLegacy() {
-  const tl = useTl()
-
-  // ── Currency detection ──────────────────────────────────────────────────────
-  const [isEuro, setIsEuro] = useState(true)
-  useEffect(() => {
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-      setIsEuro(tz.startsWith('Europe/') || tz === 'Atlantic/Azores' || tz === 'Africa/Tunis' || tz === 'Africa/Ceuta')
-    } catch {}
-  }, [])
-
-  const allPlans: PlanDef[] = [
-    {
-      id: 'free',
-      name: tl({ fr: 'Gratuit', en: 'Free', de: 'Kostenlos', tr: 'Ücretsiz', es: 'Gratis' }),
-      priceEur: '0€', priceUsd: '$0',
-      priceId: null, popular: false, badge: null,
-      accent: '#64748b', accentBg: 'rgba(100,116,139,0.05)', accentBorder: 'rgba(100,116,139,0.12)',
-    },
-    {
-      id: 'pro_starter',
-      name: 'Pro Starter',
-      priceEur: '39,99€', priceUsd: '$42.99',
-      priceId: PADDLE_PRICE_PRO_STARTER, popular: true,
-      badge: tl(T.pricing.mostPopular),
-      accent: '#f43f5e', accentBg: 'rgba(244,63,94,0.08)', accentBorder: 'rgba(244,63,94,0.32)',
-    },
-    {
-      id: 'custom_simple',
-      name: 'Custom Simple',
-      priceEur: '39,99€', priceUsd: '$39.99',
-      priceId: PADDLE_PRICE_CUSTOM_SIMPLE, popular: false, badge: null,
-      accent: '#818cf8', accentBg: 'rgba(129,140,248,0.06)', accentBorder: 'rgba(129,140,248,0.22)',
-    },
-    {
-      id: 'custom_pro',
-      name: 'Custom Pro',
-      priceEur: '99,99€', priceUsd: '$99.99',
-      priceId: PADDLE_PRICE_CUSTOM_PRO, popular: false, badge: null,
-      accent: '#a78bfa', accentBg: 'rgba(167,139,250,0.06)', accentBorder: 'rgba(167,139,250,0.22)',
-    },
-  ]
-  const plans = allPlans.filter(p => p.id !== 'free' && p.id !== 'pro_starter')
-  const planCta = (planName: string) => `${tl(T.pricing.cta)} ${planName.replace(/^Custom\s+/i, '')}`
-
-
-  // ── Feature rows ─────────────────────────────────────────────────────────────
-  // vals order: [Free, Pro Starter, Custom Simple, Custom Pro]
-  const features: { label: string; sub?: string; vals: FV[]; unit: FUnit; isHeader?: boolean }[] = [
-    {
-      label: tl({ fr: 'Minutes de voix / mois', en: 'Voice minutes / month', de: 'Sprachminuten / Monat', tr: 'Ses dakikası / ay', es: 'Minutos de voz / mes' }),
-      vals: [3, 200, 'ul', 'ul'], unit: 'pm',
-    },
-    {
-      label: tl({ fr: 'Messages texte / jour', en: 'Text messages / day', de: 'Textnachrichten / Tag', tr: 'Metin mesajı / gün', es: 'Mensajes de texto / día' }),
-      vals: [10, 250, 'ul', 'ul'], unit: 'pd',
-    },
-    {
-      label: tl({ fr: 'Recherche web Google en temps réel', en: 'Real-time Google web search', de: 'Google-Websuche in Echtzeit', tr: 'Gerçek zamanlı Google araması', es: 'Búsqueda web Google en tiempo real' }),
-      vals: [false, 50, 'ul', 'ul'], unit: 'pd',
-    },
-    {
-      label: tl({ fr: 'Analyse d\'images (jusqu\'à 6 par appel)', en: 'Image analysis (up to 6 per call)', de: 'Bildanalyse (bis zu 6 pro Anruf)', tr: 'Görsel analizi (arama başına 6\'ya kadar)', es: 'Análisis de imágenes (hasta 6 por llamada)' }),
-      vals: [false, true, true, true], unit: '',
-    },
-    {
-      label: tl({ fr: 'Vision écran en temps réel', en: 'Real-time screen vision', de: 'Echtzeit-Bildschirmvision', tr: 'Gerçek zamanlı ekran görüşü', es: 'Visión de pantalla en tiempo real' }),
-      vals: [true, true, true, true], unit: '',
-    },
-    {
-      label: tl({ fr: 'Agent IA autonome / jour', en: 'Autonomous AI agent / day', de: 'Autonomer KI-Agent / Tag', tr: 'Özerk YZ ajanı / gün', es: 'Agente IA autónomo / día' }),
-      sub: tl({ fr: 'tâches multisteps sur votre Mac/PC', en: 'multi-step tasks on your Mac/PC', de: 'Mehrschrittaufgaben auf Ihrem Mac/PC', tr: 'Mac/PC\'nizde çok adımlı görevler', es: 'tareas multistep en tu Mac/PC' }),
-      vals: [false, 3, 'ul', 'ul'], unit: 'pd',
-    },
-    {
-      label: tl({ fr: 'Rappels push intelligents', en: 'Smart push reminders', de: 'Smarte Push-Erinnerungen', tr: 'Akıllı push hatırlatıcılar', es: 'Recordatorios push inteligentes' }),
-      vals: [false, true, true, true], unit: '',
-    },
-    {
-      label: tl({ fr: 'Intégrations MCP (Notion, GitHub, Brave…)', en: 'MCP integrations (Notion, GitHub, Brave…)', de: 'MCP-Integrationen (Notion, GitHub…)', tr: 'MCP entegrasyonları (Notion, GitHub…)', es: 'Integraciones MCP (Notion, GitHub…)' }),
-      vals: [false, 30, 'ul', 'ul'], unit: 'pd',
-    },
-    {
-      label: tl({ fr: 'Contrôle Desktop Mac / PC à distance', en: 'Remote Mac / PC desktop control', de: 'Mac/PC-Fernsteuerung', tr: 'Mac/PC uzaktan masaüstü kontrolü', es: 'Control remoto Mac / PC' }),
-      vals: [false, 5, 'ul', 'ul'], unit: 'pd',
-    },
-    {
-      label: tl({ fr: 'Mémoire conversationnelle', en: 'Conversational memory', de: 'Gesprächsgedächtnis', tr: 'Konuşma hafızası', es: 'Memoria conversacional' }),
-      sub: tl({ fr: 'mots max stockés', en: 'max words stored', de: 'max. gespeicherte Wörter', tr: 'maks. saklanan kelime', es: 'palabras máx. almacenadas' }),
-      vals: [150, 350, 'ul', 'ul'], unit: 'w',
-    },
-    {
-      label: tl({ fr: 'Clé API Gemini personnelle (Google AI Studio)', en: 'Personal Gemini API key (Google AI Studio)', de: 'Eigener Gemini-API-Schlüssel (Google AI Studio)', tr: 'Kişisel Gemini API anahtarı (Google AI Studio)', es: 'Clave API Gemini personal (Google AI Studio)' }),
-      vals: [false, false, true, true], unit: '',
-    },
-    {
-      label: tl({ fr: 'Ava Desktop avancé', en: 'Advanced Ava Desktop', de: 'Erweitertes Ava Desktop', tr: 'Gelişmiş Ava Desktop', es: 'Ava Desktop avanzado' }),
-      sub: tl({ fr: 'automatisations, réglages et support', en: 'automations, settings and support', de: 'Automatisierungen, Einstellungen und Support', tr: 'otomasyonlar, ayarlar ve destek', es: 'automatizaciones, ajustes y soporte' }),
-      vals: [false, false, true, true], unit: '', isHeader: true,
-    },
-    {
-      label: tl({ fr: 'Mode avancé', en: 'Advanced mode', de: 'Erweiterter Modus', tr: 'Gelişmiş mod', es: 'Modo avanzado' }),
-      vals: [false, false, true, true], unit: '',
-    },
-    {
-      label: tl({ fr: 'Limites personnalisées', en: 'Custom limits', de: 'Individuelle Limits', tr: 'Özel limitler', es: 'Límites personalizados' }),
-      vals: [false, false,
-        tl({ fr: 'prudentes', en: 'careful', de: 'vorsichtig', tr: 'dikkatli', es: 'prudentes' }),
-        tl({ fr: 'flexibles', en: 'flexible', de: 'flexibel', tr: 'esnek', es: 'flexibles' }),
-      ], unit: '',
-    },
-    {
-      label: tl({ fr: 'Objectifs de session', en: 'Session goals', de: 'Sitzungsziele', tr: 'Oturum hedefleri', es: 'Objetivos de sesión' }),
-      vals: [false, false,
-        tl({ fr: 'standard', en: 'standard', de: 'standard', tr: 'standart', es: 'estándar' }),
-        tl({ fr: 'avancés', en: 'advanced', de: 'erweitert', tr: 'gelişmiş', es: 'avanzados' }),
-      ], unit: '',
-    },
-    {
-      label: tl({ fr: 'Stop loss maximum', en: 'Maximum stop loss', de: 'Max. Stop-Loss', tr: 'Maks. stop loss', es: 'Stop loss máximo' }),
-      vals: [false, false,
-        tl({ fr: '-90$ (fixe)', en: '-$90 (fixed)', de: '-90$ (fest)', tr: '-90$ (sabit)', es: '-90$ (fijo)' }),
-        tl({ fr: '-85$ à -300$', en: '-$85 to -$300', de: '-85$ bis -300$', tr: '-85$ ile -300$', es: '-85$ a -300$' }),
-      ], unit: '',
-    },
-    {
-      label: tl({ fr: 'Objectif par session', en: 'Session target', de: 'Sitzungsziel', tr: 'Seans hedefi', es: 'Objetivo por sesión' }),
-      vals: [false, false,
-        tl({ fr: 'Défaut', en: 'Default', de: 'Standard', tr: 'Varsayılan', es: 'Por defecto' }),
-        tl({ fr: 'jusqu\'à 1000$', en: 'up to $1000', de: 'bis 1000$', tr: '1000$\'a kadar', es: 'hasta 1000$' }),
-      ], unit: '',
-    },
-    {
-      label: tl({ fr: 'Giveback (protection profit)', en: 'Giveback (profit protection)', de: 'Giveback (Gewinnschutz)', tr: 'Giveback (kâr koruması)', es: 'Giveback (protección de ganancias)' }),
-      sub: tl({ fr: "arrête l'agent si le profit chute trop depuis le pic", en: 'stops the agent if profit drops too much from peak', de: 'stoppt den Agenten bei zu großem Gewinnrückgang vom Peak', tr: 'kâr zirveden çok düşerse ajanı durdurur', es: 'detiene el agente si el beneficio cae demasiado desde el pico' }),
-      vals: [
-        false,
-        false,
-        tl({ fr: '0.10$ à 5.00$', en: '$0.10 to $5.00', de: '0.10$ bis 5.00$', tr: '0.10$ ile 5.00$', es: '0.10$ a 5.00$' }),
-        tl({ fr: '0.10$ à 100.00$', en: '$0.10 to $100.00', de: '0.10$ bis 100.00$', tr: '0.10$ ile 100.00$', es: '0.10$ a 100.00$' }),
-      ], unit: '',
-    },
-    {
-      label: tl({ fr: 'Reset session au démarrage', en: 'Session reset on start', de: 'Sitzungs-Reset beim Start', tr: 'Başlangıçta seans sıfırlama', es: 'Reinicio de sesión al iniciar' }),
-      sub: tl({ fr: 'remet pic et profit à zéro au redémarrage', en: 'resets peak and profit to zero on launch', de: 'setzt Peak und Gewinn bei Neustart auf Null', tr: 'başlangıçta zirve ve kârı sıfırlar', es: 'restablece pico y beneficio a cero al reiniciar' }),
-      vals: [false, false, false, true], unit: '',
-    },
-    {
-      label: tl({ fr: 'Configs avancées modifiables', en: 'Editable advanced configs', de: 'Erweiterte Einstellungen', tr: 'Gelişmiş ayarlar', es: 'Configuraciones avanzadas editables' }),
-      sub: tl({ fr: 'fenêtre, seuil, recovery, filtre…', en: 'window, threshold, recovery, filter…', de: 'Fenster, Schwelle, Recovery, Filter…', tr: 'pencere, eşik, kurtarma, filtre…', es: 'ventana, umbral, recovery, filtro…' }),
-      vals: [false, false, false, true], unit: '',
-    },
-    {
-      label: tl({ fr: 'Apprentissage IA global (ML Sync)', en: 'Global AI learning (ML Sync)', de: 'Globales KI-Lernen (ML Sync)', tr: 'Global YZ öğrenme (ML Sync)', es: 'Aprendizaje IA global (ML Sync)' }),
-      vals: [false, false, true, true], unit: '',
-    },
-    {
-      label: tl({ fr: 'Protection anti-multi-appareil', en: 'Anti-multi-device protection', de: 'Anti-Multigerät-Schutz', tr: 'Çoklu cihaz koruma', es: 'Protección anti-multidispositivo' }),
-      sub: tl({ fr: '1 seul appareil actif à la fois', en: '1 active device at a time', de: '1 aktives Gerät gleichzeitig', tr: 'Aynı anda 1 aktif cihaz', es: '1 dispositivo activo a la vez' }),
-      vals: [false, false, true, true], unit: '',
-    },
-    {
-      label: tl({ fr: 'Accès instantané aux derniers modèles Gemini', en: 'Instant access to latest Gemini models', de: 'Sofortiger Zugang zu neuesten Gemini-Modellen', tr: 'En son Gemini modellerine anında erişim', es: 'Acceso instantáneo a los últimos modelos Gemini' }),
-      vals: [true, true, true, true], unit: '',
-    },
-    {
-      label: tl({ fr: 'Clé chiffrée de bout en bout avec PIN', en: 'End-to-end encrypted key with PIN', de: 'Ende-zu-Ende verschlüsselter Schlüssel mit PIN', tr: 'PIN ile uçtan uca şifreli anahtar', es: 'Clave cifrada de extremo a extremo con PIN' }),
-      vals: [false, false, true, true], unit: '',
-    },
-    {
-      label: tl({ fr: 'Support multilingue (FR, EN, DE, TR, ES)', en: 'Multilingual support (FR, EN, DE, TR, ES)', de: 'Mehrsprachiger Support (FR, EN, DE, TR, ES)', tr: 'Çok dilli destek (FR, EN, DE, TR, ES)', es: 'Soporte multilingüe (FR, EN, DE, TR, ES)' }),
-      vals: [true, true, true, true], unit: '',
-    },
-    {
-      label: tl({ fr: 'Support prioritaire', en: 'Priority support', de: 'Prioritätssupport', tr: 'Öncelikli destek', es: 'Soporte prioritario' }),
-      vals: [false, true, true, true], unit: '',
-    },
-  ]
-
-  const ulWord = tl({ fr: 'Illimité', en: 'Unlimited', de: 'Unbegrenzt', tr: 'Sınırsız', es: 'Ilimitado' })
-  const pdSuffix = tl({ fr: '/j', en: '/d', de: '/T', tr: '/g', es: '/d' })
-  const pmSuffix = tl({ fr: '/mois', en: '/mo', de: '/Mon.', tr: '/ay', es: '/mes' })
-  const wSuffix = tl({ fr: ' mots', en: ' words', de: ' Wörter', tr: ' kelime', es: ' pal.' })
-
-  function renderVal(val: FV, unit: FUnit, plan: PlanDef) {
-    if (val === 'ul') return (
-      <span className="font-bold text-xs" style={{ color: plan.accent }}>{ulWord}</span>
-    )
-    if (val === true) return (
-      <div className="w-5 h-5 rounded-full flex items-center justify-center mx-auto flex-shrink-0"
-        style={{ background: `${plan.accent}22` }}>
-        <Check size={10} style={{ color: plan.accent }} />
-      </div>
-    )
-    if (val === false) return <span className="text-white/15">—</span>
-    if (typeof val === 'string') return (
-      <span className="font-semibold text-[10px] text-white/75 leading-tight">{val}</span>
-    )
-    // Numeric value
-    const suffix = unit === 'pd' ? pdSuffix : unit === 'pm' ? pmSuffix : unit === 'w' ? wSuffix : ''
-    return (
-      <span className="font-semibold text-xs text-white/80">{val}{suffix}</span>
-    )
-  }
-
-  const perMonth = tl({ fr: '/mois', en: '/mo', de: '/Mon.', tr: '/ay', es: '/mes' })
-  const planGridTemplate = `180px repeat(${plans.length}, 1fr)`
-
-  const [expandedMobilePlan, setExpandedMobilePlan] = useState<number | null>(1) // default Pro Starter expanded
-
-  return (
-    <section id="pricing" className="relative py-24 sm:py-32 overflow-hidden">
-      <DotGrid className="opacity-30" />
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6">
-
-        {/* ── Header ── */}
-        <FadeUp className="text-center mb-14">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-rose-400 mb-3">
-            {tl(T.pricing.label)}
-          </p>
-          <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">
-            {tl(T.pricing.h)}
-          </h2>
-          <p className="text-slate-400 text-lg mt-4 max-w-xl mx-auto">
-            {tl(T.pricing.subtitle)}
-          </p>
-          <div className="flex justify-center mt-6">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-semibold"
-              style={{ background: 'rgba(8,16,26,0.85)', border: '1px solid rgba(255,255,255,0.10)', color: '#fda4af' }}>
-              <Sparkles size={13} className="text-emerald-400" />
-              {tl(T.pricing.billingBadge)}
-            </div>
-          </div>
-        </FadeUp>
-
-        {/* ══════════════════════════════════════════════
-            DESKTOP — comparison table (md and above)
-        ══════════════════════════════════════════════ */}
-        <FadeUp delay={0.08} className="hidden md:block">
-          {/* pt-5 gives room for the popular badge that sticks above the grid */}
-          <div className="overflow-x-auto -mx-4 sm:mx-0 pb-4 pt-5">
-            <div style={{ minWidth: 720 }} className="px-4 sm:px-0">
-
-              {/* Plan headers */}
-              <div className="grid gap-x-1.5" style={{ gridTemplateColumns: planGridTemplate }}>
-                <div className="flex items-end pb-3">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-white/20">
-                    {tl({ fr: 'Fonctionnalité', en: 'Feature', de: 'Funktion', tr: 'Özellik', es: 'Función' })}
-                  </span>
-                </div>
-                {plans.map((plan) => (
-                  <div
-                    key={plan.id}
-                    className="relative rounded-t-2xl px-2 pt-7 pb-3 text-center"
-                    style={{ background: plan.accentBg, border: `1px solid ${plan.accentBorder}`, borderBottom: 'none' }}
-                  >
-                    {plan.badge && (
-                      <div className="absolute -top-4 left-0 right-0 flex justify-center">
-                        <span className="inline-block px-3 py-1 rounded-full text-white text-[9px] font-extrabold tracking-wide"
-                          style={{ background: plan.accent, boxShadow: `0 2px 16px ${plan.accent}70` }}>
-                          {plan.badge}
-                        </span>
-                      </div>
-                    )}
-                    <p className="text-[10px] font-extrabold uppercase tracking-wide mb-1" style={{ color: plan.accent }}>
-                      {plan.name}
-                    </p>
-                    {plan.priceId ? (
-                      <>
-                        <p className="text-lg font-black text-white leading-none">
-                          {isEuro ? plan.priceEur : plan.priceUsd}
-                          <span className="text-[10px] text-white/30 font-normal ml-0.5">{perMonth}</span>
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-2xl font-black text-white leading-none">0€</p>
-                        <p className="text-[9px] text-white/25 mt-0.5">
-                          {tl({ fr: 'pour toujours', en: 'forever free', de: 'kostenlos', tr: 'sonsuza dek', es: 'para siempre' })}
-                        </p>
-                        <p className="text-[9px] text-white/20 mt-0.5">
-                          {tl({ fr: 'sans carte', en: 'no credit card', de: 'ohne Kreditkarte', tr: 'kartsız', es: 'sin tarjeta' })}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Feature rows */}
-              {features.map((feat, fi) => (
-                <div key={fi} className="grid gap-x-1.5" style={{ gridTemplateColumns: planGridTemplate }}>
-                  <div className={`py-2.5 pr-3 flex flex-col justify-center ${feat.isHeader ? 'pt-5' : ''}`}
-                    style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                    <span className={feat.isHeader ? 'text-xs font-bold text-white leading-snug' : 'text-xs text-slate-300 leading-snug'}>{feat.label}</span>
-                    {feat.sub && <span className="text-[9px] text-white/25 mt-0.5">{feat.sub}</span>}
-                  </div>
-                  {plans.map((plan, pi) => (
-                    <div key={plan.id} className={`py-2.5 text-center flex items-center justify-center ${feat.isHeader ? 'pt-5' : ''}`}
-                      style={{
-                        background: feat.isHeader ? `${plan.accentBg}` : plan.accentBg,
-                        borderLeft: `1px solid ${plan.accentBorder}`,
-                        borderRight: `1px solid ${plan.accentBorder}`,
-                        borderBottom: fi < features.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                        borderTop: feat.isHeader ? `1px solid rgba(255,255,255,0.08)` : 'none',
-                      }}>
-                      {renderVal(feat.vals[allPlans.findIndex(p => p.id === plan.id)], feat.unit, plan)}
-                    </div>
-                  ))}
-                </div>
-              ))}
-
-              {/* CTA row */}
-              <div className="grid gap-x-1.5" style={{ gridTemplateColumns: planGridTemplate }}>
-                <div />
-                {plans.map((plan) => (
-                  <div key={plan.id} className="rounded-b-2xl px-2 py-3"
-                    style={{ background: plan.accentBg, border: `1px solid ${plan.accentBorder}`, borderTop: 'none' }}>
-                    {plan.priceId ? (
-                      <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
-                        onClick={() => {
-                          window.location.href = planCheckoutUrl(plan.id)
-                        }}
-                        className="w-full py-2.5 rounded-xl text-[11px] font-extrabold text-white transition-all"
-                        style={plan.popular
-                          ? { background: plan.accent, boxShadow: `0 0 20px ${plan.accent}50` }
-                          : { border: `1px solid ${plan.accent}55`, color: plan.accent, background: `${plan.accent}0a` }
-                        }>
-                        {planCta(plan.name)}
-                      </motion.button>
-                    ) : (
-                      <a href="/app" className="block w-full py-2.5 rounded-xl text-[11px] font-bold text-center transition-all"
-                        style={{ border: '1px solid rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.45)' }}>
-                        {tl({ fr: 'Commencer', en: 'Get started', de: 'Loslegen', tr: 'Başla', es: 'Empezar' })}
-                      </a>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-            </div>
-          </div>
-        </FadeUp>
-
-        {/* ══════════════════════════════════════════════
-            MOBILE — vertical accordion cards (all plans visible)
-        ══════════════════════════════════════════════ */}
-        <div className="md:hidden space-y-3">
-          {plans.map((plan, pi) => {
-            const isOpen = expandedMobilePlan === pi
-            return (
-              <FadeUp key={plan.id} delay={pi * 0.05}>
-                <div className="rounded-2xl overflow-hidden"
-                  style={{ background: plan.accentBg, border: `1px solid ${isOpen ? plan.accent : plan.accentBorder}`, transition: 'border-color 0.2s' }}>
-
-                  {/* ── Always-visible header — tap to expand ── */}
-                  <button className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left"
-                    onClick={() => setExpandedMobilePlan(isOpen ? null : pi)}>
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* Plan name + badge */}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[11px] font-extrabold uppercase tracking-wide" style={{ color: plan.accent }}>
-                            {plan.name}
-                          </span>
-                          {plan.badge && (
-                            <span className="inline-block px-2 py-0.5 rounded-full text-white text-[9px] font-extrabold"
-                              style={{ background: plan.accent }}>
-                              {plan.badge}
-                            </span>
-                          )}
-                        </div>
-                        {/* Price always visible */}
-                        {plan.priceId ? (
-                          <div className="flex items-baseline gap-1.5 mt-0.5">
-                            <span className="text-xl font-black text-white">
-                              {isEuro ? plan.priceEur : plan.priceUsd}
-                            </span>
-                            <span className="text-xs text-white/35">{perMonth}</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-baseline gap-1.5 mt-0.5">
-                            <span className="text-xl font-black text-white">0€</span>
-                            <span className="text-xs text-white/35">
-                              {tl({ fr: 'pour toujours', en: 'forever free', de: 'kostenlos', tr: 'sonsuza dek', es: 'para siempre' })}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.22 }} className="flex-shrink-0">
-                      <ChevronDown size={16} style={{ color: isOpen ? plan.accent : 'rgba(255,255,255,0.3)' }} />
-                    </motion.div>
-                  </button>
-
-                  {/* ── Accordion body — features + CTA ── */}
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}>
-                        <div style={{ borderTop: `1px solid ${plan.accentBorder}` }}>
-                          {/* Feature list */}
-                          <ul className="px-5 py-3 space-y-0">
-                            {features.map((feat, fi) => {
-                              const originalPi = allPlans.findIndex(p => p.id === plan.id)
-                              const val = feat.vals[originalPi]
-                              if (val === false && originalPi > 0) return null
-                              return (
-                                <li key={fi} className={`flex items-center justify-between py-2 ${feat.isHeader ? 'pt-4' : ''}`}
-                                  style={{
-                                    borderBottom: fi < features.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                                    borderTop: feat.isHeader ? '1px solid rgba(255,255,255,0.08)' : 'none',
-                                  }}>
-                                  <div className="flex-1 mr-3">
-                                    <span className={feat.isHeader ? 'text-xs font-bold text-white leading-snug' : 'text-xs text-slate-300 leading-snug'}>{feat.label}</span>
-                                    {feat.sub && <p className="text-[9px] text-white/25">{feat.sub}</p>}
-                                  </div>
-                                  <div className="flex-shrink-0">
-                                    {renderVal(val, feat.unit, plan)}
-                                  </div>
-                                </li>
-                              )
-                            })}
-                          </ul>
-                          {/* CTA */}
-                          <div className="px-5 pb-5 pt-2">
-                            {plan.priceId ? (
-                              <motion.button whileTap={{ scale: 0.97 }}
-                                onClick={() => {
-                                  window.location.href = planCheckoutUrl(plan.id)
-                                }}
-                                className="w-full py-3.5 rounded-2xl text-sm font-extrabold text-white transition-all"
-                                style={plan.popular
-                                  ? { background: plan.accent, boxShadow: `0 4px 24px ${plan.accent}50` }
-                                  : { border: `1px solid ${plan.accent}55`, color: plan.accent, background: `${plan.accent}0a` }
-                                }>
-                                {planCta(plan.name)}
-                              </motion.button>
-                            ) : (
-                              <a href="/app" className="block w-full py-3.5 rounded-2xl text-sm font-bold text-center text-white/50"
-                                style={{ border: '1px solid rgba(255,255,255,0.10)' }}>
-                                {tl({ fr: 'Commencer', en: 'Get started', de: 'Loslegen', tr: 'Başla', es: 'Empezar' })}
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </FadeUp>
-            )
-          })}
-        </div>
-
-        <FadeUp delay={0.3}>
-          <p className="text-center text-xs text-slate-600 mt-6 max-w-2xl mx-auto">{tl(T.pricing.noCard)}</p>
-          <p className="text-center text-xs text-slate-600 mt-1.5">{tl(T.pricing.customNote)}</p>
-        </FadeUp>
-
       </div>
     </section>
   )
@@ -1638,9 +1149,12 @@ export default function Page() {
 
   useEffect(() => {
     const saved = localStorage.getItem(LANG_STORAGE_KEY) as Lang | null;
-    if (saved && SUPPORTED_LANGS.includes(saved)) { setLang(saved); return; }
     const detected = (navigator.language || '').slice(0, 2).toLowerCase() as Lang;
-    setLang(SUPPORTED_LANGS.includes(detected) ? detected : 'en');
+    const nextLang = saved && SUPPORTED_LANGS.includes(saved)
+      ? saved
+      : SUPPORTED_LANGS.includes(detected) ? detected : 'en';
+    const timer = window.setTimeout(() => setLang(nextLang), 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const handleSetLang = (l: Lang) => {

@@ -39,9 +39,9 @@ export default function PrivacyPage() {
           <li>Préférences utilisateur : langue, paramètres d&apos;application</li>
           <li>Informations techniques : type d&apos;appareil, version d&apos;application, système d&apos;exploitation</li>
           <li>
-            Données Ava Trading nécessaires au fonctionnement local et à l&apos;amélioration :
-            plan actif, statut d&apos;accès, symbole MT5 sélectionné, paramètres de risque,
-            signaux, résultats agrégés/anonymisés et informations techniques AvaBridge
+            Données techniques Ava Desktop nécessaires au fonctionnement local et à
+            l&apos;amélioration : plan actif, statut d&apos;accès, préférences, paramètres
+            applicatifs, résultats agrégés/anonymisés et informations techniques.
           </li>
           <li>Données de parrainage (code referral, parrains/filleuls)</li>
           <li>
@@ -89,7 +89,7 @@ export default function PrivacyPage() {
           <li>Vous contacter pour des communications importantes relatives au service</li>
           <li>Détecter et prévenir les abus, fraudes ou violations des CGU</li>
           <li>Respecter nos obligations légales</li>
-          <li>Fournir Ava Trading, appliquer les limites par plan et améliorer les modèles de décision sans publier vos informations sensibles</li>
+          <li>Fournir Ava Desktop, appliquer les limites par plan et améliorer les modèles de décision sans publier vos informations sensibles</li>
         </ul>
         <p className="mt-2">
           Nous ne pratiquons aucune prise de décision entièrement automatisée produisant
@@ -164,10 +164,10 @@ export default function PrivacyPage() {
             transactionnels (vérification de compte, notifications importantes)
           </li>
           <li>
-            <strong style={{ color: '#f1f5f9' }}>MetaTrader 5 / broker MT5</strong> :
-            AvaBridgeEA s&apos;exécute localement sur votre appareil et communique avec votre
-            terminal MT5. Woonix LTD ne reçoit pas vos identifiants broker et n&apos;est pas
-            responsable du traitement réalisé par votre broker.
+            <strong style={{ color: '#f1f5f9' }}>Connecteurs locaux Desktop</strong> :
+            certaines fonctions Ava Desktop s&apos;exécutent localement sur votre appareil
+            et peuvent communiquer avec les outils que vous choisissez de connecter.
+            Woonix LTD ne reçoit pas les identifiants de ces outils tiers.
           </li>
           <li>
             <strong style={{ color: '#f1f5f9' }}>Expo (notifications push)</strong> :

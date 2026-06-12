@@ -118,12 +118,12 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
               }}
             >
               <Terminal size={17} style={{ color: '#93c5fd', flexShrink: 0 }} />
-              <span className="text-sm font-semibold">AvaBridge MT5</span>
+              <span className="text-sm font-semibold">Connecteur Desktop</span>
             </a>
             <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Compatibilité</p>
               <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
-                Ava Desktop {AVA_DESKTOP_VERSION} recommande AvaBridgeEA {AVA_BRIDGE_EA_VERSION}.
+                Ava Desktop {AVA_DESKTOP_VERSION} recommande le connecteur {AVA_BRIDGE_EA_VERSION}.
               </p>
             </div>
           </div>
