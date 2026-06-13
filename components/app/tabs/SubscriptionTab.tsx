@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
@@ -16,8 +17,10 @@ import {
   PAYPAL_CLIENT_ID,
   PAYPAL_PLAN_CUSTOM_MAX,
   PAYPAL_PLAN_CUSTOM_PRO,
+  PAYPAL_PLAN_CUSTOM_PRO_TRIAL,
   PAYPAL_PLAN_CUSTOM_SIMPLE,
   PAYPAL_PLAN_CUSTOM_ULTRA,
+  PAYPAL_PLAN_CUSTOM_ULTRA_TRIAL,
   SUPABASE_HEADERS,
   SUPABASE_URL,
 } from '../constants'
@@ -52,6 +55,7 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
     paypalPlanId: PAYPAL_PLAN_CUSTOM_SIMPLE,
+    capital: 'Plage recommandée : 200$ à 500$',
     popular: false,
     accentColor: '#6366f1',
     bg: 'linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(99, 102, 241, 0.01) 100%)',
@@ -78,6 +82,7 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_PRO_STARTER,
     paypalPlanId: null,
+    capital: null,
     popular: false,
     accentColor: '#f43f5e',
     bg: 'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
@@ -103,6 +108,9 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_PRO,
     paypalPlanId: PAYPAL_PLAN_CUSTOM_PRO,
+    trialPaypalPlanId: PAYPAL_PLAN_CUSTOM_PRO_TRIAL,
+    trialDays: 1,
+    capital: 'Plage recommandée : 500$ à 3 000$',
     popular: true,
     badge: 'Recommandé',
     accentColor: '#e11d48',
@@ -130,6 +138,9 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_ULTRA,
     paypalPlanId: PAYPAL_PLAN_CUSTOM_ULTRA,
+    trialPaypalPlanId: PAYPAL_PLAN_CUSTOM_ULTRA_TRIAL,
+    trialDays: 1,
+    capital: 'Plage recommandée : 3 000$ à 8 000$',
     popular: true,
     badge: 'Usage intensif',
     accentColor: '#e11d48',
@@ -156,6 +167,7 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_MAX,
     paypalPlanId: PAYPAL_PLAN_CUSTOM_MAX,
+    capital: 'Plage recommandée : 8 000$ à 20 000$+',
     popular: false,
     badge: 'Volume élevé',
     accentColor: '#f43f5e',
@@ -245,6 +257,38 @@ function isValidUpgradeTarget(currentPlan: string | null, targetPlan: string | n
 
 function isPayPalPlanConfigured(planId: string | null | undefined): planId is string {
   return !!planId && planId.startsWith('P-')
+}
+
+function hasAnyPriorSubscription(user: UserData) {
+  const source = String(user.subscription_source ?? '')
+  const tier = String(user.subscription_tier ?? '')
+  return !!user.ava_trading_trial_used ||
+    !!user.ava_trading_trial_subscription_id ||
+    !!user.subscription_plan ||
+    !!user.paddle_subscription_id ||
+    !!user.paypal_subscription_id ||
+    !!user.geniuspay_subscription_uuid ||
+    !!user.mollie_subscription_id ||
+    !!user.airwallex_subscription_id ||
+    (!!source && source !== 'none') ||
+    (!!tier && tier !== 'free')
+}
+
+function canUsePlanTrial(plan: typeof ALL_PLANS[number], user: UserData) {
+  return 'trialDays' in plan && !!plan.trialDays && !hasAnyPriorSubscription(user)
+}
+
+function planTrialDays(plan: typeof ALL_PLANS[number]) {
+  return 'trialDays' in plan ? plan.trialDays : null
+}
+
+function checkoutPayPalPlanId(plan: typeof ALL_PLANS[number], user: UserData) {
+  if (canUsePlanTrial(plan, user) && 'trialPaypalPlanId' in plan) return plan.trialPaypalPlanId
+  return plan.paypalPlanId
+}
+
+function isPlanCheckoutReady(plan: typeof ALL_PLANS[number]) {
+  return CUSTOM_PLAN_ORDER.includes(plan.key)
 }
 
 function loadPayPalSdk(): Promise<void> {
@@ -352,12 +396,13 @@ function VoiceQuotaBar({ user, pro }: { user: UserData; pro: boolean }) {
 
 export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-  const [targetPlan, setTargetPlan] = useState<any>(null)
+  const [targetPlan, setTargetPlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [billingLoading, setBillingLoading] = useState(false)
   const [billingError, setBillingError] = useState('')
   const [billingMessage, setBillingMessage] = useState('')
   const [refreshedOnce, setRefreshedOnce] = useState(false)
   const [selectedPlanKey, setSelectedPlanKey] = useState<string | null>(null)
+  const [paymentChoicePlan, setPaymentChoicePlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [paypalPlan, setPaypalPlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const paypalButtonRef = useRef<HTMLDivElement | null>(null)
 
@@ -374,6 +419,9 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     user.subscription_source !== 'gumroad' &&
     user.subscription_source !== 'paddle' &&
     user.subscription_source !== 'paypal' &&
+    user.subscription_source !== 'geniuspay' &&
+    user.subscription_source !== 'mollie' &&
+    user.subscription_source !== 'airwallex' &&
     user.subscription_source !== 'wise'
 
   const currentPlan = normalizePlanKey(user.subscription_plan, custom)
@@ -412,22 +460,108 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   }, [activePlanKey])
 
   const checkoutLabel = (plan: typeof ALL_PLANS[number]) => {
-    return isPayPalPlanConfigured(plan.paypalPlanId) ? `Obtenir ${plan.label.replace(/^Custom\s+/i, '')}` : 'Paiement en attente'
+    if (!isPlanCheckoutReady(plan)) return 'Paiement en attente'
+    if (user.subscription_source === 'airwallex' && user.airwallex_subscription_id && activePlanKey && activePlanKey !== plan.key) {
+      return customPlanRank(plan.key) > customPlanRank(activePlanKey)
+        ? `Upgrade vers ${plan.label.replace(/^Custom\s+/i, '')}`
+        : 'Downgrade indisponible'
+    }
+    return canUsePlanTrial(plan, user)
+      ? `Essai gratuit ${planTrialDays(plan)} jour`
+      : `S’abonner avec Airwallex`
   }
 
   const startCheckout = (plan: typeof ALL_PLANS[number]) => {
-    if (isPayPalPlanConfigured(plan.paypalPlanId)) {
-      setBillingError('')
-      setBillingMessage('')
-      setPaypalPlan(plan)
+    if (user.subscription_source === 'airwallex' && user.airwallex_subscription_id && activePlanKey && activePlanKey !== plan.key) {
+      if (customPlanRank(plan.key) <= customPlanRank(activePlanKey)) {
+        setBillingError('Le passage à une formule inférieure est désactivé pour éviter une erreur de facturation.')
+        return
+      }
+    }
+
+    if (isPlanCheckoutReady(plan)) {
+      startAirwallexCheckout(plan)
       return
     }
 
-    setBillingError('PayPal est indisponible pour cette formule.')
+    setBillingError('Le paiement est indisponible pour cette formule.')
+  }
+
+  const startPayPalCheckout = () => {
+    if (!paymentChoicePlan) return
+    setPaypalPlan(paymentChoicePlan)
+    setPaymentChoicePlan(null)
+  }
+
+  const startMollieCheckout = async () => {
+    if (!paymentChoicePlan) return
+    setBillingLoading(true)
+    setBillingError('')
+    setBillingMessage('')
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/mollie-subscription`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({
+          user_id: user.id,
+          target_plan: paymentChoicePlan.key,
+        }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok || result.error || !result.ok) {
+        setBillingError(result.error ?? 'Paiement carte indisponible pour le moment.')
+        return
+      }
+      if (result.redirect_url) {
+        window.location.href = String(result.redirect_url)
+        return
+      }
+      setBillingError('Mollie n’a pas renvoyé de lien de paiement.')
+    } catch {
+      setBillingError('Erreur réseau Mollie. Réessayez dans un instant.')
+    } finally {
+      setBillingLoading(false)
+    }
+  }
+
+  const startAirwallexCheckout = async (plan: typeof ALL_PLANS[number]) => {
+    setBillingLoading(true)
+    setBillingError('')
+    setBillingMessage('')
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/airwallex-subscription`, {
+          method: 'POST',
+          headers: SUPABASE_HEADERS,
+          body: JSON.stringify({
+            user_id: user.id,
+          target_plan: plan.key,
+        }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok || result.error || !result.ok) {
+        setBillingError(result.error ?? 'Paiement Airwallex indisponible pour le moment.')
+        return
+      }
+      if (result.redirect_url) {
+        window.location.href = String(result.redirect_url)
+        return
+      }
+      if (result.updated) {
+        setBillingMessage(`Upgrade vers ${plan.label} confirmé. Ava met à jour vos accès.`)
+        setTimeout(() => onRefresh?.(), 2500)
+        return
+      }
+      setBillingError('Airwallex n’a pas renvoyé de lien de paiement.')
+    } catch {
+      setBillingError('Erreur réseau Airwallex. Réessayez dans un instant.')
+    } finally {
+      setBillingLoading(false)
+    }
   }
 
   useEffect(() => {
-    if (!paypalPlan || !paypalButtonRef.current || !isPayPalPlanConfigured(paypalPlan.paypalPlanId)) return
+    const paypalPlanId = paypalPlan ? checkoutPayPalPlanId(paypalPlan, user) : null
+    if (!paypalPlan || !paypalButtonRef.current || !isPayPalPlanConfigured(paypalPlanId)) return
 
     let cancelled = false
     paypalButtonRef.current.innerHTML = ''
@@ -435,7 +569,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
     loadPayPalSdk()
       .then(() => {
-        if (cancelled || !paypalButtonRef.current || !window.paypal || !isPayPalPlanConfigured(paypalPlan.paypalPlanId)) return
+        if (cancelled || !paypalButtonRef.current || !window.paypal || !isPayPalPlanConfigured(paypalPlanId)) return
         return window.paypal.Buttons({
           style: {
             layout: 'vertical',
@@ -443,11 +577,11 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             label: 'subscribe',
           },
           createSubscription: (_data, actions) => actions.subscription.create({
-            plan_id: paypalPlan.paypalPlanId,
+            plan_id: paypalPlanId,
             custom_id: user.email,
           }),
           onApprove: () => {
-            setBillingMessage(`Abonnement PayPal ${paypalPlan.label} confirme. Ava active votre acces des que PayPal envoie la confirmation.`)
+            setBillingMessage(`Abonnement PayPal ${paypalPlan.label} confirmé. Ava active votre accès dès que PayPal envoie la confirmation.`)
             setPaypalPlan(null)
             setTimeout(() => onRefresh?.(), 5000)
           },
@@ -464,7 +598,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     return () => {
       cancelled = true
     }
-  }, [onRefresh, paypalPlan, user.email])
+  }, [onRefresh, paypalPlan, user])
 
   const callPaddleSubscription = async (action: 'portal' | 'upgrade', plan?: string) => {
     setBillingLoading(true)
@@ -513,6 +647,35 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
       setBillingMessage(result.unchanged ? 'Cette formule est déjà active.' : `Formule mise à jour vers ${targetPlan.label}.`)
       setShowUpgradeModal(false)
       setTimeout(() => onRefresh?.(), 1000)
+    }
+  }
+
+  const changePayPalPlan = async (plan: typeof ALL_PLANS[number]) => {
+    setBillingLoading(true)
+    setBillingError('')
+    setBillingMessage('')
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/paypal-subscription`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({ action: 'revise', user_id: user.id, target_plan: plan.key }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok || result.error || !result.ok) {
+        setBillingError(result.error ?? 'Changement PayPal impossible pour le moment.')
+        return
+      }
+      if (result.approval_url) {
+        setBillingMessage('PayPal doit confirmer ce changement de formule. Une fenêtre va s’ouvrir.')
+        window.open(String(result.approval_url), '_blank', 'noopener,noreferrer')
+      } else {
+        setBillingMessage(`Demande de changement vers ${plan.label} envoyée à PayPal.`)
+      }
+      setTimeout(() => onRefresh?.(), 5000)
+    } catch {
+      setBillingError('Erreur réseau PayPal. Réessayez dans un instant.')
+    } finally {
+      setBillingLoading(false)
     }
   }
 
@@ -582,7 +745,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                         Abonnement Actif
                       </span>
                       <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-white/5 border border-white/10 text-slate-400">
-                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'paypal' ? 'PayPal' : user.subscription_source === 'gumroad' ? 'Gumroad' : user.subscription_source === 'wise' ? 'Wise' : 'Mobile'}
+                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'paypal' ? 'PayPal' : user.subscription_source === 'geniuspay' ? 'Carte bancaire' : user.subscription_source === 'mollie' ? 'Carte bancaire' : user.subscription_source === 'airwallex' ? 'Airwallex' : user.subscription_source === 'gumroad' ? 'Gumroad' : user.subscription_source === 'wise' ? 'Wise' : 'Mobile'}
                       </span>
                     </div>
 
@@ -629,7 +792,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 </div>
                 {user.subscription_source === 'paddle' && nextPlan && (
                   <p className="relative z-10 mt-5 text-[11px] leading-relaxed text-slate-400">
-                    Pour changer de plan, utilisez PayPal. Le portail Paddle reste disponible pour consulter les anciennes factures ou gerer un abonnement Paddle existant.
+                    Pour changer de plan, utilisez PayPal ou Carte bancaire. Le portail Paddle reste disponible pour consulter les anciennes factures ou gerer un abonnement Paddle existant.
                   </p>
                 )}
               </motion.div>
@@ -755,7 +918,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   <h4 className="text-xs font-bold uppercase tracking-wider">Aide & Facturation</h4>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Les nouveaux paiements sont traités via PayPal. PayPal active automatiquement l&apos;abonnement après confirmation, et Paddle reste disponible pour les abonnements déjà existants.
+                  Les nouveaux paiements sont traités via PayPal, Mollie ou Airwallex. Ava active automatiquement l&apos;abonnement après confirmation, et Paddle reste disponible pour les abonnements déjà existants.
                 </p>
                 <div className="pt-2">
                   <a 
@@ -843,6 +1006,19 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                       {plan.description}
                     </p>
 
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {plan.capital && (
+                        <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-300">
+                          {plan.capital}
+                        </span>
+                      )}
+                      {canUsePlanTrial(plan, user) && (
+                        <span className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                          {planTrialDays(plan)} jour gratuit
+                        </span>
+                      )}
+                    </div>
+
                     <div className="w-full h-px bg-white/5 my-6" />
 
                     {/* List of features */}
@@ -867,7 +1043,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                         onClick={() => {
                           startCheckout(plan)
                         }}
-                        disabled={!isPayPalPlanConfigured(plan.paypalPlanId)}
+                        disabled={!isPlanCheckoutReady(plan) || billingLoading}
                         className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 cursor-pointer"
                         style={{
                           background: plan.btnBg,
@@ -947,6 +1123,19 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                     {plan.description}
                   </p>
 
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {plan.capital && (
+                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-300">
+                        {plan.capital}
+                      </span>
+                    )}
+                    {canUsePlanTrial(plan, user) && (
+                      <span className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
+                        {planTrialDays(plan)} jour gratuit
+                      </span>
+                    )}
+                  </div>
+
                   <div className="w-full h-px bg-white/5 my-6" />
 
                   {/* List of features */}
@@ -964,7 +1153,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 <div className="mt-8 pt-4">
                   <button
                     onClick={() => startCheckout(plan)}
-                    disabled={!isPayPalPlanConfigured(plan.paypalPlanId) || billingLoading}
+                    disabled={!isPlanCheckoutReady(plan) || billingLoading}
                     className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 cursor-pointer"
                     style={{
                       background: plan.btnBg,
@@ -997,6 +1186,128 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         </div>
       )}
 
+      {/* Payment method modal */}
+      <AnimatePresence>
+        {paymentChoicePlan && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-6 md:p-8 shadow-2xl space-y-6"
+            >
+              <button
+                type="button"
+                onClick={() => setPaymentChoicePlan(null)}
+                className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="Fermer"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="space-y-3 pr-10">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Choix du paiement</p>
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                  <div>
+                    <h3 className="text-2xl font-black text-white tracking-tight">{paymentChoicePlan.label}</h3>
+                    <p className="mt-1 text-sm text-slate-400 leading-relaxed">
+                      Choisissez votre moyen de paiement sécurisé.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-right">
+                    <p className="text-lg font-black text-white">{paymentChoicePlan.price}</p>
+                    <p className="text-[11px] font-semibold text-slate-500">{paymentChoicePlan.per}</p>
+                  </div>
+                </div>
+              </div>
+
+              {(billingError || billingMessage) && (
+                <div className={`rounded-2xl border px-4 py-3 text-xs font-semibold ${
+                  billingError
+                    ? 'border-rose-500/20 bg-rose-500/10 text-rose-200'
+                    : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-200'
+                }`}>
+                  {billingError || billingMessage}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={startPayPalCheckout}
+                  disabled={billingLoading}
+                  className="group flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:border-[#0070ba]/45 hover:bg-[#0070ba]/10 disabled:opacity-60"
+                >
+                  <div className="flex h-14 w-16 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm">
+                    <Image src="/payment/paypal.png" alt="PayPal" width={42} height={42} className="h-10 w-10 object-contain" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-black text-white">PayPal</p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                      Abonnement récurrent via PayPal. Confirmation automatique après validation.
+                    </p>
+                  </div>
+                  <ArrowRight size={18} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                </button>
+
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition-colors hover:border-emerald-400/30">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                    <div className="flex shrink-0 items-center gap-2">
+                      <div className="flex h-12 w-16 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm">
+                        <Image src="/payment/visa.png" alt="Visa" width={64} height={40} className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex h-12 w-16 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm">
+                        <Image src="/payment/mastercard.png" alt="Mastercard" width={64} height={40} className="h-full w-full object-cover" />
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-black text-white">Carte bancaire</p>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                        Paiement sécurisé par Mollie, avec 3D Secure si nécessaire.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      type="button"
+                      onClick={startMollieCheckout}
+                      disabled={billingLoading}
+                      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-5 text-sm font-black text-slate-950 transition-all hover:bg-emerald-300 disabled:opacity-60"
+                    >
+                      {billingLoading ? 'Ouverture...' : 'Continuer par carte'}
+                      <ExternalLink size={14} />
+                    </button>
+                  </div>
+                  <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+                    <ShieldCheck size={14} className="text-emerald-300" />
+                    Paiement initial sécurisé, puis renouvellement mensuel automatique.
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => startAirwallexCheckout(paymentChoicePlan)}
+                  disabled={billingLoading}
+                  className="group flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:border-orange-400/35 hover:bg-orange-500/10 disabled:opacity-60"
+                >
+                  <div className="flex h-14 w-16 shrink-0 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-500/10 text-orange-200 shadow-sm">
+                    <CreditCard size={26} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-black text-white">Airwallex</p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                      Paiement carte international via Airwallex Billing Checkout.
+                    </p>
+                  </div>
+                  <ExternalLink size={16} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* PayPal subscription modal */}
       <AnimatePresence>
         {paypalPlan && (
@@ -1018,10 +1329,13 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
               </button>
 
               <div className="space-y-2 pr-10">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Paiement securise PayPal</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Paiement sécurisé PayPal</p>
                 <h3 className="text-2xl font-black text-white tracking-tight">{paypalPlan.label}</h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  PayPal confirmera l&apos;abonnement automatiquement. Ava activera ensuite votre acces sur le compte {user.email}.
+                  {canUsePlanTrial(paypalPlan, user)
+                    ? `Votre essai gratuit de ${planTrialDays(paypalPlan)} jour est géré par PayPal. Ava activera ensuite votre accès sur le compte ${user.email}.`
+                    : `PayPal confirmera l’abonnement automatiquement. Ava activera ensuite votre accès sur le compte ${user.email}.`
+                  }
                 </p>
               </div>
 
@@ -1081,10 +1395,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
               <div className="rounded-2xl bg-white/5 border border-white/5 p-4 space-y-2.5">
                 <p className="text-xs text-slate-300 leading-relaxed font-semibold">
-                  Ava va ouvrir le paiement PayPal correspondant à cette formule.
+                  Ava va ouvrir le paiement correspondant à cette formule.
                 </p>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  La transition vers <strong>{targetPlan.label}</strong> sera activée automatiquement après confirmation PayPal. Paddle reste conservé en arrière-plan pour les abonnements existants.
+                  La transition vers <strong>{targetPlan.label}</strong> sera activée automatiquement après confirmation. Paddle reste conservé en arrière-plan pour les abonnements existants.
                 </p>
                 {billingError && (
                   <div className="rounded-xl border border-rose-400/15 bg-rose-500/10 px-3 py-2">

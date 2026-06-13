@@ -8,6 +8,17 @@ export interface UserData {
   paddle_subscription_id?: string | null
   paypal_subscription_id?: string | null
   paypal_plan_id?: string | null
+  geniuspay_subscription_uuid?: string | null
+  geniuspay_stripe_subscription_id?: string | null
+  geniuspay_customer_id?: string | null
+  mollie_customer_id?: string | null
+  mollie_subscription_id?: string | null
+  mollie_first_payment_id?: string | null
+  mollie_last_payment_id?: string | null
+  airwallex_customer_id?: string | null
+  airwallex_checkout_id?: string | null
+  airwallex_subscription_id?: string | null
+  airwallex_price_id?: string | null
   subscription_plan?: string | null    // 'pro_starter' | 'custom_simple' | 'custom_pro' | 'custom_ultra' | 'custom_max' | legacy 'pro_plus' | 'custom'
   subscription_tier?: string | null   // RevenueCat: 'free' | 'starter' | 'pro' | 'ultra'
   ava_trading_trial_used?: boolean | null
@@ -139,7 +150,7 @@ function paddlePlanPermissions(plan: string | null | undefined): AvaPermissions 
 
 export function isPro(user: UserData): boolean {
   const source = user.subscription_source
-  if (source !== 'gumroad' && source !== 'paddle' && source !== 'paypal') return false
+  if (source !== 'gumroad' && source !== 'paddle' && source !== 'paypal' && source !== 'geniuspay' && source !== 'mollie' && source !== 'airwallex') return false
   if (!user.subscription_expires_at) return false
   if (new Date(user.subscription_expires_at) <= new Date()) return false
   // Les plans Custom Paddle ne sont pas des plans Pro (ont leur propre section)
@@ -151,8 +162,8 @@ export function isPro(user: UserData): boolean {
 export function isCustomPlan(user: UserData): boolean {
   // Gumroad custom
   if (user.custom_plan_expires_at && new Date(user.custom_plan_expires_at) > new Date()) return true
-  // Paddle/PayPal custom
-  if ((user.subscription_source === 'paddle' || user.subscription_source === 'paypal') &&
+  // Paddle/PayPal/GeniusPay/Mollie/Airwallex custom
+  if ((user.subscription_source === 'paddle' || user.subscription_source === 'paypal' || user.subscription_source === 'geniuspay' || user.subscription_source === 'mollie' || user.subscription_source === 'airwallex') &&
       user.subscription_expires_at &&
       new Date(user.subscription_expires_at) > new Date() &&
       (user.subscription_plan === 'custom' || user.subscription_plan === 'custom_simple' || user.subscription_plan === 'custom_starter' || user.subscription_plan === 'custom_pro' || user.subscription_plan === 'custom_ultra' || user.subscription_plan === 'custom_max')) return true
@@ -162,7 +173,7 @@ export function isCustomPlan(user: UserData): boolean {
 export function resolvePermissions(user: UserData): AvaPermissions {
   if (isCustomPlan(user)) return CUSTOM_PERMISSIONS
   if (isPro(user)) {
-    if (user.subscription_source === 'paddle' || user.subscription_source === 'paypal') return paddlePlanPermissions(user.subscription_plan)
+    if (user.subscription_source === 'paddle' || user.subscription_source === 'paypal' || user.subscription_source === 'geniuspay' || user.subscription_source === 'mollie' || user.subscription_source === 'airwallex') return paddlePlanPermissions(user.subscription_plan)
     return PRO_PLUS_PERMISSIONS // Gumroad = accès max
   }
   return FREE_PERMISSIONS
