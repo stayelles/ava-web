@@ -230,6 +230,12 @@ const planLabels: Record<string, string> = {
 }
 
 const CUSTOM_PLAN_ORDER = ['custom_simple', 'custom_pro', 'custom_ultra', 'custom_max']
+const CUSTOM_PLAN_CTA: Record<string, string> = {
+  custom_simple: 'Profiter de Simple',
+  custom_pro: 'Profiter de Pro',
+  custom_ultra: 'Profiter de Ultra',
+  custom_max: 'Profiter de Max',
+}
 
 function normalizePlanKey(plan: string | null | undefined, custom: boolean): string | null {
   if (plan === 'custom' || plan === 'custom_starter') return 'custom_simple'
@@ -468,7 +474,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     }
     return canUsePlanTrial(plan, user)
       ? `Essai gratuit ${planTrialDays(plan)} jour`
-      : `S’abonner avec Airwallex`
+      : CUSTOM_PLAN_CTA[plan.key] ?? 'S’abonner'
   }
 
   const startCheckout = (plan: typeof ALL_PLANS[number]) => {
