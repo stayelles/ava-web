@@ -16,26 +16,27 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'settings', label: 'Paramètres', icon: Settings },
 ]
 
-const AVA_DESKTOP_VERSION = '1.2.2'
+const AVA_DESKTOP_MAC_VERSION = '1.2.2'
+const AVA_DESKTOP_WINDOWS_VERSION = '1.2.3'
 const AVA_BRIDGE_EA_VERSION = '1.33'
 const DOWNLOAD_BASE_URL = 'https://call-ava.com/downloads'
 const DESKTOP_DOWNLOADS = [
   {
     title: 'Mac Apple Silicon',
-    subtitle: `Ava Desktop v${AVA_DESKTOP_VERSION}`,
-    href: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-arm64.dmg`,
+    subtitle: `Ava Desktop v${AVA_DESKTOP_MAC_VERSION}`,
+    href: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_MAC_VERSION}-arm64.dmg`,
     icon: Apple,
   },
   {
     title: 'Mac Intel',
-    subtitle: `Ava Desktop v${AVA_DESKTOP_VERSION}`,
-    href: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-x64.dmg`,
+    subtitle: `Ava Desktop v${AVA_DESKTOP_MAC_VERSION}`,
+    href: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_MAC_VERSION}-x64.dmg`,
     icon: Apple,
   },
   {
     title: 'Windows',
-    subtitle: `Installateur v${AVA_DESKTOP_VERSION}`,
-    href: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_VERSION}.exe`,
+    subtitle: `Installateur v${AVA_DESKTOP_WINDOWS_VERSION}`,
+    href: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_WINDOWS_VERSION}.exe`,
     icon: FaWindows,
   },
 ]
@@ -147,7 +148,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
             <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Compatibilité</p>
               <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
-                Ava Desktop {AVA_DESKTOP_VERSION} recommande le connecteur {AVA_BRIDGE_EA_VERSION}.
+                Ava Desktop Windows {AVA_DESKTOP_WINDOWS_VERSION} / Mac {AVA_DESKTOP_MAC_VERSION} recommande le connecteur {AVA_BRIDGE_EA_VERSION}.
               </p>
             </div>
           </div>

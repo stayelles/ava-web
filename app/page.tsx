@@ -34,12 +34,13 @@ import {
   PADDLE_PRICE_CUSTOM_MAX,
 } from "@/components/app/constants";
 
-const AVA_DESKTOP_VERSION = "1.2.2";
+const AVA_DESKTOP_MAC_VERSION = "1.2.2";
+const AVA_DESKTOP_WINDOWS_VERSION = "1.2.3";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = {
-  macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-arm64.dmg`,
-  macIntel: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-x64.dmg`,
-  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_VERSION}.exe`,
+  macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_MAC_VERSION}-arm64.dmg`,
+  macIntel: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_MAC_VERSION}-x64.dmg`,
+  windows: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_WINDOWS_VERSION}.exe`,
 };
 
 const planCheckoutUrl = (plan: string) =>

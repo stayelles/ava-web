@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Apple, ArrowLeft, Download, ShieldCheck, Smartphone } from "lucide-react";
 import { SiGoogleplay } from "react-icons/si";
 
-const AVA_DESKTOP_VERSION = "1.2.2";
+const AVA_DESKTOP_MAC_VERSION = "1.2.2";
+const AVA_DESKTOP_WINDOWS_VERSION = "1.2.3";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = [
   {
@@ -21,22 +22,22 @@ const DOWNLOADS = [
   },
   {
     title: "Ava Desktop Mac",
-    subtitle: `Apple Silicon · v${AVA_DESKTOP_VERSION}`,
-    href: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-arm64.dmg`,
+    subtitle: `Apple Silicon · v${AVA_DESKTOP_MAC_VERSION}`,
+    href: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_MAC_VERSION}-arm64.dmg`,
     icon: Apple,
     cta: "Télécharger",
   },
   {
     title: "Ava Desktop Mac",
-    subtitle: `Intel · v${AVA_DESKTOP_VERSION}`,
-    href: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-x64.dmg`,
+    subtitle: `Intel · v${AVA_DESKTOP_MAC_VERSION}`,
+    href: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_MAC_VERSION}-x64.dmg`,
     icon: Apple,
     cta: "Télécharger",
   },
   {
     title: "Ava Desktop Windows",
-    subtitle: `Installateur · v${AVA_DESKTOP_VERSION}`,
-    href: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_VERSION}.exe`,
+    subtitle: `Installateur · v${AVA_DESKTOP_WINDOWS_VERSION}`,
+    href: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_WINDOWS_VERSION}.exe`,
     icon: Smartphone,
     cta: "Télécharger",
   },
