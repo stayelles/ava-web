@@ -30,10 +30,10 @@ jobs:
           GH_TOKEN: ${{ secrets.DESKTOP_RELEASE_TOKEN || github.token }}
         run: |
           mkdir -p out/downloads
-          gh release download v0.2.20 --repo stayelles/ava-web --pattern 'Ava-1.1.29-arm64.dmg' --dir out/downloads --clobber
-          gh release download v0.2.20 --repo stayelles/ava-web --pattern 'Ava-1.1.29-x64.dmg' --dir out/downloads --clobber
-          gh release download v0.2.20 --repo stayelles/ava-web --pattern 'AvaSetup-1.1.29.exe' --dir out/downloads --clobber
-          gh release download v0.2.20 --repo stayelles/ava-web --pattern 'AvaBridgeEA-1.18.ex5' --dir out/downloads --clobber
+          gh release download v1.2.2 --repo stayelles/ava-desktop-releases --pattern 'Ava-1.2.2-arm64.dmg' --dir out/downloads --clobber
+          gh release download v1.2.2 --repo stayelles/ava-desktop-releases --pattern 'Ava-1.2.2-x64.dmg' --dir out/downloads --clobber
+          gh release download v1.2.2 --repo stayelles/ava-desktop-releases --pattern 'AvaSetup-1.2.2.exe' --dir out/downloads --clobber
+          gh release download v1.2.2 --repo stayelles/ava-desktop-releases --pattern 'AvaBridgeEA-1.33.ex5' --dir out/downloads --clobber
 
       - name: Deploy to Hostinger via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5

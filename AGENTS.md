@@ -27,14 +27,14 @@ The landing page points Ava Desktop downloads to versioned files under:
 
 Keep `public/downloads/.htaccess` deployed with the site. It forces `.dmg`, `.exe`, and `.ex5` files to download instead of rendering inline in Chrome/Safari. If Mac installers or the MT5 bridge open as garbled text in the browser, fix the download headers here rather than changing the file URLs.
 
-Large Desktop artifacts must not be committed to git. The Hostinger deploy workflow downloads the required Desktop release assets from the current `stayelles/ava-web` release into `out/downloads` before FTP upload. Keep the web release tag in `.github/workflows/deploy.yml` aligned with `package.json` when publishing new download assets.
+Large Desktop artifacts must not be committed to git. The Hostinger deploy workflow downloads the required Desktop release assets from the public `stayelles/ava-desktop-releases` release into `out/downloads` before FTP upload. Keep the Desktop release tag in `.github/workflows/deploy.yml` aligned with the Desktop version when publishing new download assets.
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.1.29-arm64.dmg`
-- `Ava-1.1.29-x64.dmg`
-- `AvaSetup-1.1.29.exe`
-- `AvaBridgeEA-1.18.ex5`
+- `Ava-1.2.2-arm64.dmg`
+- `Ava-1.2.2-x64.dmg`
+- `AvaSetup-1.2.2.exe`
+- `AvaBridgeEA-1.33.ex5`
 
 If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before publishing: update Desktop required bridge version, web `AVA_BRIDGE_EA_VERSION`, download filenames, release assets, and docs together. Never ship a changed `.ex5` under an old bridge version.
 
