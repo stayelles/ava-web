@@ -795,7 +795,7 @@ function Pricing() {
     {
       id: 'custom_simple',
       name: 'Custom Simple',
-      price: '$39.99',
+      price: '€39.99',
       priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
       badge: tl({ fr: 'Départ prudent', en: 'Careful start', de: 'Vorsichtiger Start', tr: 'Dikkatli başlangıç', es: 'Inicio prudente' }),
       description: tl({
@@ -816,7 +816,7 @@ function Pricing() {
     {
       id: 'custom_pro',
       name: 'Custom Pro',
-      price: '$99.99',
+      price: '€99.99',
       priceId: PADDLE_PRICE_CUSTOM_PRO,
       badge: tl({ fr: 'Recommandé', en: 'Recommended', de: 'Empfohlen', tr: 'Önerilen', es: 'Recomendado' }),
       description: tl({
@@ -838,7 +838,7 @@ function Pricing() {
     {
       id: 'custom_ultra',
       name: 'Custom Ultra',
-      price: '$399.99',
+      price: '€399.99',
       priceId: PADDLE_PRICE_CUSTOM_ULTRA,
       badge: tl({ fr: 'Haute performance', en: 'High performance', de: 'Hohe Leistung', tr: 'Yüksek performans', es: 'Alto rendimiento' }),
       description: tl({
@@ -859,7 +859,7 @@ function Pricing() {
     {
       id: 'custom_max',
       name: 'Custom Max',
-      price: '$999.99',
+      price: '€999.99',
       priceId: PADDLE_PRICE_CUSTOM_MAX,
       badge: tl({ fr: 'Niveau maximal', en: 'Maximum level', de: 'Maximales Niveau', tr: 'Maksimum seviye', es: 'Nivel máximo' }),
       description: tl({
