@@ -1,7 +1,9 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Mic, MessageSquare, User, Crown, Users, Settings, LogOut, Download, Terminal } from 'lucide-react'
+import { Apple, Mic, MessageSquare, User, Crown, Users, Settings, LogOut, Download, Terminal, X } from 'lucide-react'
+import { FaWindows } from 'react-icons/fa'
 import Image from 'next/image'
 import type { AppTab } from './types'
 
@@ -14,9 +16,29 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'settings', label: 'Paramètres', icon: Settings },
 ]
 
-const AVA_DESKTOP_VERSION = '1.1.29'
+const AVA_DESKTOP_VERSION = '1.2.2'
 const AVA_BRIDGE_EA_VERSION = '1.18'
 const DOWNLOAD_BASE_URL = 'https://call-ava.com/downloads'
+const DESKTOP_DOWNLOADS = [
+  {
+    title: 'Mac Apple Silicon',
+    subtitle: `Ava Desktop v${AVA_DESKTOP_VERSION}`,
+    href: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-arm64.dmg`,
+    icon: Apple,
+  },
+  {
+    title: 'Mac Intel',
+    subtitle: `Ava Desktop v${AVA_DESKTOP_VERSION}`,
+    href: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_VERSION}-x64.dmg`,
+    icon: Apple,
+  },
+  {
+    title: 'Windows',
+    subtitle: `Installateur v${AVA_DESKTOP_VERSION}`,
+    href: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_VERSION}.exe`,
+    icon: FaWindows,
+  },
+]
 
 interface Props {
   activeTab: AppTab
@@ -26,15 +48,18 @@ interface Props {
 }
 
 export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) {
+  const [showDownloads, setShowDownloads] = useState(false)
+
   return (
-    <aside
-      className="hidden lg:flex flex-col flex-shrink-0"
-      style={{
-        width: 240,
-        background: 'rgba(255,255,255,0.02)',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
-      }}
-    >
+    <>
+      <aside
+        className="hidden lg:flex flex-col flex-shrink-0"
+        style={{
+          width: 240,
+          background: 'rgba(255,255,255,0.02)',
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
       {/* Logo */}
       <div
         className="flex items-center gap-2.5 px-5 py-4 flex-shrink-0"
@@ -92,10 +117,9 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
         })}
         <div className="pt-3 mt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <div className="space-y-2">
-            <a
-              href="/downloads"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => setShowDownloads(true)}
               className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors group"
               style={{
                 background: 'rgba(244,63,94,0.08)',
@@ -105,7 +129,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
             >
               <Download size={17} style={{ color: '#f43f5e', flexShrink: 0 }} />
               <span className="text-sm font-semibold">Télécharger Ava</span>
-            </a>
+            </button>
             <a
               href={`${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.ex5`}
               target="_blank"
@@ -155,6 +179,55 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
           Déconnexion
         </button>
       </div>
-    </aside>
+      </aside>
+
+      {showDownloads && (
+        <div
+          className="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/75 px-6 backdrop-blur-sm lg:flex"
+          onClick={() => setShowDownloads(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#070b16] p-5 shadow-2xl shadow-black/40"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-rose-300">Desktop</p>
+                <h2 className="mt-1 text-lg font-black text-white">Télécharger Ava</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowDownloads(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-slate-400 transition-colors hover:text-white"
+                aria-label="Fermer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {DESKTOP_DOWNLOADS.map(({ title, subtitle, href, icon: Icon }) => (
+                <a
+                  key={title}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 transition-colors hover:border-rose-400/35 hover:bg-white/[0.06]"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-rose-300">
+                    <Icon size={18} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-black text-white">{title}</span>
+                    <span className="block truncate text-xs font-semibold text-slate-500">{subtitle}</span>
+                  </span>
+                  <Download size={15} className="text-slate-500" />
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
