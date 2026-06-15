@@ -320,6 +320,32 @@ function loadPayPalSdk(): Promise<void> {
   })
 }
 
+function countryFromLocale(locale: string | undefined) {
+  if (!locale) return null
+  try {
+    const parsed = new Intl.Locale(locale)
+    if (parsed.region && /^[A-Za-z]{2}$/.test(parsed.region)) return parsed.region.toUpperCase()
+  } catch {
+    const match = locale.match(/[-_]([A-Za-z]{2})(?:$|[-_])/)
+    if (match?.[1]) return match[1].toUpperCase()
+  }
+  return null
+}
+
+function browserCountryHints() {
+  if (typeof window === 'undefined') return {}
+  const locales = Array.from(new Set([
+    ...(navigator.languages ?? []),
+    navigator.language,
+  ].filter(Boolean)))
+  const localeCountry = locales.map(countryFromLocale).find(Boolean) ?? null
+  return {
+    locale_country: localeCountry,
+    locales,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone ?? null,
+  }
+}
+
 function isKnownPlan(plan: string | null) {
   return !!plan && ALL_PLANS.some(item => item.key === plan)
 }
@@ -540,8 +566,9 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
           headers: SUPABASE_HEADERS,
           body: JSON.stringify({
             user_id: user.id,
-          target_plan: plan.key,
-        }),
+            target_plan: plan.key,
+            country_hints: browserCountryHints(),
+          }),
       })
       const result = await res.json().catch(() => ({}))
       if (!res.ok || result.error || !result.ok) {
