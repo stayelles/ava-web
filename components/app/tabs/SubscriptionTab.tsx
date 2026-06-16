@@ -405,6 +405,10 @@ function storedBillingCountry() {
   }
 }
 
+function suggestedBillingCountry() {
+  return storedBillingCountry() || browserSuggestedCountry()
+}
+
 function isKnownPlan(plan: string | null) {
   return !!plan && ALL_PLANS.some(item => item.key === plan)
 }
@@ -514,7 +518,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const [paymentChoicePlan, setPaymentChoicePlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [paypalPlan, setPaypalPlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [countryPromptPlan, setCountryPromptPlan] = useState<typeof ALL_PLANS[number] | null>(null)
-  const [billingCountryCode, setBillingCountryCode] = useState(() => cleanCountryCode(user.billing_country_code) || storedBillingCountry() || browserSuggestedCountry())
+  const [billingCountryCode, setBillingCountryCode] = useState(() => cleanCountryCode(user.billing_country_code))
   const paypalButtonRef = useRef<HTMLDivElement | null>(null)
 
   const pro = isPro(user)
@@ -556,6 +560,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const paddleRenewalStopped = user.subscription_source === 'paddle' && !!user.paddle_renewal_cancelled_at
   const paddleAccessEndsAt = user.paddle_scheduled_cancel_at ?? user.subscription_expires_at
   const countries = countryOptions()
+  const suggestedCountryCode = !cleanCountryCode(user.billing_country_code) ? suggestedBillingCountry() : ''
   const legacyRenewalSource = isLegacyRenewalSource(user.subscription_source)
   const legacyRenewalDaysLeft = daysUntil(user.custom_plan_expires_at ?? user.subscription_expires_at)
   const legacyRenewalUrgent = legacyRenewalDaysLeft !== null && legacyRenewalDaysLeft <= 7
@@ -569,7 +574,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         : 'ancien moyen de paiement'
 
   useEffect(() => {
-    setBillingCountryCode(current => cleanCountryCode(user.billing_country_code) || current || storedBillingCountry() || browserSuggestedCountry())
+    setBillingCountryCode(cleanCountryCode(user.billing_country_code))
   }, [user.billing_country_code])
 
   useEffect(() => {
@@ -656,7 +661,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const startAirwallexCheckout = async (plan: typeof ALL_PLANS[number], countryCodeOverride?: string) => {
     const countryCode = cleanCountryCode(countryCodeOverride) || cleanCountryCode(user.billing_country_code)
     if (!countryCode) {
-      setBillingCountryCode(current => current || storedBillingCountry() || browserSuggestedCountry())
+      setBillingCountryCode('')
       setCountryPromptPlan(plan)
       return
     }
@@ -1450,6 +1455,16 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   ))}
                 </select>
               </label>
+
+              {suggestedCountryCode && (
+                <button
+                  type="button"
+                  onClick={() => setBillingCountryCode(suggestedCountryCode)}
+                  className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs font-bold text-slate-300 transition-colors hover:border-orange-300/40 hover:bg-orange-300/10 hover:text-white"
+                >
+                  Utiliser la suggestion : {countryDisplayName(suggestedCountryCode)}
+                </button>
+              )}
 
               <button
                 type="button"
