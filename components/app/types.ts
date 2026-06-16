@@ -6,6 +6,8 @@ export interface UserData {
   subscription_source: string | null
   subscription_expires_at: string | null
   paddle_subscription_id?: string | null
+  paddle_renewal_cancelled_at?: string | null
+  paddle_scheduled_cancel_at?: string | null
   paypal_subscription_id?: string | null
   paypal_plan_id?: string | null
   geniuspay_subscription_uuid?: string | null

@@ -474,6 +474,8 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   // Determine active plan key
   const activePlanKey = currentPlan
   const nextPlan = nextCustomPlan(activePlanKey)
+  const paddleRenewalStopped = user.subscription_source === 'paddle' && !!user.paddle_renewal_cancelled_at
+  const paddleAccessEndsAt = user.paddle_scheduled_cancel_at ?? user.subscription_expires_at
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -633,7 +635,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     }
   }, [onRefresh, paypalPlan, user])
 
-  const callPaddleSubscription = async (action: 'portal' | 'upgrade', plan?: string) => {
+  const callPaddleSubscription = async (action: 'portal' | 'upgrade' | 'cancel_renewal', plan?: string) => {
     setBillingLoading(true)
     setBillingError('')
     setBillingMessage('')
@@ -670,6 +672,18 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     const result = await callPaddleSubscription('portal')
     if (result?.url) {
       window.open(result.url, '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  const cancelPaddleRenewal = async () => {
+    const result = await callPaddleSubscription('cancel_renewal')
+    if (result?.ok) {
+      const endDate = result.scheduled_cancel_at || result.subscription_expires_at
+      const label = endDate
+        ? new Date(String(endDate)).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+        : 'la fin de la période payée'
+      setBillingMessage(`Renouvellement Paddle arrêté. Votre accès reste actif jusqu’au ${label}.`)
+      setTimeout(() => onRefresh?.(), 1200)
     }
   }
 
@@ -789,7 +803,12 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                       </h2>
                       {user.subscription_expires_at && (
                         <p className="text-sm text-slate-400 mt-2">
-                          Prochain renouvellement automatique le <span className="text-white font-bold">{new Date(user.subscription_expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                          {paddleRenewalStopped
+                            ? 'Accès Paddle actif jusqu’au '
+                            : 'Prochain renouvellement automatique le '}
+                          <span className="text-white font-bold">
+                            {new Date(paddleAccessEndsAt ?? user.subscription_expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </span>
                         </p>
                       )}
                     </div>
@@ -797,7 +816,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
                   {user.subscription_source === 'paddle' && (
                     <div className="flex flex-col sm:flex-row flex-shrink-0 gap-3">
-                      {nextPlan && (
+                      {nextPlan && !paddleRenewalStopped && (
                         <button
                           type="button"
                           onClick={() => {
@@ -812,20 +831,26 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                       )}
                       <button
                         type="button"
-                        onClick={openPaddlePortal}
+                        onClick={paddleRenewalStopped ? openPaddlePortal : cancelPaddleRenewal}
                         disabled={billingLoading}
                         className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 shadow-xl"
                       >
-                        <CreditCard size={14} />
-                        {billingLoading ? 'Ouverture...' : 'Gérer la facturation'}
-                        <ExternalLink size={12} className="opacity-60" />
+                        {paddleRenewalStopped ? <CreditCard size={14} /> : <AlertCircle size={14} />}
+                        {billingLoading
+                          ? 'Traitement...'
+                          : paddleRenewalStopped
+                            ? 'Voir les anciennes factures'
+                            : 'Arrêter le renouvellement Paddle'}
+                        {paddleRenewalStopped && <ExternalLink size={12} className="opacity-60" />}
                       </button>
                     </div>
                   )}
                 </div>
-                {user.subscription_source === 'paddle' && nextPlan && (
+                {user.subscription_source === 'paddle' && (
                   <p className="relative z-10 mt-5 text-[11px] leading-relaxed text-slate-400">
-                    Pour changer de plan, utilisez PayPal ou Carte bancaire. Le portail Paddle reste disponible pour consulter les anciennes factures ou gerer un abonnement Paddle existant.
+                    {paddleRenewalStopped
+                      ? 'Aucun nouveau prélèvement Paddle ne sera tenté. À la fin de cette période, choisissez une nouvelle formule via PayPal, carte bancaire ou Airwallex pour continuer.'
+                      : 'Paddle est conservé seulement pour les anciens abonnements. Vous pouvez arrêter le prochain prélèvement ici, puis renouveler ensuite via PayPal, carte bancaire ou Airwallex.'}
                   </p>
                 )}
               </motion.div>
