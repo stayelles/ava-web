@@ -31,9 +31,9 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.2.4-arm64.dmg`
-- `Ava-1.2.4-x64.dmg`
-- `AvaSetup-1.2.4.exe`
+- `Ava-1.2.5-arm64.dmg`
+- `Ava-1.2.5-x64.dmg`
+- `AvaSetup-1.2.5.exe`
 - `AvaBridgeEA-1.34.ex5`
 
 If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before publishing: update Desktop required bridge version, web `AVA_BRIDGE_EA_VERSION`, download filenames, release assets, and docs together. Never ship a changed `.ex5` under an old bridge version.
