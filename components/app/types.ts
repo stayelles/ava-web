@@ -21,6 +21,9 @@ export interface UserData {
   airwallex_checkout_id?: string | null
   airwallex_subscription_id?: string | null
   airwallex_price_id?: string | null
+  billing_country_code?: string | null
+  billing_country_name?: string | null
+  billing_country_confirmed_at?: string | null
   subscription_plan?: string | null    // 'pro_starter' | 'custom_simple' | 'custom_pro' | 'custom_ultra' | 'custom_max' | legacy 'pro_plus' | 'custom'
   subscription_tier?: string | null   // RevenueCat: 'free' | 'starter' | 'pro' | 'ultra'
   ava_trading_trial_used?: boolean | null

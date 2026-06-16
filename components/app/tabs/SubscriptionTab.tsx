@@ -346,6 +346,65 @@ function browserCountryHints() {
   }
 }
 
+const FALLBACK_COUNTRY_CODES = [
+  'AF', 'AX', 'AL', 'DZ', 'AS', 'AD', 'AO', 'AI', 'AQ', 'AG', 'AR', 'AM', 'AW', 'AU', 'AT', 'AZ',
+  'BS', 'BH', 'BD', 'BB', 'BY', 'BE', 'BZ', 'BJ', 'BM', 'BT', 'BO', 'BQ', 'BA', 'BW', 'BV', 'BR',
+  'IO', 'BN', 'BG', 'BF', 'BI', 'CV', 'KH', 'CM', 'CA', 'KY', 'CF', 'TD', 'CL', 'CN', 'CX', 'CC',
+  'CO', 'KM', 'CG', 'CD', 'CK', 'CR', 'CI', 'HR', 'CU', 'CW', 'CY', 'CZ', 'DK', 'DJ', 'DM', 'DO',
+  'EC', 'EG', 'SV', 'GQ', 'ER', 'EE', 'SZ', 'ET', 'FK', 'FO', 'FJ', 'FI', 'FR', 'GF', 'PF', 'TF',
+  'GA', 'GM', 'GE', 'DE', 'GH', 'GI', 'GR', 'GL', 'GD', 'GP', 'GU', 'GT', 'GG', 'GN', 'GW', 'GY',
+  'HT', 'HM', 'VA', 'HN', 'HK', 'HU', 'IS', 'IN', 'ID', 'IR', 'IQ', 'IE', 'IM', 'IL', 'IT', 'JM',
+  'JP', 'JE', 'JO', 'KZ', 'KE', 'KI', 'KP', 'KR', 'KW', 'KG', 'LA', 'LV', 'LB', 'LS', 'LR', 'LY',
+  'LI', 'LT', 'LU', 'MO', 'MG', 'MW', 'MY', 'MV', 'ML', 'MT', 'MH', 'MQ', 'MR', 'MU', 'YT', 'MX',
+  'FM', 'MD', 'MC', 'MN', 'ME', 'MS', 'MA', 'MZ', 'MM', 'NA', 'NR', 'NP', 'NL', 'NC', 'NZ', 'NI',
+  'NE', 'NG', 'NU', 'NF', 'MK', 'MP', 'NO', 'OM', 'PK', 'PW', 'PS', 'PA', 'PG', 'PY', 'PE', 'PH',
+  'PN', 'PL', 'PT', 'PR', 'QA', 'RE', 'RO', 'RU', 'RW', 'BL', 'SH', 'KN', 'LC', 'MF', 'PM', 'VC',
+  'WS', 'SM', 'ST', 'SA', 'SN', 'RS', 'SC', 'SL', 'SG', 'SX', 'SK', 'SI', 'SB', 'SO', 'ZA', 'GS',
+  'SS', 'ES', 'LK', 'SD', 'SR', 'SJ', 'SE', 'CH', 'SY', 'TW', 'TJ', 'TZ', 'TH', 'TL', 'TG', 'TK',
+  'TO', 'TT', 'TN', 'TR', 'TM', 'TC', 'TV', 'UG', 'UA', 'AE', 'GB', 'US', 'UM', 'UY', 'UZ', 'VU',
+  'VE', 'VN', 'VG', 'VI', 'WF', 'EH', 'YE', 'ZM', 'ZW',
+]
+
+function cleanCountryCode(raw: unknown) {
+  const value = String(raw ?? '').trim().toUpperCase()
+  return /^[A-Z]{2}$/.test(value) && value !== 'ZZ' ? value : ''
+}
+
+function countryDisplayName(code: string) {
+  try {
+    return new Intl.DisplayNames(['fr'], { type: 'region' }).of(code) ?? code
+  } catch {
+    return code
+  }
+}
+
+function countryOptions() {
+  let supported: string[] = []
+  try {
+    supported = (Intl as unknown as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf?.('region') ?? []
+  } catch {
+    supported = []
+  }
+  const codes = supported.length ? supported : FALLBACK_COUNTRY_CODES
+  return Array.from(new Set(codes.map(cleanCountryCode).filter(Boolean)))
+    .map(code => ({ code, name: countryDisplayName(code) }))
+    .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+}
+
+function browserSuggestedCountry() {
+  return cleanCountryCode(browserCountryHints().locale_country)
+}
+
+function storedBillingCountry() {
+  if (typeof window === 'undefined') return ''
+  try {
+    const saved = JSON.parse(localStorage.getItem('ava_billing_country') ?? '{}') as { code?: string }
+    return cleanCountryCode(saved.code)
+  } catch {
+    return ''
+  }
+}
+
 function isKnownPlan(plan: string | null) {
   return !!plan && ALL_PLANS.some(item => item.key === plan)
 }
@@ -436,6 +495,8 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const [selectedPlanKey, setSelectedPlanKey] = useState<string | null>(null)
   const [paymentChoicePlan, setPaymentChoicePlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [paypalPlan, setPaypalPlan] = useState<typeof ALL_PLANS[number] | null>(null)
+  const [countryPromptPlan, setCountryPromptPlan] = useState<typeof ALL_PLANS[number] | null>(null)
+  const [billingCountryCode, setBillingCountryCode] = useState(() => cleanCountryCode(user.billing_country_code) || storedBillingCountry() || browserSuggestedCountry())
   const paypalButtonRef = useRef<HTMLDivElement | null>(null)
 
   const pro = isPro(user)
@@ -476,6 +537,11 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const nextPlan = nextCustomPlan(activePlanKey)
   const paddleRenewalStopped = user.subscription_source === 'paddle' && !!user.paddle_renewal_cancelled_at
   const paddleAccessEndsAt = user.paddle_scheduled_cancel_at ?? user.subscription_expires_at
+  const countries = countryOptions()
+
+  useEffect(() => {
+    setBillingCountryCode(current => cleanCountryCode(user.billing_country_code) || current || storedBillingCountry() || browserSuggestedCountry())
+  }, [user.billing_country_code])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -558,10 +624,23 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     }
   }
 
-  const startAirwallexCheckout = async (plan: typeof ALL_PLANS[number]) => {
+  const startAirwallexCheckout = async (plan: typeof ALL_PLANS[number], countryCodeOverride?: string) => {
+    const countryCode = cleanCountryCode(countryCodeOverride) || cleanCountryCode(user.billing_country_code)
+    if (!countryCode) {
+      setBillingCountryCode(current => current || storedBillingCountry() || browserSuggestedCountry())
+      setCountryPromptPlan(plan)
+      return
+    }
+
     setBillingLoading(true)
     setBillingError('')
     setBillingMessage('')
+    try {
+      localStorage.setItem('ava_billing_country', JSON.stringify({
+        code: countryCode,
+        name: countryDisplayName(countryCode),
+      }))
+    } catch {}
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/airwallex-subscription`, {
           method: 'POST',
@@ -569,12 +648,15 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
           body: JSON.stringify({
             user_id: user.id,
             target_plan: plan.key,
+            country_code: countryCode,
+            country_name: countryDisplayName(countryCode),
             country_hints: browserCountryHints(),
           }),
       })
       const result = await res.json().catch(() => ({}))
       if (!res.ok || result.error || !result.ok) {
         setBillingError(result.error ?? 'Paiement Airwallex indisponible pour le moment.')
+        if (result.code === 'country_required') setCountryPromptPlan(plan)
         return
       }
       if (result.redirect_url) {
@@ -592,6 +674,18 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     } finally {
       setBillingLoading(false)
     }
+  }
+
+  const confirmBillingCountry = () => {
+    if (!countryPromptPlan) return
+    const code = cleanCountryCode(billingCountryCode)
+    if (!code) {
+      setBillingError('Sélectionnez votre pays pour continuer avec Airwallex.')
+      return
+    }
+    const plan = countryPromptPlan
+    setCountryPromptPlan(null)
+    startAirwallexCheckout(plan, code)
   }
 
   useEffect(() => {
@@ -1243,6 +1337,70 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
           </p>
         </div>
       )}
+
+      {/* Airwallex country modal */}
+      <AnimatePresence>
+        {countryPromptPlan && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-6 md:p-8 shadow-2xl space-y-6"
+            >
+              <button
+                type="button"
+                onClick={() => setCountryPromptPlan(null)}
+                className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="Fermer"
+              >
+                <X size={16} />
+              </button>
+
+              <div className="space-y-2 pr-10">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pays de facturation</p>
+                <h3 className="text-2xl font-black text-white tracking-tight">{countryPromptPlan.label}</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  Sélectionnez votre pays pour finaliser le paiement Airwallex et éviter les comptes sans adresse de facturation.
+                </p>
+              </div>
+
+              {billingError && (
+                <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-xs font-semibold text-rose-200">
+                  {billingError}
+                </div>
+              )}
+
+              <label className="block space-y-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pays</span>
+                <select
+                  value={billingCountryCode}
+                  onChange={(event) => setBillingCountryCode(event.target.value)}
+                  className="h-12 w-full rounded-2xl border border-white/10 bg-slate-950 px-4 text-sm font-semibold text-white outline-none transition-colors focus:border-orange-300/60"
+                >
+                  <option value="">Choisir un pays</option>
+                  {countries.map(country => (
+                    <option key={country.code} value={country.code}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <button
+                type="button"
+                onClick={confirmBillingCountry}
+                disabled={billingLoading || !cleanCountryCode(billingCountryCode)}
+                className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-orange-400 px-5 text-sm font-black text-slate-950 transition-all hover:bg-orange-300 disabled:opacity-50"
+              >
+                {billingLoading ? 'Ouverture...' : 'Continuer avec Airwallex'}
+                <ExternalLink size={14} />
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Payment method modal */}
       <AnimatePresence>
