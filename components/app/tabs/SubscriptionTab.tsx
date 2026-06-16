@@ -409,6 +409,24 @@ function isKnownPlan(plan: string | null) {
   return !!plan && ALL_PLANS.some(item => item.key === plan)
 }
 
+function isLegacyRenewalSource(source: string | null | undefined) {
+  return source === 'wise' || source === 'paddle' || source === 'gumroad'
+}
+
+function daysUntil(raw: string | null | undefined) {
+  if (!raw) return null
+  const parsed = Date.parse(raw)
+  if (!Number.isFinite(parsed)) return null
+  return Math.ceil((parsed - Date.now()) / (24 * 3600 * 1000))
+}
+
+function legacyRenewalPlanKey(user: UserData, currentPlan: string | null) {
+  if (currentPlan && CUSTOM_PLAN_ORDER.includes(currentPlan)) return currentPlan
+  const normalized = normalizePlanKey(user.subscription_plan, true)
+  if (normalized && CUSTOM_PLAN_ORDER.includes(normalized)) return normalized
+  return 'custom_simple'
+}
+
 function VoiceQuotaBar({ user, pro }: { user: UserData; pro: boolean }) {
   const used = voiceMinutesUsed(user)
   const quota = voiceQuotaMinutes(user)
@@ -538,6 +556,17 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const paddleRenewalStopped = user.subscription_source === 'paddle' && !!user.paddle_renewal_cancelled_at
   const paddleAccessEndsAt = user.paddle_scheduled_cancel_at ?? user.subscription_expires_at
   const countries = countryOptions()
+  const legacyRenewalSource = isLegacyRenewalSource(user.subscription_source)
+  const legacyRenewalDaysLeft = daysUntil(user.custom_plan_expires_at ?? user.subscription_expires_at)
+  const legacyRenewalUrgent = legacyRenewalDaysLeft !== null && legacyRenewalDaysLeft <= 7
+  const legacyRenewalPlan = ALL_PLANS.find(plan => plan.key === legacyRenewalPlanKey(user, activePlanKey)) ?? ALL_PLANS.find(plan => plan.key === 'custom_simple')!
+  const legacyRenewalSourceLabel = user.subscription_source === 'wise'
+    ? 'Wise'
+    : user.subscription_source === 'paddle'
+      ? 'Paddle'
+      : user.subscription_source === 'gumroad'
+        ? 'Gumroad'
+        : 'ancien moyen de paiement'
 
   useEffect(() => {
     setBillingCountryCode(current => cleanCountryCode(user.billing_country_code) || current || storedBillingCountry() || browserSuggestedCountry())
@@ -851,6 +880,40 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
               Votre facturation est gérée sur l&apos;App Store ou Google Play Store. Vos quotas vocaux sont synchronisés en temps réel sur le Web et le Desktop.
             </p>
           </div>
+        </motion.div>
+      )}
+
+      {legacyRenewalSource && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`rounded-2xl px-5 py-4 flex flex-col gap-4 border backdrop-blur-md md:flex-row md:items-center md:justify-between ${
+            legacyRenewalUrgent
+              ? 'border-amber-400/25 bg-amber-500/10'
+              : 'border-orange-400/15 bg-orange-500/5'
+          }`}
+        >
+          <div className="flex items-start gap-3">
+            <AlertCircle size={17} className={legacyRenewalUrgent ? 'text-amber-300 mt-0.5 flex-shrink-0' : 'text-orange-300 mt-0.5 flex-shrink-0'} />
+            <div>
+              <p className={`text-sm font-black ${legacyRenewalUrgent ? 'text-amber-200' : 'text-orange-200'}`}>
+                Renouvellement à préparer via Airwallex
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                Votre accès {legacyRenewalSourceLabel} reste actif jusqu’à sa date actuelle. Pour éviter une coupure, renouvelez avec Airwallex sur {legacyRenewalPlan.label}; aucun essai gratuit ne sera appliqué.
+                {legacyRenewalDaysLeft !== null && legacyRenewalDaysLeft >= 0 ? ` Il reste environ ${legacyRenewalDaysLeft} jour${legacyRenewalDaysLeft > 1 ? 's' : ''}.` : ''}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => startCheckout(legacyRenewalPlan)}
+            disabled={billingLoading}
+            className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-orange-400 px-5 text-sm font-black text-slate-950 transition-all hover:bg-orange-300 disabled:opacity-60"
+          >
+            Renouveler via Airwallex
+            <ExternalLink size={14} />
+          </button>
         </motion.div>
       )}
 
