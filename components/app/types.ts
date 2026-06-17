@@ -21,11 +21,13 @@ export interface UserData {
   airwallex_checkout_id?: string | null
   airwallex_subscription_id?: string | null
   airwallex_price_id?: string | null
+  airwallex_last_event_type?: string | null
   whop_checkout_id?: string | null
   whop_plan_id?: string | null
   whop_payment_id?: string | null
   whop_membership_id?: string | null
   whop_user_id?: string | null
+  whop_last_event_type?: string | null
   billing_country_code?: string | null
   billing_country_name?: string | null
   billing_country_confirmed_at?: string | null

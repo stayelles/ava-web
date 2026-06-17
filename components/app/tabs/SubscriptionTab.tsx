@@ -27,6 +27,10 @@ import {
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
 
+type AirwallexPaymentMethod = 'apple_pay' | 'google_pay' | 'ewallet' | 'wallet'
+type WhopPaymentMethod = 'card'
+type PaymentMethod = AirwallexPaymentMethod | WhopPaymentMethod | 'paypal'
+
 declare global {
   interface Window {
     paypal?: {
@@ -419,6 +423,45 @@ function isLegacyRenewalSource(source: string | null | undefined) {
   return source === 'wise' || source === 'paddle' || source === 'gumroad'
 }
 
+function paymentMethodFromEvent(raw: unknown): PaymentMethod | null {
+  const value = String(raw ?? '').toLowerCase()
+  if (value.includes('google_pay')) return 'google_pay'
+  if (value.includes('apple_pay')) return 'apple_pay'
+  if (value.includes('ewallet')) return 'ewallet'
+  if (value.includes('card')) return 'card'
+  return null
+}
+
+function subscriptionPaymentLabel(user: UserData) {
+  if (user.subscription_source === 'paypal') return 'PayPal'
+  if (user.subscription_source === 'whop') return 'Carte bancaire'
+  if (user.subscription_source === 'airwallex') {
+    const method = paymentMethodFromEvent(user.airwallex_last_event_type)
+    if (method === 'apple_pay') return 'Apple Pay'
+    if (method === 'google_pay') return 'Google Pay'
+    if (method === 'ewallet') return 'eWallet'
+    return 'Apple Pay / Google Pay'
+  }
+  if (user.subscription_source === 'geniuspay' || user.subscription_source === 'mollie') return 'Carte bancaire'
+  if (user.subscription_source === 'paddle') return 'Ancien paiement'
+  if (user.subscription_source === 'gumroad') return 'Ancien paiement'
+  if (user.subscription_source === 'wise') return 'Wise'
+  return 'Mobile'
+}
+
+function subscriptionManagementLabel(user: UserData) {
+  if (user.subscription_source === 'paypal') return 'Gérez cet abonnement depuis PayPal.'
+  if (user.subscription_source === 'whop') return 'Gérez cet abonnement depuis votre espace de paiement carte.'
+  if (user.subscription_source === 'airwallex') return 'Gérez cet abonnement depuis le même moyen de paiement.'
+  return ''
+}
+
+function airwallexMethodForUser(user: UserData): AirwallexPaymentMethod {
+  const method = paymentMethodFromEvent(user.airwallex_last_event_type)
+  if (method === 'apple_pay' || method === 'google_pay' || method === 'ewallet') return method
+  return 'wallet'
+}
+
 function daysUntil(raw: string | null | undefined) {
   if (!raw) return null
   const parsed = Date.parse(raw)
@@ -520,6 +563,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const [paymentChoicePlan, setPaymentChoicePlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [paypalPlan, setPaypalPlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [countryPromptPlan, setCountryPromptPlan] = useState<typeof ALL_PLANS[number] | null>(null)
+  const [countryPromptMethod, setCountryPromptMethod] = useState<AirwallexPaymentMethod>('wallet')
   const [billingCountryCode, setBillingCountryCode] = useState(() => cleanCountryCode(user.billing_country_code))
   const paypalButtonRef = useRef<HTMLDivElement | null>(null)
 
@@ -618,7 +662,15 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
     if (isPlanCheckoutReady(plan)) {
       if (user.subscription_source === 'airwallex' && user.airwallex_subscription_id && activePlanKey && activePlanKey !== plan.key) {
-        startAirwallexCheckout(plan)
+        startAirwallexCheckout(plan, undefined, airwallexMethodForUser(user))
+        return
+      }
+      if (user.subscription_source === 'whop' && user.whop_membership_id && activePlanKey && activePlanKey !== plan.key) {
+        startWhopCheckout('card', plan)
+        return
+      }
+      if (user.subscription_source === 'paypal' && user.paypal_subscription_id && activePlanKey && activePlanKey !== plan.key) {
+        setPaypalPlan(plan)
         return
       }
       setPaymentChoicePlan(plan)
@@ -634,39 +686,12 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     setPaymentChoicePlan(null)
   }
 
-  const startMollieCheckout = async () => {
-    if (!paymentChoicePlan) return
-    setBillingLoading(true)
-    setBillingError('')
-    setBillingMessage('')
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/mollie-subscription`, {
-        method: 'POST',
-        headers: SUPABASE_HEADERS,
-        body: JSON.stringify({
-          user_id: user.id,
-          target_plan: paymentChoicePlan.key,
-        }),
-      })
-      const result = await res.json().catch(() => ({}))
-      if (!res.ok || result.error || !result.ok) {
-        setBillingError(result.error ?? 'Paiement carte indisponible pour le moment.')
-        return
-      }
-      if (result.redirect_url) {
-        window.location.href = String(result.redirect_url)
-        return
-      }
-      setBillingError('Mollie n’a pas renvoyé de lien de paiement.')
-    } catch {
-      setBillingError('Erreur réseau Mollie. Réessayez dans un instant.')
-    } finally {
-      setBillingLoading(false)
-    }
-  }
-
-  const startWhopCheckout = async () => {
-    if (!paymentChoicePlan) return
+  const startWhopCheckout = async (
+    preferredPaymentMethod: WhopPaymentMethod = 'card',
+    planOverride?: typeof ALL_PLANS[number],
+  ) => {
+    const plan = planOverride ?? paymentChoicePlan
+    if (!plan) return
     setBillingLoading(true)
     setBillingError('')
     setBillingMessage('')
@@ -676,31 +701,42 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         headers: SUPABASE_HEADERS,
         body: JSON.stringify({
           user_id: user.id,
-          target_plan: paymentChoicePlan.key,
+          target_plan: plan.key,
+          preferred_payment_method: preferredPaymentMethod,
         }),
       })
       const result = await res.json().catch(() => ({}))
       if (!res.ok || result.error || !result.ok) {
-        setBillingError(result.error ?? 'Paiement Whop indisponible pour le moment.')
+        setBillingError(result.error ?? 'Paiement par carte indisponible pour le moment.')
         return
       }
       if (result.redirect_url) {
         window.location.href = String(result.redirect_url)
         return
       }
-      setBillingError('Whop n’a pas renvoyé de lien de paiement.')
+      if (result.unchanged) {
+        setBillingMessage(String(result.message ?? 'Cette formule est déjà liée à votre compte.'))
+        setTimeout(() => onRefresh?.(), 2000)
+        return
+      }
+      setBillingError('Le paiement par carte n’a pas renvoyé de lien.')
     } catch {
-      setBillingError('Erreur réseau Whop. Réessayez dans un instant.')
+      setBillingError('Erreur réseau. Réessayez dans un instant.')
     } finally {
       setBillingLoading(false)
     }
   }
 
-  const startAirwallexCheckout = async (plan: typeof ALL_PLANS[number], countryCodeOverride?: string) => {
+  const startAirwallexCheckout = async (
+    plan: typeof ALL_PLANS[number],
+    countryCodeOverride?: string,
+    preferredPaymentMethod: AirwallexPaymentMethod = 'wallet',
+  ) => {
     const countryCode = cleanCountryCode(countryCodeOverride) || cleanCountryCode(user.billing_country_code)
     if (!countryCode) {
       setBillingCountryCode('')
       setCountryPromptPlan(plan)
+      setCountryPromptMethod(preferredPaymentMethod)
       return
     }
 
@@ -723,11 +759,12 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             country_code: countryCode,
             country_name: countryDisplayName(countryCode),
             country_hints: browserCountryHints(),
+            preferred_payment_method: preferredPaymentMethod,
           }),
       })
       const result = await res.json().catch(() => ({}))
       if (!res.ok || result.error || !result.ok) {
-        setBillingError(result.error ?? 'Paiement Airwallex indisponible pour le moment.')
+        setBillingError(result.error ?? 'Paiement indisponible pour le moment.')
         if (result.code === 'country_required') setCountryPromptPlan(plan)
         return
       }
@@ -735,14 +772,19 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         window.location.href = String(result.redirect_url)
         return
       }
+      if (result.unchanged) {
+        setBillingMessage(String(result.message ?? 'Cette formule est déjà liée à votre compte.'))
+        setTimeout(() => onRefresh?.(), 2000)
+        return
+      }
       if (result.updated) {
         setBillingMessage(`Upgrade vers ${plan.label} confirmé. Ava met à jour vos accès.`)
         setTimeout(() => onRefresh?.(), 2500)
         return
       }
-      setBillingError('Airwallex n’a pas renvoyé de lien de paiement.')
+      setBillingError('Le moyen de paiement n’a pas renvoyé de lien.')
     } catch {
-      setBillingError('Erreur réseau Airwallex. Réessayez dans un instant.')
+      setBillingError('Erreur réseau. Réessayez dans un instant.')
     } finally {
       setBillingLoading(false)
     }
@@ -752,12 +794,37 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     if (!countryPromptPlan) return
     const code = cleanCountryCode(billingCountryCode)
     if (!code) {
-      setBillingError('Sélectionnez votre pays pour continuer avec Airwallex.')
+      setBillingError('Sélectionnez votre pays pour continuer.')
       return
     }
     const plan = countryPromptPlan
+    const method = countryPromptMethod
     setCountryPromptPlan(null)
-    startAirwallexCheckout(plan, code)
+    startAirwallexCheckout(plan, code, method)
+  }
+
+  const handleManageSubscription = () => {
+    if (user.subscription_source === 'paddle') {
+      if (paddleRenewalStopped) {
+        openPaddlePortal()
+      } else {
+        cancelPaddleRenewal()
+      }
+      return
+    }
+    if (user.subscription_source === 'paypal') {
+      window.open('https://www.paypal.com/myaccount/autopay/', '_blank', 'noopener,noreferrer')
+      return
+    }
+    if (user.subscription_source === 'whop') {
+      window.open('https://whop.com/hub/', '_blank', 'noopener,noreferrer')
+      return
+    }
+    if (user.subscription_source === 'airwallex') {
+      setBillingMessage('Pour gérer cet abonnement, utilisez le lien reçu par e-mail après paiement ou contactez le support Ava.')
+      return
+    }
+    setBillingMessage('Contactez le support Ava pour gérer cet abonnement.')
   }
 
   useEffect(() => {
@@ -992,7 +1059,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                         Abonnement Actif
                       </span>
                       <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-white/5 border border-white/10 text-slate-400">
-                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'paypal' ? 'PayPal' : user.subscription_source === 'geniuspay' ? 'Carte bancaire' : user.subscription_source === 'mollie' ? 'Carte bancaire' : user.subscription_source === 'airwallex' ? 'Airwallex' : user.subscription_source === 'whop' ? 'Whop' : user.subscription_source === 'gumroad' ? 'Gumroad' : user.subscription_source === 'wise' ? 'Wise' : 'Mobile'}
+                        {subscriptionPaymentLabel(user)}
                       </span>
                     </div>
 
@@ -1014,7 +1081,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                     </div>
                   </div>
 
-                  {user.subscription_source === 'paddle' && (
+                  {['paddle', 'paypal', 'airwallex', 'whop'].includes(String(user.subscription_source ?? '')) && (
                     <div className="flex flex-col sm:flex-row flex-shrink-0 gap-3">
                       {nextPlan && !paddleRenewalStopped && (
                         <button
@@ -1031,17 +1098,19 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                       )}
                       <button
                         type="button"
-                        onClick={paddleRenewalStopped ? openPaddlePortal : cancelPaddleRenewal}
+                        onClick={handleManageSubscription}
                         disabled={billingLoading}
                         className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 shadow-xl"
                       >
-                        {paddleRenewalStopped ? <CreditCard size={14} /> : <AlertCircle size={14} />}
+                        {paddleRenewalStopped ? <CreditCard size={14} /> : user.subscription_source === 'paddle' ? <AlertCircle size={14} /> : <CreditCard size={14} />}
                         {billingLoading
                           ? 'Traitement...'
-                          : paddleRenewalStopped
-                            ? 'Voir les anciennes factures'
-                            : 'Arrêter le renouvellement Paddle'}
-                        {paddleRenewalStopped && <ExternalLink size={12} className="opacity-60" />}
+                          : user.subscription_source === 'paddle'
+                            ? paddleRenewalStopped
+                              ? 'Voir les anciennes factures'
+                              : 'Arrêter le renouvellement'
+                            : 'Gérer l’abonnement'}
+                        {user.subscription_source !== 'airwallex' && <ExternalLink size={12} className="opacity-60" />}
                       </button>
                     </div>
                   )}
@@ -1049,8 +1118,8 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 {user.subscription_source === 'paddle' && (
                   <p className="relative z-10 mt-5 text-[11px] leading-relaxed text-slate-400">
                     {paddleRenewalStopped
-                      ? 'Aucun nouveau prélèvement Paddle ne sera tenté. À la fin de cette période, choisissez une nouvelle formule via PayPal, carte bancaire, Airwallex ou Whop pour continuer.'
-                      : 'Paddle est conservé seulement pour les anciens abonnements. Vous pouvez arrêter le prochain prélèvement ici, puis renouveler ensuite via PayPal, carte bancaire, Airwallex ou Whop.'}
+                      ? 'Aucun nouveau prélèvement Paddle ne sera tenté. À la fin de cette période, choisissez une nouvelle formule via PayPal, carte bancaire, Apple Pay, Google Pay ou eWallet pour continuer.'
+                      : 'Paddle est conservé seulement pour les anciens abonnements. Vous pouvez arrêter le prochain prélèvement ici, puis renouveler ensuite via PayPal, carte bancaire, Apple Pay, Google Pay ou eWallet.'}
                   </p>
                 )}
               </motion.div>
@@ -1176,7 +1245,8 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   <h4 className="text-xs font-bold uppercase tracking-wider">Aide & Facturation</h4>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Les nouveaux paiements sont traités via PayPal, Mollie, Airwallex ou Whop. Ava active automatiquement l&apos;abonnement après confirmation, et Paddle reste disponible pour les abonnements déjà existants.
+                  Les nouveaux paiements sont disponibles via PayPal, carte bancaire, Apple Pay, Google Pay ou eWallet. Ava active automatiquement l&apos;abonnement après confirmation, et les anciens abonnements restent reconnus jusqu&apos;à leur date actuelle.
+                  {subscriptionManagementLabel(user) ? ` ${subscriptionManagementLabel(user)}` : ''}
                 </p>
                 <div className="pt-2">
                   <a 
@@ -1444,7 +1514,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         </div>
       )}
 
-      {/* Airwallex country modal */}
+      {/* Billing country modal */}
       <AnimatePresence>
         {countryPromptPlan && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
@@ -1468,7 +1538,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Pays de facturation</p>
                 <h3 className="text-2xl font-black text-white tracking-tight">{countryPromptPlan.label}</h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  Sélectionnez votre pays pour finaliser le paiement Airwallex et éviter les comptes sans adresse de facturation.
+                  Sélectionnez votre pays pour finaliser le paiement et éviter les comptes sans adresse de facturation.
                 </p>
               </div>
 
@@ -1510,7 +1580,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 disabled={billingLoading || !cleanCountryCode(billingCountryCode)}
                 className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-orange-400 px-5 text-sm font-black text-slate-950 transition-all hover:bg-orange-300 disabled:opacity-50"
               >
-                {billingLoading ? 'Ouverture...' : 'Continuer avec Airwallex'}
+                {billingLoading ? 'Ouverture...' : 'Continuer'}
                 <ExternalLink size={14} />
               </button>
             </motion.div>
@@ -1596,14 +1666,14 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-black text-white">Carte bancaire</p>
                       <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                        Paiement sécurisé par Mollie, avec 3D Secure si nécessaire.
+                        Visa ou Mastercard, avec validation sécurisée si nécessaire.
                       </p>
                     </div>
                   </div>
                   <div className="mt-4">
                     <button
                       type="button"
-                      onClick={startMollieCheckout}
+                      onClick={() => startWhopCheckout('card')}
                       disabled={billingLoading}
                       className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-5 text-sm font-black text-slate-950 transition-all hover:bg-emerald-300 disabled:opacity-60"
                     >
@@ -1619,17 +1689,17 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
                 <button
                   type="button"
-                  onClick={() => startAirwallexCheckout(paymentChoicePlan)}
+                  onClick={() => startAirwallexCheckout(paymentChoicePlan, undefined, 'apple_pay')}
                   disabled={billingLoading}
-                  className="group flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:border-orange-400/35 hover:bg-orange-500/10 disabled:opacity-60"
+                  className="group flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:border-white/30 hover:bg-white/[0.08] disabled:opacity-60"
                 >
-                  <div className="flex h-14 w-16 shrink-0 items-center justify-center rounded-2xl border border-orange-400/20 bg-orange-500/10 text-orange-200 shadow-sm">
-                    <CreditCard size={26} />
+                  <div className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black shadow-sm">
+                    <Image src="/payment/apple-pay.svg" alt="Apple Pay" width={80} height={32} className="h-full w-full object-contain" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-white">Airwallex</p>
+                    <p className="text-sm font-black text-white">Apple Pay</p>
                     <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                      Paiement carte international via Airwallex Billing Checkout.
+                      Paiement rapide avec votre wallet Apple.
                     </p>
                   </div>
                   <ExternalLink size={16} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
@@ -1637,17 +1707,35 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
                 <button
                   type="button"
-                  onClick={startWhopCheckout}
+                  onClick={() => startAirwallexCheckout(paymentChoicePlan, undefined, 'google_pay')}
                   disabled={billingLoading}
-                  className="group flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:border-rose-400/35 hover:bg-rose-500/10 disabled:opacity-60"
+                  className="group flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:border-white/30 hover:bg-white/[0.08] disabled:opacity-60"
                 >
-                  <div className="flex h-14 w-16 shrink-0 items-center justify-center rounded-2xl border border-rose-400/20 bg-rose-500/10 text-rose-200 shadow-sm">
-                    <CreditCard size={26} />
+                  <div className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black shadow-sm">
+                    <Image src="/payment/google-pay.svg" alt="Google Pay" width={80} height={32} className="h-full w-full object-contain" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-white">Whop</p>
+                    <p className="text-sm font-black text-white">Google Pay</p>
                     <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                      Paiement via Whop avec carte ou PayPal selon les options disponibles.
+                      Paiement rapide avec votre wallet Google.
+                    </p>
+                  </div>
+                  <ExternalLink size={16} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => startAirwallexCheckout(paymentChoicePlan, undefined, 'ewallet')}
+                  disabled={billingLoading}
+                  className="group flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:border-amber-300/35 hover:bg-amber-300/10 disabled:opacity-60"
+                >
+                  <div className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 shadow-sm">
+                    <Image src="/payment/ewallet.svg" alt="eWallet" width={80} height={32} className="h-full w-full object-contain" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-black text-white">eWallet</p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                      Paiement avec wallet compatible selon les options disponibles.
                     </p>
                   </div>
                   <ExternalLink size={16} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
