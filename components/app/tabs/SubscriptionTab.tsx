@@ -454,10 +454,10 @@ function subscriptionManagementLabel(user: UserData) {
   return ''
 }
 
-function airwallexMethodForUser(user: UserData): AirwallexPaymentMethod {
+function airwallexMethodForUser(user: UserData): AirwallexPaymentMethod | undefined {
   const method = paymentMethodFromEvent(user.airwallex_last_event_type)
   if (method === 'apple_pay' || method === 'google_pay') return method
-  return 'apple_pay'
+  return undefined
 }
 
 function daysUntil(raw: string | null | undefined) {
@@ -561,7 +561,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const [paymentChoicePlan, setPaymentChoicePlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [paypalPlan, setPaypalPlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [countryPromptPlan, setCountryPromptPlan] = useState<typeof ALL_PLANS[number] | null>(null)
-  const [countryPromptMethod, setCountryPromptMethod] = useState<AirwallexPaymentMethod>('apple_pay')
+  const [countryPromptMethod, setCountryPromptMethod] = useState<AirwallexPaymentMethod | undefined>(undefined)
   const [billingCountryCode, setBillingCountryCode] = useState(() => cleanCountryCode(user.billing_country_code))
   const paypalButtonRef = useRef<HTMLDivElement | null>(null)
 
@@ -688,7 +688,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         setBillingMessage(`Votre abonnement actuel vient de ${subscriptionPaymentLabel(user)}. Pour renouveler ou changer de formule avec ce même moyen de paiement, contactez le support Ava afin d’éviter un double abonnement.`)
         return
       }
-      setPaymentChoicePlan(plan)
+      startAirwallexCheckout(plan)
       return
     }
 
@@ -745,7 +745,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const startAirwallexCheckout = async (
     plan: typeof ALL_PLANS[number],
     countryCodeOverride?: string,
-    preferredPaymentMethod: AirwallexPaymentMethod = 'apple_pay',
+    preferredPaymentMethod?: AirwallexPaymentMethod,
   ) => {
     const countryCode = cleanCountryCode(countryCodeOverride) || cleanCountryCode(user.billing_country_code)
     if (!countryCode) {
@@ -774,7 +774,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             country_code: countryCode,
             country_name: countryDisplayName(countryCode),
             country_hints: browserCountryHints(),
-            preferred_payment_method: preferredPaymentMethod,
+            ...(preferredPaymentMethod ? { preferred_payment_method: preferredPaymentMethod } : {}),
           }),
       })
       const result = await res.json().catch(() => ({}))
