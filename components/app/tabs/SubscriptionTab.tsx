@@ -276,6 +276,8 @@ function hasAnyPriorSubscription(user: UserData) {
     !!user.geniuspay_subscription_uuid ||
     !!user.mollie_subscription_id ||
     !!user.airwallex_subscription_id ||
+    !!user.whop_membership_id ||
+    !!user.whop_payment_id ||
     (!!source && source !== 'none') ||
     (!!tier && tier !== 'free')
 }
@@ -537,6 +539,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     user.subscription_source !== 'geniuspay' &&
     user.subscription_source !== 'mollie' &&
     user.subscription_source !== 'airwallex' &&
+    user.subscription_source !== 'whop' &&
     user.subscription_source !== 'wise'
 
   const currentPlan = normalizePlanKey(user.subscription_plan, custom)
@@ -614,7 +617,11 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     }
 
     if (isPlanCheckoutReady(plan)) {
-      startAirwallexCheckout(plan)
+      if (user.subscription_source === 'airwallex' && user.airwallex_subscription_id && activePlanKey && activePlanKey !== plan.key) {
+        startAirwallexCheckout(plan)
+        return
+      }
+      setPaymentChoicePlan(plan)
       return
     }
 
@@ -653,6 +660,37 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
       setBillingError('Mollie n’a pas renvoyé de lien de paiement.')
     } catch {
       setBillingError('Erreur réseau Mollie. Réessayez dans un instant.')
+    } finally {
+      setBillingLoading(false)
+    }
+  }
+
+  const startWhopCheckout = async () => {
+    if (!paymentChoicePlan) return
+    setBillingLoading(true)
+    setBillingError('')
+    setBillingMessage('')
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/whop-subscription`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({
+          user_id: user.id,
+          target_plan: paymentChoicePlan.key,
+        }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok || result.error || !result.ok) {
+        setBillingError(result.error ?? 'Paiement Whop indisponible pour le moment.')
+        return
+      }
+      if (result.redirect_url) {
+        window.location.href = String(result.redirect_url)
+        return
+      }
+      setBillingError('Whop n’a pas renvoyé de lien de paiement.')
+    } catch {
+      setBillingError('Erreur réseau Whop. Réessayez dans un instant.')
     } finally {
       setBillingLoading(false)
     }
@@ -902,10 +940,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             <AlertCircle size={17} className={legacyRenewalUrgent ? 'text-amber-300 mt-0.5 flex-shrink-0' : 'text-orange-300 mt-0.5 flex-shrink-0'} />
             <div>
               <p className={`text-sm font-black ${legacyRenewalUrgent ? 'text-amber-200' : 'text-orange-200'}`}>
-                Renouvellement à préparer via Airwallex
+                Renouvellement à préparer
               </p>
               <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                Votre accès {legacyRenewalSourceLabel} reste actif jusqu’à sa date actuelle. Pour éviter une coupure, renouvelez avec Airwallex sur {legacyRenewalPlan.label}; aucun essai gratuit ne sera appliqué.
+                Votre accès {legacyRenewalSourceLabel} reste actif jusqu’à sa date actuelle. Pour éviter une coupure, renouvelez sur {legacyRenewalPlan.label}; aucun essai gratuit ne sera appliqué.
                 {legacyRenewalDaysLeft !== null && legacyRenewalDaysLeft >= 0 ? ` Il reste environ ${legacyRenewalDaysLeft} jour${legacyRenewalDaysLeft > 1 ? 's' : ''}.` : ''}
               </p>
             </div>
@@ -916,7 +954,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             disabled={billingLoading}
             className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-orange-400 px-5 text-sm font-black text-slate-950 transition-all hover:bg-orange-300 disabled:opacity-60"
           >
-            Renouveler via Airwallex
+            Renouveler
             <ExternalLink size={14} />
           </button>
         </motion.div>
@@ -954,7 +992,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                         Abonnement Actif
                       </span>
                       <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-white/5 border border-white/10 text-slate-400">
-                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'paypal' ? 'PayPal' : user.subscription_source === 'geniuspay' ? 'Carte bancaire' : user.subscription_source === 'mollie' ? 'Carte bancaire' : user.subscription_source === 'airwallex' ? 'Airwallex' : user.subscription_source === 'gumroad' ? 'Gumroad' : user.subscription_source === 'wise' ? 'Wise' : 'Mobile'}
+                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'paypal' ? 'PayPal' : user.subscription_source === 'geniuspay' ? 'Carte bancaire' : user.subscription_source === 'mollie' ? 'Carte bancaire' : user.subscription_source === 'airwallex' ? 'Airwallex' : user.subscription_source === 'whop' ? 'Whop' : user.subscription_source === 'gumroad' ? 'Gumroad' : user.subscription_source === 'wise' ? 'Wise' : 'Mobile'}
                       </span>
                     </div>
 
@@ -1011,8 +1049,8 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 {user.subscription_source === 'paddle' && (
                   <p className="relative z-10 mt-5 text-[11px] leading-relaxed text-slate-400">
                     {paddleRenewalStopped
-                      ? 'Aucun nouveau prélèvement Paddle ne sera tenté. À la fin de cette période, choisissez une nouvelle formule via PayPal, carte bancaire ou Airwallex pour continuer.'
-                      : 'Paddle est conservé seulement pour les anciens abonnements. Vous pouvez arrêter le prochain prélèvement ici, puis renouveler ensuite via PayPal, carte bancaire ou Airwallex.'}
+                      ? 'Aucun nouveau prélèvement Paddle ne sera tenté. À la fin de cette période, choisissez une nouvelle formule via PayPal, carte bancaire, Airwallex ou Whop pour continuer.'
+                      : 'Paddle est conservé seulement pour les anciens abonnements. Vous pouvez arrêter le prochain prélèvement ici, puis renouveler ensuite via PayPal, carte bancaire, Airwallex ou Whop.'}
                   </p>
                 )}
               </motion.div>
@@ -1138,7 +1176,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   <h4 className="text-xs font-bold uppercase tracking-wider">Aide & Facturation</h4>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Les nouveaux paiements sont traités via PayPal, Mollie ou Airwallex. Ava active automatiquement l&apos;abonnement après confirmation, et Paddle reste disponible pour les abonnements déjà existants.
+                  Les nouveaux paiements sont traités via PayPal, Mollie, Airwallex ou Whop. Ava active automatiquement l&apos;abonnement après confirmation, et Paddle reste disponible pour les abonnements déjà existants.
                 </p>
                 <div className="pt-2">
                   <a 
@@ -1592,6 +1630,24 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                     <p className="text-sm font-black text-white">Airwallex</p>
                     <p className="mt-1 text-xs leading-relaxed text-slate-400">
                       Paiement carte international via Airwallex Billing Checkout.
+                    </p>
+                  </div>
+                  <ExternalLink size={16} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={startWhopCheckout}
+                  disabled={billingLoading}
+                  className="group flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:border-rose-400/35 hover:bg-rose-500/10 disabled:opacity-60"
+                >
+                  <div className="flex h-14 w-16 shrink-0 items-center justify-center rounded-2xl border border-rose-400/20 bg-rose-500/10 text-rose-200 shadow-sm">
+                    <CreditCard size={26} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-black text-white">Whop</p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                      Paiement via Whop avec carte ou PayPal selon les options disponibles.
                     </p>
                   </div>
                   <ExternalLink size={16} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
