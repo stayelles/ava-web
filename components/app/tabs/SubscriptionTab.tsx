@@ -688,7 +688,9 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         setBillingMessage(`Votre abonnement actuel vient de ${subscriptionPaymentLabel(user)}. Pour renouveler ou changer de formule avec ce même moyen de paiement, contactez le support Ava afin d’éviter un double abonnement.`)
         return
       }
-      startAirwallexCheckout(plan)
+      // New subscriptions now go through Whop while Airwallex stays available
+      // for existing Airwallex accounts and future reactivation.
+      startWhopCheckout('card', plan)
       return
     }
 
