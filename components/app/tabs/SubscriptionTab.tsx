@@ -75,8 +75,6 @@ const ALL_PLANS = [
       'Limites prudentes par défaut',
       'Automatisations essentielles',
       'Support standard',
-      'Clé API Gemini personnelle',
-      'Support standard',
     ]
   },
   {
@@ -132,7 +130,6 @@ const ALL_PLANS = [
       'Support prioritaire',
       'Ava Desktop inclus',
       'Clé API Gemini personnelle',
-      'Support prioritaire',
     ]
   },
   {
@@ -648,6 +645,107 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     return canUsePlanTrial(plan, user)
       ? `Essai gratuit ${planTrialDays(plan)} jour`
       : CUSTOM_PLAN_CTA[plan.key] ?? 'S’abonner'
+  }
+
+  const renderPlanCard = (plan: typeof ALL_PLANS[number], index: number) => {
+    const isActive = plan.key === activePlanKey
+    const isSelected = plan.key === selectedPlanKey
+    const isRecommended = plan.key === 'custom_pro'
+    const trialAvailable = canUsePlanTrial(plan, user)
+    const features = Array.from(new Set(plan.features)).slice(0, 5)
+    const extraFeatures = Math.max(0, Array.from(new Set(plan.features)).length - features.length)
+    const cardBorder = isActive
+      ? 'border-emerald-400/35'
+      : isSelected
+        ? 'border-rose-300/55'
+      : isRecommended
+        ? 'border-rose-400/45'
+        : 'border-white/10'
+
+    return (
+      <motion.div
+        key={plan.key}
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.06 * (index + 1), duration: 0.35 }}
+        className={`relative flex min-h-[410px] flex-col rounded-2xl border ${cardBorder} bg-white/[0.035] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-rose-400/35`}
+      >
+        {(plan.badge || isActive || isRecommended) && (
+          <div className="absolute -top-3 left-1/2 flex -translate-x-1/2 gap-2">
+            {isActive ? (
+              <span className="rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3 py-1 text-[10px] font-bold uppercase text-emerald-300">
+                Actif
+              </span>
+            ) : (
+              <span className="rounded-full border border-rose-400/30 bg-rose-500 px-3 py-1 text-[10px] font-bold uppercase text-white shadow-lg shadow-rose-500/25">
+                {isRecommended ? 'Populaire' : plan.badge}
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-1 flex-col">
+          <div className="space-y-3">
+            <div className="text-center">
+              <h3 className="text-lg font-black text-white">{plan.label.replace(/^Custom\s+/i, '')}</h3>
+              <p className="mt-1 text-xs font-medium text-slate-500">{plan.description}</p>
+            </div>
+
+            <div className="flex items-end justify-center gap-1 pt-2">
+              <span className="text-4xl font-black text-white">{plan.price}</span>
+              <span className="pb-1 text-xs font-semibold text-slate-500">{plan.per}</span>
+            </div>
+
+            <div className="flex min-h-[58px] flex-col items-center justify-center gap-2">
+              {trialAvailable && (
+                <span className="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase text-emerald-300">
+                  {planTrialDays(plan)} jour gratuit
+                </span>
+              )}
+              {plan.capital && (
+                <span className="rounded-full border border-white/10 bg-slate-950/50 px-3 py-1 text-center text-[10px] font-bold uppercase text-slate-400">
+                  {plan.capital.replace('Plage recommandée : ', '')}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="my-5 h-px w-full bg-white/[0.08]" />
+
+          <div className="flex-1 space-y-3">
+            {features.map((feat) => (
+              <div key={feat} className="flex items-start gap-3">
+                <Check size={15} className="mt-0.5 shrink-0 text-rose-400" />
+                <span className="text-sm font-medium leading-snug text-slate-300">{feat}</span>
+              </div>
+            ))}
+            {extraFeatures > 0 && (
+              <p className="pl-7 text-xs font-semibold text-slate-500">+{extraFeatures} autres avantages</p>
+            )}
+          </div>
+
+          <div className="mt-6">
+            {isActive ? (
+              <div className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-3 text-center text-sm font-bold text-slate-400">
+                Votre formule active
+              </div>
+            ) : (
+              <button
+                onClick={() => startCheckout(plan)}
+                disabled={!isPlanCheckoutReady(plan) || billingLoading}
+                className={`w-full rounded-xl py-3 text-sm font-black transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 ${
+                  isRecommended || plan.key === 'custom_ultra' || plan.key === 'custom_max'
+                    ? 'bg-rose-500 text-white shadow-xl shadow-rose-500/25 hover:bg-rose-400'
+                    : 'border border-white/10 bg-slate-950/60 text-white hover:border-rose-400/35 hover:bg-white/[0.06]'
+                }`}
+              >
+                {billingLoading ? 'Activation...' : checkoutLabel(plan)}
+              </button>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    )
   }
 
   const startCheckout = (plan: typeof ALL_PLANS[number]) => {
@@ -1266,7 +1364,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   <h4 className="text-xs font-bold uppercase tracking-wider">Aide & Facturation</h4>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Les nouveaux paiements sont disponibles via PayPal, carte bancaire, Apple Pay ou Google Pay. Ava active automatiquement l&apos;abonnement après confirmation, et les anciens abonnements restent reconnus jusqu&apos;à leur date actuelle.
+                  Les nouveaux paiements passent par le checkout sécurisé Ava. Ava active automatiquement l&apos;abonnement après confirmation, et les anciens abonnements restent reconnus jusqu&apos;à leur date actuelle.
                   {subscriptionManagementLabel(user) ? ` ${subscriptionManagementLabel(user)}` : ''}
                 </p>
                 <div className="pt-2">
@@ -1289,244 +1387,30 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
           {/* Pricing Plans Grid for Subscribed Users */}
           <div className="space-y-8">
-            <div className="space-y-2">
-              <h3 className="text-xl font-bold text-white tracking-tight">Toutes les formules disponibles</h3>
+            <div className="mx-auto max-w-2xl space-y-2 text-center">
+              <h3 className="text-2xl font-black text-white">Toutes les formules disponibles</h3>
               <p className="text-sm text-slate-400">
                 Découvrez nos formules et changez d&apos;offre ou abonnez-vous à tout moment.
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch max-w-7xl mx-auto w-full">
-              {ALL_PLANS.filter(p => p.key !== 'pro_starter').map((plan, index) => (
-                <motion.div
-                  key={plan.key}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.08 * (index + 1) }}
-                  className="rounded-3xl overflow-hidden flex flex-col justify-between p-7 relative transition-all duration-300 group hover:translate-y-[-4px]"
-                  style={{
-                    background: plan.bg,
-                    border: plan.key === activePlanKey 
-                      ? `2px solid ${plan.accentColor}` 
-                      : `1px solid ${plan.border}`,
-                    boxShadow: plan.key === activePlanKey
-                      ? `0 0 25px -5px ${plan.accentColor}30`
-                      : plan.glow !== 'none' ? `0 15px 40px -10px ${plan.glow}` : 'none',
-                  }}
-                >
-                  {/* Popular/Active badge */}
-                  <div className="absolute top-5 right-5 flex gap-2">
-                    {plan.key === activePlanKey && (
-                      <span className="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border bg-emerald-500/10 border-emerald-500/20 text-emerald-400">
-                        Actif
-                      </span>
-                    )}
-                    {plan.badge && plan.key !== activePlanKey && (
-                      <span 
-                        className="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border"
-                        style={{
-                          background: `${plan.accentColor}15`,
-                          borderColor: `${plan.accentColor}30`,
-                          color: '#f43f5e'
-                        }}
-                      >
-                        {plan.badge}
-                      </span>
-                    )}
-                  </div>
-
-                  <div>
-                    {/* Plan Name */}
-                    <span 
-                      className="text-xs font-black uppercase tracking-widest"
-                      style={{ color: plan.accentColor }}
-                    >
-                      {plan.label}
-                    </span>
-                    
-                    {/* Pricing Display */}
-                    <div className="flex items-baseline gap-1 mt-4">
-                      <span className="text-4xl font-black text-white tracking-tight">{plan.price}</span>
-                      <span className="text-xs text-slate-500 font-semibold">{plan.per}</span>
-                    </div>
-                    
-                    {/* Description */}
-                    <p className="text-xs text-slate-400 mt-5 leading-relaxed font-medium">
-                      {plan.description}
-                    </p>
-
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      {plan.capital && (
-                        <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-300">
-                          {plan.capital}
-                        </span>
-                      )}
-                      {canUsePlanTrial(plan, user) && (
-                        <span className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
-                          {planTrialDays(plan)} jour gratuit
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="w-full h-px bg-white/5 my-6" />
-
-                    {/* List of features */}
-                    <div className="space-y-4">
-                      {plan.features.map((feat) => (
-                        <div key={feat} className="flex items-start gap-3">
-                          <Check size={14} className="mt-0.5 flex-shrink-0" style={{ color: plan.accentColor }} />
-                          <span className="text-xs text-slate-300 leading-normal font-medium">{feat}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Subscribing CTA Button */}
-                  <div className="mt-8 pt-4">
-                    {plan.key === activePlanKey ? (
-                      <div className="w-full py-3.5 rounded-2xl font-bold text-sm text-center border border-white/5 bg-white/5 text-slate-500">
-                        Votre formule active
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          startCheckout(plan)
-                        }}
-                        disabled={!isPlanCheckoutReady(plan) || billingLoading}
-                        className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 cursor-pointer"
-                        style={{
-                          background: plan.btnBg,
-                          color: plan.btnColor,
-                          boxShadow: plan.popular ? '0 5px 25px rgba(225,29,72,0.3)' : 'none',
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = plan.btnHoverBg as string
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = plan.btnBg as string
-                        }}
-                      >
-                        {checkoutLabel(plan)}
-                      </button>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+            <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+              {ALL_PLANS.filter(p => p.key !== 'pro_starter').map((plan, index) => renderPlanCard(plan, index))}
             </div>
           </div>
         </div>
       ) : (
-        // Unsubscribed Pricing Cards view (Gorgeous spacious 3-column layout)
-        <div className="space-y-12">
-          
-          {/* Main Grid of Plans */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch max-w-7xl mx-auto w-full">
-            {ALL_PLANS.filter(p => p.key !== 'pro_starter').map((plan, index) => (
-              <motion.div
-                key={plan.key}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.08 * (index + 1) }}
-                className="rounded-3xl overflow-hidden flex flex-col justify-between p-7 relative transition-all duration-300 group hover:translate-y-[-4px]"
-                style={{
-                  background: plan.bg,
-                  border: plan.key === selectedPlanKey ? `2px solid ${plan.accentColor}` : `1px solid ${plan.border}`,
-                  boxShadow: plan.key === selectedPlanKey
-                    ? `0 0 28px -5px ${plan.accentColor}45`
-                    : plan.glow !== 'none' ? `0 15px 40px -10px ${plan.glow}` : 'none',
-                }}
-              >
-                {/* Popular badge */}
-                {plan.badge && (
-                  <div className="absolute top-5 right-5">
-                    <span 
-                      className="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border"
-                      style={{
-                        background: `${plan.accentColor}15`,
-                        borderColor: `${plan.accentColor}30`,
-                        color: '#f43f5e'
-                      }}
-                    >
-                      {plan.badge}
-                    </span>
-                  </div>
-                )}
+        <div className="space-y-10">
+          <div className="mx-auto max-w-2xl text-center">
+            <p className="text-xs font-bold uppercase text-rose-400">Plans Ava Custom</p>
+            <h3 className="mt-3 text-3xl font-black text-white">Tarifs simples et transparents</h3>
+            <p className="mt-3 text-sm text-slate-400">
+              Choisissez le niveau adapté à votre capital et à votre rythme d&apos;utilisation.
+            </p>
+          </div>
 
-                <div>
-                  {/* Plan Name */}
-                  <span 
-                    className="text-xs font-black uppercase tracking-widest"
-                    style={{ color: plan.accentColor }}
-                  >
-                    {plan.label}
-                  </span>
-                  
-                  {/* Pricing Display */}
-                  <div className="flex items-baseline gap-1 mt-4">
-                    <span className="text-4xl font-black text-white tracking-tight">{plan.price}</span>
-                    <span className="text-xs text-slate-500 font-semibold">{plan.per}</span>
-                  </div>
-                  
-                  {/* Description */}
-                  <p className="text-xs text-slate-400 mt-5 leading-relaxed font-medium">
-                    {plan.description}
-                  </p>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {plan.capital && (
-                      <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-300">
-                        {plan.capital}
-                      </span>
-                    )}
-                    {canUsePlanTrial(plan, user) && (
-                      <span className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
-                        {planTrialDays(plan)} jour gratuit
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="w-full h-px bg-white/5 my-6" />
-
-                  {/* List of features */}
-                  <div className="space-y-4">
-                    {plan.features.map((feat) => (
-                      <div key={feat} className="flex items-start gap-3">
-                        <Check size={14} className="mt-0.5 flex-shrink-0" style={{ color: plan.accentColor }} />
-                        <span className="text-xs text-slate-300 leading-normal font-medium">{feat}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Subscribing CTA Button */}
-                <div className="mt-8 pt-4">
-                  <button
-                    onClick={() => startCheckout(plan)}
-                    disabled={!isPlanCheckoutReady(plan) || billingLoading}
-                    className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 cursor-pointer"
-                    style={{
-                      background: plan.btnBg,
-                      color: plan.btnColor,
-                      boxShadow: plan.popular ? '0 5px 25px rgba(225,29,72,0.3)' : 'none',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (plan.popular) {
-                        e.currentTarget.style.background = plan.btnHoverBg as string
-                      } else {
-                        e.currentTarget.style.background = plan.btnHoverBg as string
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = plan.btnBg as string
-                    }}
-                  >
-                    {billingLoading
-                      ? 'Activation...'
-                      : checkoutLabel(plan)}
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+          <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+            {ALL_PLANS.filter(p => p.key !== 'pro_starter').map((plan, index) => renderPlanCard(plan, index))}
           </div>
 
           <p className="text-center text-[10px] text-slate-500 max-w-sm mx-auto leading-relaxed mt-4">
