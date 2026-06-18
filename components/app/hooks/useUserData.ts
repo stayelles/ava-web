@@ -236,19 +236,21 @@ export function useUserData() {
     } catch {}
   }, [user])
 
-  const updatePin = useCallback(async (newPin: string): Promise<{ ok: boolean; error?: string }> => {
+  const updatePin = useCallback(async (currentPin: string, newPin: string): Promise<{ ok: boolean; error?: string }> => {
     if (!user) return { ok: false, error: 'Non connecté' }
+    if (!/^\d{4,6}$/.test(currentPin)) return { ok: false, error: 'PIN actuel incorrect' }
     if (!/^\d{4,6}$/.test(newPin)) return { ok: false, error: 'Le PIN doit contenir 4 à 6 chiffres' }
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${user.id}`, {
-        method: 'PATCH',
-        headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
-        body: JSON.stringify({ pin: newPin }),
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/update-pin`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({ user_id: user.id, current_pin: currentPin, new_pin: newPin }),
       })
-      if (res.ok || res.status === 204) {
+      const result = await res.json().catch(() => ({}))
+      if (res.ok && !result.error) {
         return { ok: true }
       }
-      return { ok: false, error: 'Erreur lors de la mise à jour' }
+      return { ok: false, error: result.error ?? 'Erreur lors de la mise à jour' }
     } catch {
       return { ok: false, error: 'Erreur réseau. Réessayez.' }
     }

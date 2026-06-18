@@ -8,11 +8,11 @@ import { isPro, totalCredits } from '../types'
 
 interface Props {
   user: UserData
-  onUpdatePin: (newPin: string) => Promise<{ ok: boolean; error?: string }>
-  onRefresh: () => void
+  onUpdatePin: (currentPin: string, newPin: string) => Promise<{ ok: boolean; error?: string }>
 }
 
-export function ProfileTab({ user, onUpdatePin, onRefresh }: Props) {
+export function ProfileTab({ user, onUpdatePin }: Props) {
+  const [currentPin, setCurrentPin] = useState('')
   const [newPin, setNewPin] = useState('')
   const [confirmPin, setConfirmPin] = useState('')
   const [pinStatus, setPinStatus] = useState<{ ok: boolean; msg: string } | null>(null)
@@ -22,6 +22,10 @@ export function ProfileTab({ user, onUpdatePin, onRefresh }: Props) {
   const credits = totalCredits(user)
 
   const handlePinSave = async () => {
+    if (!/^\d{4,6}$/.test(currentPin)) {
+      setPinStatus({ ok: false, msg: 'PIN actuel incorrect' })
+      return
+    }
     if (newPin !== confirmPin) {
       setPinStatus({ ok: false, msg: 'Les PIN ne correspondent pas' })
       return
@@ -31,10 +35,11 @@ export function ProfileTab({ user, onUpdatePin, onRefresh }: Props) {
       return
     }
     setSaving(true)
-    const result = await onUpdatePin(newPin)
+    const result = await onUpdatePin(currentPin, newPin)
     setSaving(false)
     setPinStatus({ ok: result.ok, msg: result.ok ? 'PIN mis à jour !' : (result.error ?? 'Erreur') })
     if (result.ok) {
+      setCurrentPin('')
       setNewPin('')
       setConfirmPin('')
     }
@@ -117,6 +122,7 @@ export function ProfileTab({ user, onUpdatePin, onRefresh }: Props) {
         </div>
         <div className="px-4 py-4 space-y-3">
           {[
+            { label: 'PIN actuel', value: currentPin, setter: setCurrentPin, placeholder: '••••' },
             { label: 'Nouveau PIN', value: newPin, setter: setNewPin, placeholder: '••••' },
             { label: 'Confirmer le PIN', value: confirmPin, setter: setConfirmPin, placeholder: '••••' },
           ].map((f) => (
@@ -155,14 +161,14 @@ export function ProfileTab({ user, onUpdatePin, onRefresh }: Props) {
 
           <motion.button
             onClick={handlePinSave}
-            disabled={saving || !newPin || !confirmPin}
+            disabled={saving || !currentPin || !newPin || !confirmPin}
             whileHover={saving ? {} : { scale: 1.02 }}
             whileTap={saving ? {} : { scale: 0.98 }}
             className="w-full py-3 rounded-xl font-bold text-sm"
             style={{
-              background: saving || !newPin || !confirmPin ? 'rgba(225,29,72,0.3)' : '#e11d48',
+              background: saving || !currentPin || !newPin || !confirmPin ? 'rgba(225,29,72,0.3)' : '#e11d48',
               color: '#fff',
-              cursor: saving || !newPin || !confirmPin ? 'not-allowed' : 'pointer',
+              cursor: saving || !currentPin || !newPin || !confirmPin ? 'not-allowed' : 'pointer',
             }}
           >
             {saving ? (

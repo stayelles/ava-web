@@ -16,7 +16,7 @@ interface Props {
   user: UserData
   permissions: AvaPermissions
   onLogout: () => void
-  onUpdatePin: (pin: string) => Promise<{ ok: boolean; error?: string }>
+  onUpdatePin: (currentPin: string, newPin: string) => Promise<{ ok: boolean; error?: string }>
   onRefresh: () => void
   onDecrementCredits: () => Promise<void>
   onTrackVoiceTime: (seconds: number) => Promise<void>
@@ -138,7 +138,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
             />
           )}
           {activeTab === 'profile' && (
-            <ProfileTab user={user} onUpdatePin={onUpdatePin} onRefresh={onRefresh} />
+            <ProfileTab user={user} onUpdatePin={onUpdatePin} />
           )}
           {activeTab === 'subscription' && (
             <SubscriptionTab user={user} onRefresh={onRefresh} onGoToSettings={handleGoToSettings} />
