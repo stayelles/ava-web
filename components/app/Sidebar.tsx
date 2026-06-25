@@ -18,7 +18,7 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
 
 const AVA_DESKTOP_MAC_VERSION = '1.2.26'
 const AVA_DESKTOP_WINDOWS_VERSION = '1.2.26'
-const AVA_BRIDGE_EA_VERSION = '1.34'
+const AVA_BRIDGE_EA_VERSION = '1.41'
 const DOWNLOAD_BASE_URL = 'https://call-ava.com/downloads'
 const DESKTOP_DOWNLOADS = [
   {
@@ -40,6 +40,20 @@ const DESKTOP_DOWNLOADS = [
     icon: FaWindows,
   },
 ]
+const BRIDGE_DOWNLOADS = [
+  {
+    title: 'AvaBridgeEA 1.41',
+    badge: 'Recommandé',
+    subtitle: 'Ava Volatility Boom/Crash et Ava Trading moderne',
+    href: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.41.ex5`,
+  },
+  {
+    title: 'AvaBridgeEA 1.34',
+    badge: 'Classic',
+    subtitle: 'Compatibilité Gold Classic 1.2.5',
+    href: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.34.ex5`,
+  },
+]
 
 interface Props {
   activeTab: AppTab
@@ -50,6 +64,7 @@ interface Props {
 
 export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) {
   const [showDownloads, setShowDownloads] = useState(false)
+  const [showBridgeDownloads, setShowBridgeDownloads] = useState(false)
 
   return (
     <>
@@ -131,10 +146,9 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
               <Download size={17} style={{ color: '#f43f5e', flexShrink: 0 }} />
               <span className="text-sm font-semibold">Télécharger Ava</span>
             </button>
-            <a
-              href={`${DOWNLOAD_BASE_URL}/AvaBridgeEA-${AVA_BRIDGE_EA_VERSION}.ex5`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => setShowBridgeDownloads(true)}
               className="relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors group"
               style={{
                 background: 'rgba(59,130,246,0.08)',
@@ -144,11 +158,11 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
             >
               <Terminal size={17} style={{ color: '#93c5fd', flexShrink: 0 }} />
               <span className="text-sm font-semibold">Connecteur Desktop</span>
-            </a>
+            </button>
             <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Compatibilité</p>
               <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
-                Ava Desktop Windows {AVA_DESKTOP_WINDOWS_VERSION} / Mac {AVA_DESKTOP_MAC_VERSION} recommande le connecteur {AVA_BRIDGE_EA_VERSION}.
+                Ava Desktop Windows {AVA_DESKTOP_WINDOWS_VERSION} / Mac {AVA_DESKTOP_MAC_VERSION} recommande AvaBridgeEA {AVA_BRIDGE_EA_VERSION}. Gold Classic 1.2.5 peut utiliser 1.34.
               </p>
             </div>
           </div>
@@ -220,6 +234,62 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-black text-white">{title}</span>
+                    <span className="block truncate text-xs font-semibold text-slate-500">{subtitle}</span>
+                  </span>
+                  <Download size={15} className="text-slate-500" />
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBridgeDownloads && (
+        <div
+          className="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/75 px-6 backdrop-blur-sm lg:flex"
+          onClick={() => setShowBridgeDownloads(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#070b16] p-5 shadow-2xl shadow-black/40"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-300">MT5 Bridge</p>
+                <h2 className="mt-1 text-lg font-black text-white">Télécharger AvaBridgeEA</h2>
+                <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
+                  Choisissez la version à installer manuellement dans MetaTrader 5 si l'installation automatique ne suffit pas.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBridgeDownloads(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-slate-400 transition-colors hover:text-white"
+                aria-label="Fermer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              {BRIDGE_DOWNLOADS.map(({ title, badge, subtitle, href }) => (
+                <a
+                  key={title}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 transition-colors hover:border-sky-300/35 hover:bg-white/[0.06]"
+                >
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-sky-300">
+                    <Terminal size={18} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-2">
+                      <span className="block text-sm font-black text-white">{title}</span>
+                      <span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-sky-200">
+                        {badge}
+                      </span>
+                    </span>
                     <span className="block truncate text-xs font-semibold text-slate-500">{subtitle}</span>
                   </span>
                   <Download size={15} className="text-slate-500" />

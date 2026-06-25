@@ -34,7 +34,8 @@ When changing desktop download links, keep filenames versioned so older installe
 - `Ava-1.2.21-arm64.dmg`
 - `Ava-1.2.21-x64.dmg`
 - `AvaSetup-1.2.21.exe`
-- `AvaBridgeEA-1.34.ex5`
+- `AvaBridgeEA-1.41.ex5` (recommended for Ava Volatility Boom/Crash and modern Ava Trading)
+- `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
 If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before publishing: update Desktop required bridge version, web `AVA_BRIDGE_EA_VERSION`, download filenames, release assets, and docs together. Never ship a changed `.ex5` under an old bridge version.
 
