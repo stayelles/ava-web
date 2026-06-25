@@ -177,6 +177,7 @@ function Navbar() {
     { name: tl(T.nav.features), link: "#features" },
     { name: tl(T.nav.pricing),  link: "#pricing" },
     { name: tl(T.nav.download), link: "#download" },
+    { name: "Affiliation",      link: "/affiliation" },
     { name: tl(T.nav.blog),     link: "/blog" },
   ];
 

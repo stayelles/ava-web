@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, 
   Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock,
-  CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight, X
+  CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight, X, Ticket
 } from 'lucide-react'
 import {
   PADDLE_PRICE_PRO_STARTER,
@@ -30,6 +30,15 @@ import type { UserData } from '../types'
 type AirwallexPaymentMethod = 'apple_pay' | 'google_pay'
 type WhopPaymentMethod = 'card'
 type PaymentMethod = AirwallexPaymentMethod | WhopPaymentMethod | 'paypal'
+
+type ReferralEntitlement = {
+  id: string
+  plan_key: string
+  status: string
+  starts_at: string
+  expires_at: string
+  source_coupon_id: string
+}
 
 declare global {
   interface Window {
@@ -560,15 +569,42 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const [countryPromptPlan, setCountryPromptPlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [countryPromptMethod, setCountryPromptMethod] = useState<AirwallexPaymentMethod | undefined>(undefined)
   const [billingCountryCode, setBillingCountryCode] = useState(() => cleanCountryCode(user.billing_country_code))
+  const [referralEntitlements, setReferralEntitlements] = useState<ReferralEntitlement[]>([])
   const paypalButtonRef = useRef<HTMLDivElement | null>(null)
 
   const pro = isPro(user)
   const custom = isCustomPlan(user)
+  const activeReferralEntitlement = referralEntitlements.find(entitlement =>
+    entitlement.status === 'active' && new Date(entitlement.expires_at) > new Date()
+  ) ?? null
+  const referralPlanKey = normalizePlanKey(activeReferralEntitlement?.plan_key ?? null, true)
+  const referralPlanLabel = referralPlanKey ? planLabels[referralPlanKey] ?? 'Accès Affiliation' : null
+
   useEffect(() => {
     if (refreshedOnce) return
     setRefreshedOnce(true)
     onRefresh?.()
   }, [onRefresh, refreshedOnce])
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadReferralEntitlements() {
+      try {
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/referral-rewards`, {
+          method: 'POST',
+          headers: SUPABASE_HEADERS,
+          body: JSON.stringify({ user_id: user.id }),
+        })
+        const data = await res.json()
+        if (!res.ok || data.error) return
+        if (!cancelled) setReferralEntitlements(Array.isArray(data.entitlements) ? data.entitlements : [])
+      } catch {}
+    }
+    loadReferralEntitlements()
+    return () => {
+      cancelled = true
+    }
+  }, [user.id])
 
   const hasMobileSubscription = !!user.subscription_tier &&
     user.subscription_tier !== 'free' &&
@@ -581,10 +617,11 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     user.subscription_source !== 'whop' &&
     user.subscription_source !== 'wise'
 
-  const currentPlan = normalizePlanKey(user.subscription_plan, custom)
+  const currentPlan = normalizePlanKey(user.subscription_plan, custom) ?? referralPlanKey
   const activePlanLabel = currentPlan ? planLabels[currentPlan] ?? null : null
 
-  const isSubscribed = pro || custom
+  const isSubscribed = pro || custom || !!activeReferralEntitlement
+  const hasCustomLikeAccess = custom || !!activeReferralEntitlement
   // Define accent colors for current plan
   const planAccent = activePlanLabel === 'Custom Pro'
     ? '#e11d48'
@@ -1175,10 +1212,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                     <div className="flex items-center gap-2.5">
                       <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        Abonnement Actif
+                        {activeReferralEntitlement ? 'Accès Affiliation actif' : 'Abonnement Actif'}
                       </span>
                       <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-white/5 border border-white/10 text-slate-400">
-                        {subscriptionPaymentLabel(user)}
+                        {activeReferralEntitlement ? 'Coupon parrainage' : subscriptionPaymentLabel(user)}
                       </span>
                     </div>
 
@@ -1187,7 +1224,14 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                         {activePlanLabel ?? 'Abonnement Custom'}
                         <Crown size={22} style={{ color: planAccent }} />
                       </h2>
-                      {user.subscription_expires_at && (
+                      {activeReferralEntitlement ? (
+                        <p className="text-sm text-slate-400 mt-2">
+                          Accès offert jusqu’au{' '}
+                          <span className="text-white font-bold">
+                            {new Date(activeReferralEntitlement.expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          </span>
+                        </p>
+                      ) : user.subscription_expires_at && (
                         <p className="text-sm text-slate-400 mt-2">
                           {paddleRenewalStopped
                             ? 'Accès Paddle actif jusqu’au '
@@ -1234,6 +1278,17 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                     </div>
                   )}
                 </div>
+                {activeReferralEntitlement && (
+                  <div
+                    className="relative z-10 mt-5 flex items-start gap-3 rounded-2xl px-4 py-3"
+                    style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.18)' }}
+                  >
+                    <Ticket size={16} className="mt-0.5 flex-shrink-0" style={{ color: '#fbbf24' }} />
+                    <p className="text-xs leading-relaxed text-slate-300">
+                      Cet accès vient d’un coupon d’affiliation. Il donne les droits Ava Trading / Ava Volatility du plan {referralPlanLabel ?? activePlanLabel}, sans renouvellement automatique. Vous pouvez passer à un abonnement payant ou upgrader à tout moment depuis les formules ci-dessous.
+                    </p>
+                  </div>
+                )}
                 {user.subscription_source === 'paddle' && (
                   <p className="relative z-10 mt-5 text-[11px] leading-relaxed text-slate-400">
                     {paddleRenewalStopped
@@ -1325,18 +1380,18 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 </div>
                 
                 <div className="divide-y divide-white/5">
-                  {(custom ? CUSTOM_FEATURES : PRO_FEATURES).map(({ icon: Icon, text, val }) => (
+                  {(hasCustomLikeAccess ? CUSTOM_FEATURES : PRO_FEATURES).map(({ icon: Icon, text, val }) => (
                     <div key={text} className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-white/[0.01]">
                       <div className="flex items-center gap-3.5 min-w-0 pr-4">
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                          style={{ background: custom ? 'rgba(99,102,241,0.06)' : 'rgba(244,63,94,0.06)' }}>
-                          <Icon size={14} style={{ color: custom ? '#818cf8' : '#f43f5e' }} />
+                          style={{ background: hasCustomLikeAccess ? 'rgba(99,102,241,0.06)' : 'rgba(244,63,94,0.06)' }}>
+                          <Icon size={14} style={{ color: hasCustomLikeAccess ? '#818cf8' : '#f43f5e' }} />
                         </div>
                         <span className="text-xs font-semibold text-slate-200 truncate">{text}</span>
                       </div>
                       <span 
                         className="text-xs font-black flex-shrink-0 uppercase tracking-wider"
-                        style={{ color: custom ? '#818cf8' : '#f43f5e' }}
+                        style={{ color: hasCustomLikeAccess ? '#818cf8' : '#f43f5e' }}
                       >
                         {val}
                       </span>

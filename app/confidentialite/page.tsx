@@ -43,7 +43,11 @@ export default function PrivacyPage() {
             l&apos;amélioration : plan actif, statut d&apos;accès, préférences, paramètres
             applicatifs, résultats agrégés/anonymisés et informations techniques.
           </li>
-          <li>Données de parrainage (code referral, parrains/filleuls)</li>
+          <li>
+            Données d&apos;affiliation/parrainage : code referral, parrains/filleuls,
+            cycles de qualification, paiements qualifiés, coupons, activations de coupons
+            et accès gratuits temporaires Ava Trading.
+          </li>
           <li>
             Clé API Gemini personnelle (Plan Custom) — chiffrée AES-256-GCM avec votre PIN,
             indéchiffrable sans ce dernier
@@ -84,7 +88,7 @@ export default function PrivacyPage() {
         <ul className="list-disc list-inside space-y-1 mt-2">
           <li>Fournir, personnaliser et améliorer le service Ava</li>
           <li>Authentifier et sécuriser votre accès au compte</li>
-          <li>Gérer votre compte, vos crédits, votre abonnement et votre parrainage</li>
+          <li>Gérer votre compte, vos crédits, votre abonnement, votre affiliation/parrainage et les coupons associés</li>
           <li>Envoyer des rappels push programmés (avec votre consentement)</li>
           <li>Vous contacter pour des communications importantes relatives au service</li>
           <li>Détecter et prévenir les abus, fraudes ou violations des CGU</li>

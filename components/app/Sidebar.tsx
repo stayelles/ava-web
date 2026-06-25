@@ -12,7 +12,7 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'profile', label: 'Profil', icon: User },
   { id: 'subscription', label: 'Abonnement', icon: Crown },
-  { id: 'referral', label: 'Parrainage', icon: Users },
+  { id: 'referral', label: 'Affiliation', icon: Users },
   { id: 'settings', label: 'Paramètres', icon: Settings },
 ]
 

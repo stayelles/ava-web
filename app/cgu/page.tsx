@@ -114,6 +114,18 @@ export default function CGUPage() {
           Notre politique de remboursement complète est disponible à{' '}
           <a href="/remboursement" style={{ color: '#e11d48' }}>call-ava.com/remboursement</a>.
         </p>
+        <p className="mt-2">
+          Ava peut proposer un programme d&apos;affiliation/parrainage lié aux plans Ava
+          Trading Custom. Les récompenses éventuelles prennent la forme de coupons gratuits
+          temporaires, séparés des abonnements payants. Un coupon ne crée pas de prélèvement
+          automatique, ne remplace pas un abonnement existant et peut être refusé, annulé
+          ou révoqué en cas d&apos;abus, fraude, auto-parrainage, remboursement, chargeback
+          ou paiement non confirmé. Les seuils actuellement applicables sont : Custom Simple
+          10 paiements qualifiés, Custom Pro 8, Custom Ultra 7, Custom Max 5, dans un cycle
+          de 32 jours. Un coupon donne 1 mois d&apos;accès du plan correspondant, expire
+          après 30 jours s&apos;il n&apos;est pas utilisé, et un seul coupon en attente par
+          plan peut bloquer le démarrage d&apos;un nouveau cycle.
+        </p>
       </LegalSection>
 
       <LegalSection n={7} title="Droit de rétractation (Union Européenne)">
