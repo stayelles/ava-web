@@ -29,7 +29,7 @@ import {
   T, LANG_FLAGS, SUPPORTED_LANGS, LANG_STORAGE_KEY,
 } from "@/lib/landing-translations";
 import {
-  PADDLE_PRICE_CUSTOM_PRO, PADDLE_PRICE_CUSTOM_SIMPLE,
+  PADDLE_PRICE_CUSTOM_PRO,
   PADDLE_PRICE_CUSTOM_ULTRA,
   PADDLE_PRICE_CUSTOM_MAX,
 } from "@/components/app/constants";
@@ -795,27 +795,6 @@ function Pricing() {
 
   const plans = [
     {
-      id: 'custom_simple',
-      name: 'Custom Simple',
-      price: '€39.99',
-      priceId: PADDLE_PRICE_CUSTOM_SIMPLE,
-      badge: tl({ fr: 'Départ prudent', en: 'Careful start', de: 'Vorsichtiger Start', tr: 'Dikkatli başlangıç', es: 'Inicio prudente' }),
-      description: tl({
-        fr: 'Pour démarrer avec Ava Desktop, votre clé API personnelle et des limites prudentes.',
-        en: 'For starting with Ava Desktop, your personal API key and careful limits.',
-        de: 'Für den Einstieg mit Ava Desktop, Ihrem persönlichen API-Schlüssel und vorsichtigen Limits.',
-        tr: 'Ava Desktop, kişisel API anahtarınız ve dikkatli limitlerle başlamak için.',
-        es: 'Para empezar con Ava Desktop, tu clave API personal y límites prudentes.',
-      }),
-      features: [
-        'Ava Desktop inclus',
-        'Clé API Gemini personnelle',
-        'Limites prudentes par défaut',
-        'Automatisations essentielles',
-        'Support standard',
-      ],
-    },
-    {
       id: 'custom_pro',
       name: 'Custom Pro',
       price: '€99.99',
@@ -830,7 +809,8 @@ function Pricing() {
       }),
       highlighted: true,
       features: [
-        'Tout Custom Simple inclus',
+        'Ava Desktop inclus',
+        'Clé API Gemini personnelle',
         'Limites personnalisées',
         'Automatisations avancées',
         'Configuration plus flexible',
@@ -905,7 +885,7 @@ function Pricing() {
 
         <FadeUp delay={0.08}>
           <div className="overflow-x-auto pb-3">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 min-w-0 lg:min-w-[1040px]">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               {plans.map((plan) => (
                 <motion.button
                   key={plan.id}

@@ -17,10 +17,8 @@ import {
   PAYPAL_CLIENT_ID,
   PAYPAL_PLAN_CUSTOM_MAX,
   PAYPAL_PLAN_CUSTOM_PRO,
-  PAYPAL_PLAN_CUSTOM_PRO_TRIAL,
   PAYPAL_PLAN_CUSTOM_SIMPLE,
   PAYPAL_PLAN_CUSTOM_ULTRA,
-  PAYPAL_PLAN_CUSTOM_ULTRA_TRIAL,
   SUPABASE_HEADERS,
   SUPABASE_URL,
 } from '../constants'
@@ -119,8 +117,6 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_PRO,
     paypalPlanId: PAYPAL_PLAN_CUSTOM_PRO,
-    trialPaypalPlanId: PAYPAL_PLAN_CUSTOM_PRO_TRIAL,
-    trialDays: 1,
     capital: 'Plage recommandée : 500€ à 3 000€',
     popular: true,
     badge: 'Recommandé',
@@ -148,8 +144,6 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_ULTRA,
     paypalPlanId: PAYPAL_PLAN_CUSTOM_ULTRA,
-    trialPaypalPlanId: PAYPAL_PLAN_CUSTOM_ULTRA_TRIAL,
-    trialDays: 1,
     capital: 'Plage recommandée : 3 000€ à 8 000€',
     popular: true,
     badge: 'Usage intensif',
@@ -240,6 +234,7 @@ const planLabels: Record<string, string> = {
 }
 
 const CUSTOM_PLAN_ORDER = ['custom_simple', 'custom_pro', 'custom_ultra', 'custom_max']
+const CHECKOUT_PLAN_KEYS = ['custom_pro', 'custom_ultra', 'custom_max']
 const CUSTOM_PLAN_CTA: Record<string, string> = {
   custom_simple: 'Profiter de Simple',
   custom_pro: 'Profiter de Pro',
@@ -275,38 +270,13 @@ function isPayPalPlanConfigured(planId: string | null | undefined): planId is st
   return !!planId && planId.startsWith('P-')
 }
 
-function hasAnyPriorSubscription(user: UserData) {
-  const source = String(user.subscription_source ?? '')
-  const tier = String(user.subscription_tier ?? '')
-  return !!user.ava_trading_trial_used ||
-    !!user.ava_trading_trial_subscription_id ||
-    !!user.subscription_plan ||
-    !!user.paddle_subscription_id ||
-    !!user.paypal_subscription_id ||
-    !!user.geniuspay_subscription_uuid ||
-    !!user.mollie_subscription_id ||
-    !!user.airwallex_subscription_id ||
-    !!user.whop_membership_id ||
-    !!user.whop_payment_id ||
-    (!!source && source !== 'none') ||
-    (!!tier && tier !== 'free')
-}
-
-function canUsePlanTrial(plan: typeof ALL_PLANS[number], user: UserData) {
-  return 'trialDays' in plan && !!plan.trialDays && !hasAnyPriorSubscription(user)
-}
-
-function planTrialDays(plan: typeof ALL_PLANS[number]) {
-  return 'trialDays' in plan ? plan.trialDays : null
-}
-
 function checkoutPayPalPlanId(plan: typeof ALL_PLANS[number], user: UserData) {
-  if (canUsePlanTrial(plan, user) && 'trialPaypalPlanId' in plan) return plan.trialPaypalPlanId
+  void user
   return plan.paypalPlanId
 }
 
 function isPlanCheckoutReady(plan: typeof ALL_PLANS[number]) {
-  return CUSTOM_PLAN_ORDER.includes(plan.key)
+  return CHECKOUT_PLAN_KEYS.includes(plan.key)
 }
 
 function loadPayPalSdk(): Promise<void> {
@@ -421,8 +391,12 @@ function suggestedBillingCountry() {
   return storedBillingCountry() || browserSuggestedCountry()
 }
 
-function isKnownPlan(plan: string | null) {
-  return !!plan && ALL_PLANS.some(item => item.key === plan)
+function isCheckoutVisiblePlan(plan: typeof ALL_PLANS[number]) {
+  return CHECKOUT_PLAN_KEYS.includes(plan.key)
+}
+
+function isVisibleCheckoutPlanKey(plan: string | null) {
+  return !!plan && CHECKOUT_PLAN_KEYS.includes(plan)
 }
 
 function isLegacyRenewalSource(source: string | null | undefined) {
@@ -643,7 +617,9 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const legacyRenewalSource = isLegacyRenewalSource(user.subscription_source)
   const legacyRenewalDaysLeft = daysUntil(user.custom_plan_expires_at ?? user.subscription_expires_at)
   const legacyRenewalUrgent = legacyRenewalDaysLeft !== null && legacyRenewalDaysLeft <= 7
-  const legacyRenewalPlan = ALL_PLANS.find(plan => plan.key === legacyRenewalPlanKey(user, activePlanKey)) ?? ALL_PLANS.find(plan => plan.key === 'custom_simple')!
+  const legacyRenewalPlanKeyValue = legacyRenewalPlanKey(user, activePlanKey)
+  const legacyRenewalTargetKey = legacyRenewalPlanKeyValue === 'custom_simple' ? 'custom_pro' : legacyRenewalPlanKeyValue
+  const legacyRenewalPlan = ALL_PLANS.find(plan => plan.key === legacyRenewalTargetKey) ?? ALL_PLANS.find(plan => plan.key === 'custom_pro')!
   const legacyRenewalSourceLabel = user.subscription_source === 'wise'
     ? 'Wise'
     : user.subscription_source === 'paddle'
@@ -660,10 +636,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     const params = new URLSearchParams(window.location.search)
     const requestedUpgrade = params.get('upgrade')
     const requestedPlan = params.get('plan')
-    if (isKnownPlan(requestedPlan)) {
+    if (isVisibleCheckoutPlanKey(requestedPlan)) {
       setSelectedPlanKey(requestedPlan)
     }
-    if (isValidUpgradeTarget(activePlanKey, requestedUpgrade)) {
+    if (isVisibleCheckoutPlanKey(requestedUpgrade) && isValidUpgradeTarget(activePlanKey, requestedUpgrade)) {
       const plan = ALL_PLANS.find(p => p.key === requestedUpgrade)
       if (plan) {
         setTargetPlan(plan)
@@ -679,16 +655,13 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         ? `Upgrade vers ${plan.label.replace(/^Custom\s+/i, '')}`
         : 'Downgrade indisponible'
     }
-    return canUsePlanTrial(plan, user)
-      ? `Essai gratuit ${planTrialDays(plan)} jour`
-      : CUSTOM_PLAN_CTA[plan.key] ?? 'S’abonner'
+    return CUSTOM_PLAN_CTA[plan.key] ?? 'S’abonner'
   }
 
   const renderPlanCard = (plan: typeof ALL_PLANS[number], index: number) => {
     const isActive = plan.key === activePlanKey
     const isSelected = plan.key === selectedPlanKey
     const isRecommended = plan.key === 'custom_pro'
-    const trialAvailable = canUsePlanTrial(plan, user)
     const features = Array.from(new Set(plan.features)).slice(0, 5)
     const extraFeatures = Math.max(0, Array.from(new Set(plan.features)).length - features.length)
     const cardBorder = isActive
@@ -734,11 +707,6 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             </div>
 
             <div className="flex min-h-[58px] flex-col items-center justify-center gap-2">
-              {trialAvailable && (
-                <span className="rounded-full border border-emerald-400/25 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase text-emerald-300">
-                  {planTrialDays(plan)} jour gratuit
-                </span>
-              )}
               {plan.capital && (
                 <span className="rounded-full border border-white/10 bg-slate-950/50 px-3 py-1 text-center text-[10px] font-bold uppercase text-slate-400">
                   {plan.capital.replace('Plage recommandée : ', '')}
@@ -1167,7 +1135,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 Renouvellement à préparer
               </p>
               <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                Votre accès {legacyRenewalSourceLabel} reste actif jusqu’à sa date actuelle. Pour éviter une coupure, renouvelez sur {legacyRenewalPlan.label}; aucun essai gratuit ne sera appliqué.
+                Votre accès {legacyRenewalSourceLabel} reste actif jusqu’à sa date actuelle. Pour éviter une coupure, renouvelez sur {legacyRenewalPlan.label}; le paiement direct sera utilisé.
                 {legacyRenewalDaysLeft !== null && legacyRenewalDaysLeft >= 0 ? ` Il reste environ ${legacyRenewalDaysLeft} jour${legacyRenewalDaysLeft > 1 ? 's' : ''}.` : ''}
               </p>
             </div>
@@ -1449,8 +1417,8 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
               </p>
             </div>
             
-            <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {ALL_PLANS.filter(p => p.key !== 'pro_starter').map((plan, index) => renderPlanCard(plan, index))}
+            <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 md:grid-cols-3">
+              {ALL_PLANS.filter(isCheckoutVisiblePlan).map((plan, index) => renderPlanCard(plan, index))}
             </div>
           </div>
         </div>
@@ -1464,8 +1432,8 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             </p>
           </div>
 
-          <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-            {ALL_PLANS.filter(p => p.key !== 'pro_starter').map((plan, index) => renderPlanCard(plan, index))}
+          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 md:grid-cols-3">
+            {ALL_PLANS.filter(isCheckoutVisiblePlan).map((plan, index) => renderPlanCard(plan, index))}
           </div>
 
           <p className="text-center text-[10px] text-slate-500 max-w-sm mx-auto leading-relaxed mt-4">
@@ -1713,10 +1681,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Paiement sécurisé PayPal</p>
                 <h3 className="text-2xl font-black text-white tracking-tight">{paypalPlan.label}</h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  {canUsePlanTrial(paypalPlan, user)
-                    ? `Votre essai gratuit de ${planTrialDays(paypalPlan)} jour est géré par PayPal. Ava activera ensuite votre accès sur le compte ${user.email}.`
-                    : `PayPal confirmera l’abonnement automatiquement. Ava activera ensuite votre accès sur le compte ${user.email}.`
-                  }
+                  PayPal confirmera l’abonnement automatiquement. Ava activera ensuite votre accès sur le compte {user.email}.
                 </p>
               </div>
 
