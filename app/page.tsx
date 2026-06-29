@@ -843,7 +843,14 @@ function Pricing() {
       name: 'Custom Max',
       price: '€999.99',
       priceId: PADDLE_PRICE_CUSTOM_MAX,
-      badge: tl({ fr: 'Niveau maximal', en: 'Maximum level', de: 'Maximales Niveau', tr: 'Maksimum seviye', es: 'Nivel máximo' }),
+      badge: tl({ fr: 'Offre limitée', en: 'Limited offer', de: 'Begrenztes Angebot', tr: 'Sınırlı teklif', es: 'Oferta limitada' }),
+      promo: tl({
+        fr: '2 jours gratuits pour les 5 prochaines inscriptions Custom Max.',
+        en: '2 free days for the next 5 Custom Max sign-ups.',
+        de: '2 kostenlose Tage für die nächsten 5 Custom-Max-Anmeldungen.',
+        tr: 'Sonraki 5 Custom Max kaydı için 2 gün ücretsiz.',
+        es: '2 días gratis para las próximas 5 altas Custom Max.',
+      }),
       description: tl({
         fr: 'Le plan maximal pour usage intensif, limites hautes et accompagnement prioritaire.',
         en: 'The maximum plan for intensive usage, higher limits and priority support.',
@@ -853,6 +860,7 @@ function Pricing() {
       }),
       features: [
         'Tout Custom Ultra inclus',
+        'Offre limitée: 2 jours gratuits pour les 5 prochaines inscriptions Max',
         'Limites maximales',
         'Automatisations premium',
         'Accompagnement prioritaire',
@@ -911,6 +919,11 @@ function Pricing() {
                   <div className="mt-6">
                     <span className="text-4xl sm:text-5xl font-black tracking-tight text-white">{plan.price}</span>
                     <span className="ml-1 text-sm font-semibold text-slate-500">/mois</span>
+                    {plan.promo && (
+                      <p className="mt-3 rounded-2xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-xs font-black uppercase tracking-wide text-rose-200">
+                        {plan.promo}
+                      </p>
+                    )}
                     <p className="mt-4 min-h-[66px] text-sm leading-relaxed text-slate-400">{plan.description}</p>
                   </div>
 
