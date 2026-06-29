@@ -16,8 +16,8 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'settings', label: 'Paramètres', icon: Settings },
 ]
 
-const AVA_DESKTOP_MAC_VERSION = '1.2.29'
-const AVA_DESKTOP_WINDOWS_VERSION = '1.2.29'
+const AVA_DESKTOP_MAC_VERSION = '1.2.36'
+const AVA_DESKTOP_WINDOWS_VERSION = '1.2.36'
 const AVA_BRIDGE_EA_VERSION = '1.41'
 const DOWNLOAD_BASE_URL = 'https://call-ava.com/downloads'
 const DESKTOP_DOWNLOADS = [
