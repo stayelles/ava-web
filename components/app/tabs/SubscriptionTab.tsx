@@ -173,8 +173,7 @@ const ALL_PLANS = [
     paypalPlanId: PAYPAL_PLAN_CUSTOM_MAX,
     capital: 'Plage recommandée : 8 000€ à 20 000€+',
     popular: false,
-    badge: '2 jours offerts',
-    promo: 'Offre limitée : 2 jours gratuits pour les 5 prochaines inscriptions Custom Max.',
+    badge: 'Volume élevé',
     accentColor: '#f43f5e',
     bg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.08) 0%, rgba(15, 23, 42, 0.18) 100%)',
     border: 'rgba(244, 63, 94, 0.35)',
@@ -185,7 +184,6 @@ const ALL_PLANS = [
     description: 'Le plan maximal pour volumes élevés, accompagnement et limites sur mesure.',
     features: [
       'Tout Custom Ultra inclus',
-      '2 jours gratuits pour les 5 prochaines inscriptions Max',
       'Limites maximales',
       'Automatisations premium',
       'Configuration complète',
@@ -709,11 +707,6 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             </div>
 
             <div className="flex min-h-[58px] flex-col items-center justify-center gap-2">
-              {plan.promo && (
-                <span className="rounded-2xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-center text-[10px] font-black uppercase leading-snug text-rose-200">
-                  {plan.promo}
-                </span>
-              )}
               {plan.capital && (
                 <span className="rounded-full border border-white/10 bg-slate-950/50 px-3 py-1 text-center text-[10px] font-bold uppercase text-slate-400">
                   {plan.capital.replace('Plage recommandée : ', '')}
