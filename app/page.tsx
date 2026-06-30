@@ -4,7 +4,7 @@ import { useRef, useState, useEffect, createContext, useContext } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import {
   Mic2, Monitor, Brain, Bell, Zap, Check, Apple, Smartphone,
-  Sparkles, Shield, Terminal, Star, ChevronDown, Layers, Wifi,
+  Sparkles, Shield, Terminal, Star, ChevronDown, ChevronUp, Layers, Wifi,
   Cpu,
 } from "lucide-react";
 import { SiApple, SiGoogleplay } from "react-icons/si";
@@ -792,6 +792,7 @@ function Showcase() {
 
 function Pricing() {
   const tl = useTl()
+  const [showComparison, setShowComparison] = useState(false)
 
   const plans = [
     {
@@ -866,6 +867,35 @@ function Pricing() {
   }
 
   const planCta = (planName: string) => `${tl(T.pricing.cta)} ${planName.replace(/^Custom\s+/i, '')}`
+  const comparison = [
+    {
+      section: 'IA et moteur',
+      rows: [
+        ['Modèles IA', 'Ava 1.1.29 + 1.1.59', 'Pro + Objective 1h', 'Tous les modèles Ava'],
+        ['Vertex/Cortex', 'Automatique', 'Automatique + main libre', 'Main libre complète'],
+        ['Lot IA dynamique', 'Réservé Dev', 'Réservé Dev', 'Réservé Dev'],
+        ['SELL Volatility', 'Verrouillé', 'Verrouillé', 'Activable'],
+      ],
+    },
+    {
+      section: 'Volatility',
+      rows: [
+        ['Objectif session', '$15 max', '$35 max', 'Illimité'],
+        ['BUY Rebond / session', '15 max', '35 max', 'Illimité'],
+        ['BUY ouverts', '4 max', '8 max', 'Illimité'],
+        ['Quota journalier', '4h + pause 4h', '10h + pause 2h', 'Illimité'],
+        ['Renforts', '2 niveaux', '3 niveaux', 'Sans limite commerciale'],
+      ],
+    },
+    {
+      section: 'Accompagnement',
+      rows: [
+        ['Positions manuelles', 'Non inclus', '25 / 7 jours', 'Illimité'],
+        ['Pause nuit', 'Arrêt à 20h', 'Disponible', 'Disponible'],
+        ['Support', 'Prioritaire', 'Renforcé', 'Direct / maximal'],
+      ],
+    },
+  ]
 
   return (
     <section id="pricing" className="relative py-24 sm:py-32 overflow-hidden">
@@ -939,6 +969,59 @@ function Pricing() {
         </FadeUp>
 
         <FadeUp delay={0.22}>
+          <div className="mt-8 space-y-5">
+            <button
+              type="button"
+              onClick={() => setShowComparison(value => !value)}
+              className="mx-auto flex items-center gap-2 rounded-2xl border border-rose-400/35 bg-slate-950/75 px-5 py-3 text-sm font-black text-white shadow-lg shadow-black/20 transition-colors hover:border-rose-300/60 hover:bg-rose-500/10"
+            >
+              Voir le comparatif complet
+              {showComparison ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+            <AnimatePresence initial={false}>
+              {showComparison && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.22 }}
+                  className="overflow-hidden rounded-[28px] border border-white/10 bg-slate-950/70 shadow-2xl shadow-black/30 backdrop-blur-xl"
+                >
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[820px]">
+                      <div className="grid grid-cols-[1.35fr_repeat(3,1fr)] border-b border-white/10 bg-white/[0.035] text-sm">
+                        <div className="px-5 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Comparatif</div>
+                        {['Pro', 'Ultra', 'Max'].map(plan => (
+                          <div key={plan} className={`px-5 py-4 text-center font-black text-white ${plan === 'Pro' ? 'bg-rose-500/10' : ''}`}>
+                            {plan}
+                          </div>
+                        ))}
+                      </div>
+                      {comparison.map(section => (
+                        <div key={section.section}>
+                          <div className="bg-white/[0.055] px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-300">
+                            {section.section}
+                          </div>
+                          {section.rows.map(([label, pro, ultra, max]) => (
+                            <div key={label} className="grid grid-cols-[1.35fr_repeat(3,1fr)] border-t border-white/[0.06] text-sm">
+                              <div className="px-5 py-4 font-semibold text-slate-400">{label}</div>
+                              <div className="bg-rose-500/[0.045] px-5 py-4 text-center font-bold text-slate-200">{pro}</div>
+                              <div className="px-5 py-4 text-center font-bold text-slate-200">{ultra}</div>
+                              <div className="px-5 py-4 text-center font-bold text-rose-100">{max}</div>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-t border-white/10 px-5 py-4 text-center text-xs leading-relaxed text-slate-500">
+                    Les limites servent à comparer les plans Ava Desktop. Les recommandations de capital sont affichées après connexion dans l’onglet Abonnement.
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           <p className="text-center text-xs text-slate-600 mt-6 max-w-2xl mx-auto">
             {tl({ fr: 'Choisissez une formule adaptée à votre usage. Les fonctionnalités avancées demandent une configuration responsable.', en: 'Choose a plan that fits your usage. Advanced features require responsible configuration.', de: 'Wählen Sie einen Plan, der zu Ihrer Nutzung passt. Erweiterte Funktionen erfordern verantwortungsvolle Konfiguration.', tr: 'Kullanımınıza uygun bir plan seçin. Gelişmiş özellikler sorumlu yapılandırma gerektirir.', es: 'Elige un plan adaptado a tu uso. Las funciones avanzadas requieren una configuración responsable.' })}
           </p>

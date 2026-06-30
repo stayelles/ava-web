@@ -6,7 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, 
   Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock,
-  CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight, X, Ticket
+  CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight, X, Ticket,
+  ChevronDown, ChevronUp
 } from 'lucide-react'
 import {
   PADDLE_PRICE_PRO_STARTER,
@@ -117,7 +118,7 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_PRO,
     paypalPlanId: PAYPAL_PLAN_CUSTOM_PRO,
-    capital: 'Plage recommandée : 500€ à 3 000€',
+    capital: 'Plage recommandée : 1 000€ à 3 000€',
     popular: true,
     badge: 'Recommandé',
     accentColor: '#e11d48',
@@ -171,7 +172,7 @@ const ALL_PLANS = [
     per: '/mois',
     priceId: PADDLE_PRICE_CUSTOM_MAX,
     paypalPlanId: PAYPAL_PLAN_CUSTOM_MAX,
-    capital: 'Plage recommandée : 8 000€ à 20 000€+',
+    capital: 'Plage recommandée : 8 000€+',
     popular: false,
     badge: 'Volume élevé',
     accentColor: '#f43f5e',
@@ -192,6 +193,37 @@ const ALL_PLANS = [
       'Support maximal',
     ]
   }
+]
+
+const CUSTOM_PLAN_COMPARISON = [
+  {
+    section: 'Profil',
+    rows: [
+      { label: 'Capital recommandé', pro: '1 000€ à 3 000€', ultra: '3 000€ à 8 000€', max: '8 000€+', connectedOnly: true },
+      { label: 'Modèles IA', pro: 'Ava 1.1.29 + 1.1.59', ultra: 'Pro + Objective 1h', max: 'Tous les modèles Ava' },
+      { label: 'Superviseur Vertex/Cortex', pro: 'Automatique', ultra: 'Automatique + main libre', max: 'Main libre complète' },
+      { label: 'Lot IA dynamique confiance/capital', pro: 'Réservé Dev', ultra: 'Réservé Dev', max: 'Réservé Dev' },
+      { label: 'SELL Volatility / Burst SELL', pro: 'Verrouillé', ultra: 'Verrouillé', max: 'Activable' },
+    ],
+  },
+  {
+    section: 'Volatility',
+    rows: [
+      { label: 'Objectif session Volatility', pro: '$15 max', ultra: '$35 max', max: 'Illimité' },
+      { label: 'Boom Rebond BUY par session', pro: '15 BUY max', ultra: '35 BUY max', max: 'Illimité' },
+      { label: 'Boom Rebond BUY ouverts', pro: '4 ouverts max', ultra: '8 ouverts max', max: 'Illimité' },
+      { label: 'Quota Volatility journalier', pro: '4h/jour + pause 4h', ultra: '10h/jour + pause 2h', max: 'Illimité' },
+      { label: 'Renforts contrôlés', pro: '2 niveaux', ultra: '3 niveaux', max: 'Sans limite commerciale' },
+    ],
+  },
+  {
+    section: 'Contrôle',
+    rows: [
+      { label: 'Positions manuelles', pro: 'Non inclus', ultra: '25 / 7 jours', max: 'Illimité' },
+      { label: 'Pause nuit 19h-04h', pro: 'Arrêt à 20h', ultra: 'Disponible', max: 'Disponible' },
+      { label: 'Support', pro: 'Prioritaire', ultra: 'Renforcé', max: 'Direct / maximal' },
+    ],
+  },
 ]
 
 const PRO_FEATURES = [
@@ -544,6 +576,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const [countryPromptMethod, setCountryPromptMethod] = useState<AirwallexPaymentMethod | undefined>(undefined)
   const [billingCountryCode, setBillingCountryCode] = useState(() => cleanCountryCode(user.billing_country_code))
   const [referralEntitlements, setReferralEntitlements] = useState<ReferralEntitlement[]>([])
+  const [showPlanComparison, setShowPlanComparison] = useState(false)
   const paypalButtonRef = useRef<HTMLDivElement | null>(null)
 
   const pro = isPro(user)
@@ -752,6 +785,67 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
       </motion.div>
     )
   }
+
+  const renderPlanComparison = (includeCapital: boolean) => (
+    <div className="mx-auto w-full max-w-6xl space-y-5">
+      <button
+        type="button"
+        onClick={() => setShowPlanComparison(value => !value)}
+        className="mx-auto flex items-center gap-2 rounded-2xl border border-rose-400/35 bg-slate-950/70 px-5 py-3 text-sm font-black text-white shadow-lg shadow-black/20 transition-colors hover:border-rose-300/60 hover:bg-rose-500/10"
+      >
+        Voir le comparatif complet
+        {showPlanComparison ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+      </button>
+
+      <AnimatePresence initial={false}>
+        {showPlanComparison && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.22 }}
+            className="overflow-hidden rounded-3xl border border-white/10 bg-slate-950/70 shadow-2xl shadow-black/30 backdrop-blur-xl"
+          >
+            <div className="overflow-x-auto">
+              <div className="min-w-[820px]">
+                <div className="grid grid-cols-[1.35fr_repeat(3,1fr)] border-b border-white/10 bg-white/[0.035] text-sm">
+                  <div className="px-5 py-4 text-xs font-black uppercase tracking-widest text-slate-500">Comparatif</div>
+                  {['Pro', 'Ultra', 'Max'].map(plan => (
+                    <div
+                      key={plan}
+                      className={`px-5 py-4 text-center font-black text-white ${plan === 'Pro' ? 'bg-rose-500/10' : ''}`}
+                    >
+                      {plan}
+                    </div>
+                  ))}
+                </div>
+                {CUSTOM_PLAN_COMPARISON.map(section => (
+                  <div key={section.section}>
+                    <div className="bg-white/[0.055] px-5 py-3 text-xs font-black uppercase tracking-widest text-slate-300">
+                      {section.section}
+                    </div>
+                    {section.rows
+                      .filter(row => includeCapital || !row.connectedOnly)
+                      .map(row => (
+                        <div key={row.label} className="grid grid-cols-[1.35fr_repeat(3,1fr)] border-t border-white/[0.06] text-sm">
+                          <div className="px-5 py-4 font-semibold text-slate-400">{row.label}</div>
+                          <div className="bg-rose-500/[0.045] px-5 py-4 text-center font-bold text-slate-200">{row.pro}</div>
+                          <div className="px-5 py-4 text-center font-bold text-slate-200">{row.ultra}</div>
+                          <div className="px-5 py-4 text-center font-bold text-rose-100">{row.max}</div>
+                        </div>
+                      ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="border-t border-white/10 px-5 py-4 text-center text-xs leading-relaxed text-slate-500">
+              Les plages de capital sont des recommandations. Ava Desktop applique séparément les protections de risque et les limites du plan actif.
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
 
   const startCheckout = (plan: typeof ALL_PLANS[number]) => {
     const source = String(user.subscription_source ?? '')
@@ -1424,6 +1518,8 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 md:grid-cols-3">
               {ALL_PLANS.filter(isCheckoutVisiblePlan).map((plan, index) => renderPlanCard(plan, index))}
             </div>
+
+            {renderPlanComparison(true)}
           </div>
         </div>
       ) : (
@@ -1439,6 +1535,8 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
           <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 md:grid-cols-3">
             {ALL_PLANS.filter(isCheckoutVisiblePlan).map((plan, index) => renderPlanCard(plan, index))}
           </div>
+
+          {renderPlanComparison(true)}
 
           <p className="text-center text-[10px] text-slate-500 max-w-sm mx-auto leading-relaxed mt-4">
             Pour les plans Custom, vous pourrez configurer votre propre clé API Gemini (Google AI Studio) directement dans vos paramètres après souscription.
