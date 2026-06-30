@@ -35,7 +35,7 @@ import {
 } from "@/components/app/constants";
 
 const AVA_DESKTOP_MAC_VERSION = "1.2.40";
-const AVA_DESKTOP_WINDOWS_VERSION = "1.2.37";
+const AVA_DESKTOP_WINDOWS_VERSION = "1.2.40";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = {
   macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_MAC_VERSION}-arm64.dmg`,
