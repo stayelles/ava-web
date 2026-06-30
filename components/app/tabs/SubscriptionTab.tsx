@@ -479,6 +479,12 @@ function daysUntil(raw: string | null | undefined) {
   return Math.ceil((parsed - Date.now()) / (24 * 3600 * 1000))
 }
 
+function isPastDate(raw: string | null | undefined) {
+  if (!raw) return false
+  const parsed = Date.parse(raw)
+  return Number.isFinite(parsed) && parsed <= Date.now()
+}
+
 function legacyRenewalPlanKey(user: UserData, currentPlan: string | null) {
   if (currentPlan && CUSTOM_PLAN_ORDER.includes(currentPlan)) return currentPlan
   const normalized = normalizePlanKey(user.subscription_plan, true)
@@ -624,33 +630,36 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     user.subscription_source !== 'whop' &&
     user.subscription_source !== 'wise'
 
-  const currentPlan = normalizePlanKey(user.subscription_plan, custom) ?? referralPlanKey
-  const activePlanLabel = currentPlan ? planLabels[currentPlan] ?? null : null
-
   const isSubscribed = pro || custom || !!activeReferralEntitlement
+  const lastPlanKey = normalizePlanKey(user.subscription_plan, false)
+  const paidAccessPlanKey = (pro || custom) ? normalizePlanKey(user.subscription_plan, custom) : null
+  const activePlanKey = paidAccessPlanKey ?? referralPlanKey
+  const displayPlanKey = activePlanKey ?? lastPlanKey
+  const activePlanLabel = activePlanKey ? planLabels[activePlanKey] ?? null : null
+  const lastPlanLabel = lastPlanKey ? planLabels[lastPlanKey] ?? null : null
+  const expiryDate = user.custom_plan_expires_at ?? user.subscription_expires_at
+  const subscriptionExpired = !isSubscribed && !!lastPlanKey && isPastDate(expiryDate)
   const hasCustomLikeAccess = custom || !!activeReferralEntitlement
   // Define accent colors for current plan
-  const planAccent = activePlanLabel === 'Custom Pro'
+  const planAccent = displayPlanKey === 'custom_pro'
     ? '#e11d48'
-    : activePlanLabel === 'Custom Ultra'
+    : displayPlanKey === 'custom_ultra'
       ? '#e11d48'
-      : activePlanLabel === 'Custom Max'
+      : displayPlanKey === 'custom_max'
         ? '#f43f5e'
-    : activePlanLabel === 'Custom Simple'
+    : displayPlanKey === 'custom_simple'
       ? '#6366f1'
       : '#f43f5e'
 
-  // Determine active plan key
-  const activePlanKey = currentPlan
   const nextPlan = nextCustomPlan(activePlanKey)
   const paddleRenewalStopped = user.subscription_source === 'paddle' && !!user.paddle_renewal_cancelled_at
   const paddleAccessEndsAt = user.paddle_scheduled_cancel_at ?? user.subscription_expires_at
   const countries = countryOptions()
   const suggestedCountryCode = !cleanCountryCode(user.billing_country_code) ? suggestedBillingCountry() : ''
-  const legacyRenewalSource = isLegacyRenewalSource(user.subscription_source)
+  const legacyRenewalSource = isLegacyRenewalSource(user.subscription_source) && isSubscribed
   const legacyRenewalDaysLeft = daysUntil(user.custom_plan_expires_at ?? user.subscription_expires_at)
   const legacyRenewalUrgent = legacyRenewalDaysLeft !== null && legacyRenewalDaysLeft <= 7
-  const legacyRenewalPlanKeyValue = legacyRenewalPlanKey(user, activePlanKey)
+  const legacyRenewalPlanKeyValue = legacyRenewalPlanKey(user, activePlanKey ?? lastPlanKey)
   const legacyRenewalTargetKey = legacyRenewalPlanKeyValue === 'custom_simple' ? 'custom_pro' : legacyRenewalPlanKeyValue
   const legacyRenewalPlan = ALL_PLANS.find(plan => plan.key === legacyRenewalTargetKey) ?? ALL_PLANS.find(plan => plan.key === 'custom_pro')!
   const legacyRenewalSourceLabel = user.subscription_source === 'wise'
@@ -683,6 +692,9 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
   const checkoutLabel = (plan: typeof ALL_PLANS[number]) => {
     if (!isPlanCheckoutReady(plan)) return 'Paiement en attente'
+    if (subscriptionExpired && plan.key === lastPlanKey) {
+      return `Renouveler ${plan.label.replace(/^Custom\s+/i, '')}`
+    }
     if (user.subscription_source === 'airwallex' && user.airwallex_subscription_id && activePlanKey && activePlanKey !== plan.key) {
       return customPlanRank(plan.key) > customPlanRank(activePlanKey)
         ? `Upgrade vers ${plan.label.replace(/^Custom\s+/i, '')}`
@@ -693,6 +705,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
   const renderPlanCard = (plan: typeof ALL_PLANS[number], index: number) => {
     const isActive = plan.key === activePlanKey
+    const isExpiredPreviousPlan = subscriptionExpired && plan.key === lastPlanKey
     const isSelected = plan.key === selectedPlanKey
     const isRecommended = plan.key === 'custom_pro'
     const features = Array.from(new Set(plan.features)).slice(0, 5)
@@ -713,11 +726,15 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         transition={{ delay: 0.06 * (index + 1), duration: 0.35 }}
         className={`relative flex min-h-[410px] flex-col rounded-2xl border ${cardBorder} bg-white/[0.035] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-rose-400/35`}
       >
-        {(plan.badge || isActive || isRecommended) && (
+        {(plan.badge || isActive || isExpiredPreviousPlan || isRecommended) && (
           <div className="absolute -top-3 left-1/2 flex -translate-x-1/2 gap-2">
             {isActive ? (
               <span className="rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3 py-1 text-[10px] font-bold uppercase text-emerald-300">
                 Actif
+              </span>
+            ) : isExpiredPreviousPlan ? (
+              <span className="rounded-full border border-amber-400/30 bg-amber-500/15 px-3 py-1 text-[10px] font-bold uppercase text-amber-200">
+                Expiré
               </span>
             ) : (
               <span className="rounded-full border border-rose-400/30 bg-rose-500 px-3 py-1 text-[10px] font-bold uppercase text-white shadow-lg shadow-rose-500/25">
@@ -1524,6 +1541,40 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         </div>
       ) : (
         <div className="space-y-10">
+          {subscriptionExpired && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mx-auto flex max-w-3xl flex-col gap-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-5 py-4 backdrop-blur-md md:flex-row md:items-center md:justify-between"
+            >
+              <div className="flex items-start gap-3">
+                <AlertCircle size={17} className="mt-0.5 flex-shrink-0 text-amber-300" />
+                <div>
+                  <p className="text-sm font-black text-amber-200">
+                    Abonnement expiré
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-300">
+                    Votre ancien accès {lastPlanLabel ?? 'Ava Custom'} n’est plus actif. Vous pouvez relancer le paiement maintenant pour réactiver les avantages Pro.
+                  </p>
+                </div>
+              </div>
+              {lastPlanKey && CHECKOUT_PLAN_KEYS.includes(lastPlanKey) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const plan = ALL_PLANS.find(item => item.key === lastPlanKey)
+                    if (plan) startCheckout(plan)
+                  }}
+                  disabled={billingLoading}
+                  className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-amber-300 px-5 text-sm font-black text-slate-950 transition-all hover:bg-amber-200 disabled:opacity-60"
+                >
+                  Renouveler {lastPlanLabel?.replace(/^Custom\s+/i, '') ?? 'Pro'}
+                  <ArrowRight size={14} />
+                </button>
+              )}
+            </motion.div>
+          )}
+
           <div className="mx-auto max-w-2xl text-center">
             <p className="text-xs font-bold uppercase text-rose-400">Plans Ava Custom</p>
             <h3 className="mt-3 text-3xl font-black text-white">Tarifs simples et transparents</h3>
