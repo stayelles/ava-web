@@ -787,8 +787,12 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         setPaypalPlan(plan)
         return
       }
-      if (activePlanKey && activePlanKey !== plan.key && ['wise', 'paddle', 'gumroad'].includes(source)) {
+      if (activePlanKey && activePlanKey !== plan.key && ['wise', 'gumroad'].includes(source)) {
         setBillingMessage(`Votre abonnement actuel vient de ${subscriptionPaymentLabel(user)}. Pour renouveler ou changer de formule avec ce même moyen de paiement, contactez le support Ava afin d’éviter un double abonnement.`)
+        return
+      }
+      if (activePlanKey && activePlanKey !== plan.key && source === 'paddle' && !paddleRenewalStopped) {
+        setBillingMessage('Paddle est un ancien moyen de paiement. Arrêtez d’abord le renouvellement Paddle, puis choisissez une nouvelle formule par carte bancaire.')
         return
       }
       // New subscriptions now go through Whop while Airwallex stays available
@@ -1260,7 +1264,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 {user.subscription_source === 'paddle' && (
                   <p className="relative z-10 mt-5 text-[11px] leading-relaxed text-slate-400">
                     {paddleRenewalStopped
-                      ? 'Aucun nouveau prélèvement Paddle ne sera tenté. À la fin de cette période, contactez le support Ava pour renouveler sans créer de double abonnement.'
+                      ? 'Renouvellement Paddle arrêté. Aucun nouveau prélèvement Paddle ne sera tenté; votre accès reste actif jusqu’à la date indiquée, puis vous pourrez renouveler avec les nouveaux moyens de paiement.'
                       : 'Paddle est conservé seulement pour les anciens abonnements. Vous pouvez arrêter le prochain prélèvement ici; pour changer de formule, contactez le support Ava afin d’éviter un double abonnement.'}
                   </p>
                 )}
