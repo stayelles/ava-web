@@ -30,8 +30,8 @@ export function ProfileTab({ user, onUpdatePin }: Props) {
       setPinStatus({ ok: false, msg: 'Les PIN ne correspondent pas' })
       return
     }
-    if (!/^\d{4,6}$/.test(newPin)) {
-      setPinStatus({ ok: false, msg: 'Le PIN doit contenir 4 à 6 chiffres' })
+    if (!/^\d{4,5}$/.test(newPin)) {
+      setPinStatus({ ok: false, msg: 'Le PIN doit contenir 4 à 5 chiffres' })
       return
     }
     setSaving(true)
@@ -133,7 +133,7 @@ export function ProfileTab({ user, onUpdatePin }: Props) {
               <input
                 type="password"
                 value={f.value}
-                onChange={(e) => f.setter(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onChange={(e) => f.setter(e.target.value.replace(/\D/g, '').slice(0, 5))}
                 placeholder={f.placeholder}
                 inputMode="numeric"
                 style={{

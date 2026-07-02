@@ -72,8 +72,8 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
     const email = signupEmail.trim()
     const pin = signupPin.trim()
     if (!email || !pin) return
-    if (!/^\d{4,6}$/.test(pin)) {
-      setLocalError('Le PIN doit contenir entre 4 et 6 chiffres')
+    if (!/^\d{4,5}$/.test(pin)) {
+      setLocalError('Le PIN doit contenir entre 4 et 5 chiffres')
       return
     }
     setLocalLoading(true)
@@ -139,6 +139,10 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
     if (!email || !token || !newPin) return
     if (newPin !== resetPinConfirm.trim()) {
       setLocalError('Les deux codes PIN ne correspondent pas')
+      return
+    }
+    if (!/^\d{4,5}$/.test(newPin)) {
+      setLocalError('Le PIN doit contenir entre 4 et 5 chiffres')
       return
     }
     setLocalLoading(true)
@@ -287,14 +291,14 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
               >
                 <div>
                   <label className="block text-[11px] font-bold mb-1.5 uppercase tracking-widest" style={{ color: '#475569' }}>
-                    Email ou identifiant
+                    Email
                   </label>
                   <input
                     type="text"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
                     onKeyDown={handleKey}
-                    placeholder="votre@email.com ou 62402485"
+                    placeholder="votre@email.com"
                     style={{
                       width: '100%',
                       padding: '13px 16px',
@@ -455,15 +459,15 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
 
                 <div>
                   <label className="block text-[11px] font-bold mb-1.5 uppercase tracking-widest" style={{ color: '#475569' }}>
-                    Code PIN de sécurité (4-6 chiffres)
+                    Code PIN de sécurité (4-5 chiffres)
                   </label>
                   <div style={{ position: 'relative' }}>
                     <input
                       type={showSignupPin ? 'text' : 'password'}
                       value={signupPin}
-                      onChange={(e) => setSignupPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      onChange={(e) => setSignupPin(e.target.value.replace(/\D/g, '').slice(0, 5))}
                       onKeyDown={handleKey}
-                      placeholder="••••••"
+                      placeholder="•••••"
                       inputMode="numeric"
                       style={{
                         width: '100%',
@@ -760,9 +764,9 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
                     <input
                       type={showResetPin ? 'text' : 'password'}
                       value={resetPin}
-                      onChange={(e) => setResetPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      onChange={(e) => setResetPin(e.target.value.replace(/\D/g, '').slice(0, 5))}
                       onKeyDown={handleKey}
-                      placeholder="••••••"
+                      placeholder="•••••"
                       inputMode="numeric"
                       style={{
                         width: '100%',
@@ -809,9 +813,9 @@ export function LoginScreen({ onLogin, loading, error, onRegisterRequest, onRegi
                   <input
                     type={showResetPin ? 'text' : 'password'}
                     value={resetPinConfirm}
-                    onChange={(e) => setResetPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    onChange={(e) => setResetPinConfirm(e.target.value.replace(/\D/g, '').slice(0, 5))}
                     onKeyDown={handleKey}
-                    placeholder="••••••"
+                    placeholder="•••••"
                     inputMode="numeric"
                     style={{
                       width: '100%',

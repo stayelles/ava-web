@@ -195,7 +195,7 @@ export function useUserData() {
   }, [])
 
   const confirmPinReset = useCallback(async (email: string, token: string, newPin: string): Promise<{ ok: boolean; error?: string }> => {
-    if (!/^\d{4,6}$/.test(newPin)) return { ok: false, error: 'Le PIN doit contenir 4 à 6 chiffres' }
+    if (!/^\d{4,5}$/.test(newPin)) return { ok: false, error: 'Le PIN doit contenir 4 à 5 chiffres' }
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/pin-reset-confirm`, {
         method: 'POST',
@@ -239,7 +239,7 @@ export function useUserData() {
   const updatePin = useCallback(async (currentPin: string, newPin: string): Promise<{ ok: boolean; error?: string }> => {
     if (!user) return { ok: false, error: 'Non connecté' }
     if (!/^\d{4,6}$/.test(currentPin)) return { ok: false, error: 'PIN actuel incorrect' }
-    if (!/^\d{4,6}$/.test(newPin)) return { ok: false, error: 'Le PIN doit contenir 4 à 6 chiffres' }
+    if (!/^\d{4,5}$/.test(newPin)) return { ok: false, error: 'Le PIN doit contenir 4 à 5 chiffres' }
     try {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/update-pin`, {
         method: 'POST',
