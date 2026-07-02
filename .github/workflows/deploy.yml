@@ -30,9 +30,9 @@ jobs:
           GH_TOKEN: ${{ secrets.DESKTOP_RELEASE_TOKEN || github.token }}
         run: |
           mkdir -p out/downloads
-          gh release download v1.2.42 --repo stayelles/ava-desktop-releases --pattern 'Ava-1.2.42-arm64.dmg' --dir out/downloads --clobber
-          gh release download v1.2.42 --repo stayelles/ava-desktop-releases --pattern 'Ava-1.2.42-x64.dmg' --dir out/downloads --clobber
-          gh release download v1.2.42 --repo stayelles/ava-desktop-releases --pattern 'AvaSetup-1.2.42.exe' --dir out/downloads --clobber
+          gh release download v1.2.43 --repo stayelles/ava-desktop-releases --pattern 'Ava-1.2.43-arm64.dmg' --dir out/downloads --clobber
+          gh release download v1.2.43 --repo stayelles/ava-desktop-releases --pattern 'Ava-1.2.43-x64.dmg' --dir out/downloads --clobber
+          gh release download v1.2.43 --repo stayelles/ava-desktop-releases --pattern 'AvaSetup-1.2.43.exe' --dir out/downloads --clobber
           gh release download v1.2.27 --repo stayelles/ava-desktop-releases --pattern 'AvaBridgeEA-1.41.ex5' --dir out/downloads --clobber
           gh release download v1.2.5 --repo stayelles/ava-desktop-releases --pattern 'AvaBridgeEA-1.34.ex5' --dir out/downloads --clobber
 
