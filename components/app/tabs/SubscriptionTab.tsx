@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, 
   Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock,
-  CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight, X
+  CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight, X, Wallet
 } from 'lucide-react'
 import {
   PADDLE_PRICE_PRO_STARTER,
@@ -231,6 +231,7 @@ const planLabels: Record<string, string> = {
 }
 
 const CUSTOM_PLAN_ORDER = ['custom_simple', 'custom_pro', 'custom_ultra', 'custom_max']
+const PUBLIC_CUSTOM_PLAN_KEYS = ['custom_pro', 'custom_ultra', 'custom_max']
 const CUSTOM_PLAN_CTA: Record<string, string> = {
   custom_simple: 'Profiter de Simple',
   custom_pro: 'Profiter de Pro',
@@ -295,7 +296,11 @@ function checkoutPayPalPlanId(plan: typeof ALL_PLANS[number], user: UserData) {
 }
 
 function isPlanCheckoutReady(plan: typeof ALL_PLANS[number]) {
-  return CUSTOM_PLAN_ORDER.includes(plan.key)
+  return PUBLIC_CUSTOM_PLAN_KEYS.includes(plan.key)
+}
+
+function isNowPaymentsPlan(plan: typeof ALL_PLANS[number] | null) {
+  return plan?.key === 'custom_pro' || plan?.key === 'custom_ultra' || plan?.key === 'custom_max'
 }
 
 function loadPayPalSdk(): Promise<void> {
@@ -412,6 +417,10 @@ function suggestedBillingCountry() {
 
 function isKnownPlan(plan: string | null) {
   return !!plan && ALL_PLANS.some(item => item.key === plan)
+}
+
+function visiblePlans() {
+  return ALL_PLANS.filter(plan => PUBLIC_CUSTOM_PLAN_KEYS.includes(plan.key))
 }
 
 function isLegacyRenewalSource(source: string | null | undefined) {
@@ -542,6 +551,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     user.subscription_source !== 'geniuspay' &&
     user.subscription_source !== 'mollie' &&
     user.subscription_source !== 'airwallex' &&
+    user.subscription_source !== 'nowpayments' &&
     user.subscription_source !== 'wise'
 
   const currentPlan = normalizePlanKey(user.subscription_plan, custom)
@@ -589,6 +599,15 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     if (isKnownPlan(requestedPlan)) {
       setSelectedPlanKey(requestedPlan)
     }
+    const payment = params.get('payment')
+    if (payment === 'nowpayments_return') {
+      setBillingMessage('Paiement crypto reçu par NOWPayments. Ava active votre accès dès que la confirmation blockchain est terminée.')
+      setTimeout(() => onRefresh?.(), 3500)
+    } else if (payment === 'nowpayments_partial') {
+      setBillingError('Paiement crypto partiel détecté. Ava n’active pas automatiquement les paiements incomplets; contactez le support avec votre email.')
+    } else if (payment === 'nowpayments_cancel') {
+      setBillingMessage('Paiement crypto annulé. Aucun accès n’a été modifié.')
+    }
     if (isValidUpgradeTarget(activePlanKey, requestedUpgrade)) {
       const plan = ALL_PLANS.find(p => p.key === requestedUpgrade)
       if (plan) {
@@ -596,10 +615,11 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         setShowUpgradeModal(true)
       }
     }
-  }, [activePlanKey])
+  }, [activePlanKey, onRefresh])
 
   const checkoutLabel = (plan: typeof ALL_PLANS[number]) => {
     if (!isPlanCheckoutReady(plan)) return 'Paiement en attente'
+    if (isNowPaymentsPlan(plan)) return `Payer ${plan.label.replace(/^Custom\s+/i, '')} en crypto`
     if (user.subscription_source === 'airwallex' && user.airwallex_subscription_id && activePlanKey && activePlanKey !== plan.key) {
       return customPlanRank(plan.key) > customPlanRank(activePlanKey)
         ? `Upgrade vers ${plan.label.replace(/^Custom\s+/i, '')}`
@@ -612,6 +632,11 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
   const startCheckout = (plan: typeof ALL_PLANS[number]) => {
     const source = String(user.subscription_source ?? '')
+    if (isNowPaymentsPlan(plan)) {
+      void startNowPaymentsCheckout(plan)
+      return
+    }
+
     if (user.subscription_source === 'airwallex' && user.airwallex_subscription_id && activePlanKey && activePlanKey !== plan.key) {
       if (customPlanRank(plan.key) <= customPlanRank(activePlanKey)) {
         setBillingError('Le passage à une formule inférieure est désactivé pour éviter une erreur de facturation.')
@@ -771,6 +796,48 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
       setBillingError('Airwallex n’a pas renvoyé de lien de paiement.')
     } catch {
       setBillingError('Erreur réseau Airwallex. Réessayez dans un instant.')
+    } finally {
+      setBillingLoading(false)
+    }
+  }
+
+  const startNowPaymentsCheckout = async (planOverride?: typeof ALL_PLANS[number]) => {
+    const plan = planOverride ?? paymentChoicePlan
+    if (!plan || !isNowPaymentsPlan(plan)) {
+      setBillingError('Le paiement crypto est disponible uniquement pour Custom Pro, Ultra et Max.')
+      return
+    }
+    setBillingLoading(true)
+    setBillingError('')
+    setBillingMessage('')
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/nowpayments-invoice`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({
+          user_id: user.id,
+          target_plan: plan.key,
+        }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok || result.error || !result.ok) {
+        setBillingError(result.error ?? 'Paiement crypto indisponible pour le moment.')
+        return
+      }
+      if (result.invoice_url) {
+        window.location.href = String(result.invoice_url)
+        return
+      }
+      if (result.email_sent || result.subscription_id) {
+        setBillingMessage(
+          result.message ??
+            `Abonnement crypto créé. NOWPayments envoie le lien de paiement à ${user.email}; les prochains liens arriveront aussi par email avant expiration.`,
+        )
+        return
+      }
+      setBillingError('NOWPayments n’a pas renvoyé de lien de paiement.')
+    } catch {
+      setBillingError('Erreur réseau NOWPayments. Réessayez dans un instant.')
     } finally {
       setBillingLoading(false)
     }
@@ -1020,7 +1087,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                         Abonnement Actif
                       </span>
                       <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-white/5 border border-white/10 text-slate-400">
-                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'paypal' ? 'PayPal' : user.subscription_source === 'geniuspay' ? 'Carte bancaire' : user.subscription_source === 'mollie' ? 'Carte bancaire' : user.subscription_source === 'airwallex' ? 'Airwallex' : user.subscription_source === 'gumroad' ? 'Gumroad' : user.subscription_source === 'wise' ? 'Wise' : 'Mobile'}
+                        {user.subscription_source === 'paddle' ? 'Paddle Billing' : user.subscription_source === 'paypal' ? 'PayPal' : user.subscription_source === 'geniuspay' ? 'Carte bancaire' : user.subscription_source === 'mollie' ? 'Carte bancaire' : user.subscription_source === 'airwallex' ? 'Airwallex' : user.subscription_source === 'nowpayments' ? 'Crypto' : user.subscription_source === 'gumroad' ? 'Gumroad' : user.subscription_source === 'wise' ? 'Wise' : 'Mobile'}
                       </span>
                     </div>
 
@@ -1204,7 +1271,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   <h4 className="text-xs font-bold uppercase tracking-wider">Aide & Facturation</h4>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Les nouveaux paiements sont traités via PayPal, Mollie ou Airwallex. Ava active automatiquement l&apos;abonnement après confirmation, et Paddle reste disponible pour les abonnements déjà existants.
+                  Les nouveaux paiements sont traités temporairement par crypto via NOWPayments. Ava active automatiquement l&apos;abonnement après confirmation blockchain.
                 </p>
                 <div className="pt-2">
                   <a 
@@ -1229,12 +1296,12 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             <div className="space-y-2">
               <h3 className="text-xl font-bold text-white tracking-tight">Toutes les formules disponibles</h3>
               <p className="text-sm text-slate-400">
-                Découvrez nos formules et changez d&apos;offre ou abonnez-vous à tout moment.
+                Choisissez une formule Custom et payez directement par crypto.
               </p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch max-w-7xl mx-auto w-full">
-              {ALL_PLANS.filter(p => p.key !== 'pro_starter').map((plan, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-stretch max-w-6xl mx-auto w-full">
+              {visiblePlans().map((plan, index) => (
                 <motion.div
                   key={plan.key}
                   initial={{ opacity: 0, y: 20 }}
@@ -1298,7 +1365,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                           {plan.capital}
                         </span>
                       )}
-                      {canUsePlanTrial(plan, user) && (
+                      {!isNowPaymentsPlan(plan) && canUsePlanTrial(plan, user) && (
                         <span className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
                           {planTrialDays(plan)} jour gratuit
                         </span>
@@ -1357,8 +1424,8 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         <div className="space-y-12">
           
           {/* Main Grid of Plans */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 items-stretch max-w-7xl mx-auto w-full">
-            {ALL_PLANS.filter(p => p.key !== 'pro_starter').map((plan, index) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 items-stretch max-w-6xl mx-auto w-full">
+            {visiblePlans().map((plan, index) => (
               <motion.div
                 key={plan.key}
                 initial={{ opacity: 0, y: 20 }}
@@ -1415,7 +1482,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                         {plan.capital}
                       </span>
                     )}
-                    {canUsePlanTrial(plan, user) && (
+                    {!isNowPaymentsPlan(plan) && canUsePlanTrial(plan, user) && (
                       <span className="inline-flex items-center rounded-full border border-emerald-400/20 bg-emerald-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-widest text-emerald-300">
                         {planTrialDays(plan)} jour gratuit
                       </span>
@@ -1662,6 +1729,31 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   </div>
                   <ArrowRight size={18} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
                 </button>
+
+                {isNowPaymentsPlan(paymentChoicePlan) && (
+                  <button
+                    type="button"
+                    onClick={() => startNowPaymentsCheckout()}
+                    disabled={billingLoading}
+                    className="group flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:border-rose-400/40 hover:bg-rose-500/10 disabled:opacity-60"
+                  >
+                    <div className="flex h-14 w-16 shrink-0 items-center justify-center rounded-2xl border border-rose-400/25 bg-rose-500/10 text-rose-200 shadow-sm">
+                      <Wallet size={26} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-black text-white">Crypto</p>
+                        <span className="rounded-full border border-rose-400/25 bg-rose-500/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-rose-200">
+                          NOWPayments
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                        Abonnement crypto par email. NOWPayments envoie le lien de paiement initial et les renouvellements avant expiration.
+                      </p>
+                    </div>
+                    <ExternalLink size={16} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                  </button>
+                )}
 
                 <button
                   type="button"
