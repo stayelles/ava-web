@@ -311,6 +311,10 @@ function isPlanCheckoutReady(plan: typeof ALL_PLANS[number]) {
   return CHECKOUT_PLAN_KEYS.includes(plan.key)
 }
 
+function isNowPaymentsPlan(plan: typeof ALL_PLANS[number] | null) {
+  return plan?.key === 'custom_pro' || plan?.key === 'custom_ultra' || plan?.key === 'custom_max'
+}
+
 function loadPayPalSdk(): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve()
   if (window.paypal) return Promise.resolve()
@@ -628,6 +632,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     user.subscription_source !== 'mollie' &&
     user.subscription_source !== 'airwallex' &&
     user.subscription_source !== 'whop' &&
+    user.subscription_source !== 'nowpayments' &&
     user.subscription_source !== 'wise'
 
   const isSubscribed = pro || custom || !!activeReferralEntitlement
@@ -681,6 +686,17 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     if (isVisibleCheckoutPlanKey(requestedPlan)) {
       setSelectedPlanKey(requestedPlan)
     }
+    const payment = params.get('payment')
+    if (payment === 'nowpayments_return') {
+      setBillingMessage('Paiement crypto reçu par NOWPayments. Ava active votre accès dès que la confirmation blockchain est terminée.')
+      setTimeout(() => onRefresh?.(), 3500)
+    } else if (payment === 'nowpayments_partial') {
+      setBillingError('Paiement crypto partiel détecté. Ava n’active pas automatiquement les paiements incomplets; contactez le support avec votre email.')
+    } else if (payment === 'nowpayments_cancel') {
+      setBillingMessage('Paiement crypto annulé. Aucun accès n’a été modifié.')
+    } else if (payment === 'nowpayments_error') {
+      setBillingError('Le lien de renouvellement crypto est invalide ou expiré. Relancez le paiement depuis Ava.')
+    }
     if (isVisibleCheckoutPlanKey(requestedUpgrade) && isValidUpgradeTarget(activePlanKey, requestedUpgrade)) {
       const plan = ALL_PLANS.find(p => p.key === requestedUpgrade)
       if (plan) {
@@ -692,6 +708,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
   const checkoutLabel = (plan: typeof ALL_PLANS[number]) => {
     if (!isPlanCheckoutReady(plan)) return 'Paiement en attente'
+    if (isNowPaymentsPlan(plan)) return `Payer ${plan.label.replace(/^Custom\s+/i, '')} en crypto`
     if (subscriptionExpired && plan.key === lastPlanKey) {
       return `Renouveler ${plan.label.replace(/^Custom\s+/i, '')}`
     }
@@ -866,6 +883,11 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
   const startCheckout = (plan: typeof ALL_PLANS[number]) => {
     const source = String(user.subscription_source ?? '')
+    if (isNowPaymentsPlan(plan)) {
+      void startNowPaymentsCheckout(plan)
+      return
+    }
+
     if (user.subscription_source === 'airwallex' && user.airwallex_subscription_id && activePlanKey && activePlanKey !== plan.key) {
       if (customPlanRank(plan.key) <= customPlanRank(activePlanKey)) {
         setBillingError('Le passage à une formule inférieure est désactivé pour éviter une erreur de facturation.')
@@ -1020,6 +1042,41 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
       setBillingError('Le moyen de paiement n’a pas renvoyé de lien.')
     } catch {
       setBillingError('Erreur réseau. Réessayez dans un instant.')
+    } finally {
+      setBillingLoading(false)
+    }
+  }
+
+  const startNowPaymentsCheckout = async (planOverride?: typeof ALL_PLANS[number]) => {
+    const plan = planOverride ?? paymentChoicePlan
+    if (!plan || !isNowPaymentsPlan(plan)) {
+      setBillingError('Le paiement crypto est disponible uniquement pour Custom Pro, Ultra et Max.')
+      return
+    }
+    setBillingLoading(true)
+    setBillingError('')
+    setBillingMessage('')
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/nowpayments-invoice`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({
+          user_id: user.id,
+          target_plan: plan.key,
+        }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok || result.error || !result.ok) {
+        setBillingError(result.error ?? 'Paiement crypto indisponible pour le moment.')
+        return
+      }
+      if (result.invoice_url) {
+        window.location.href = String(result.invoice_url)
+        return
+      }
+      setBillingError('NOWPayments n’a pas renvoyé de lien de paiement.')
+    } catch {
+      setBillingError('Erreur réseau NOWPayments. Réessayez dans un instant.')
     } finally {
       setBillingLoading(false)
     }
@@ -1502,7 +1559,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   <h4 className="text-xs font-bold uppercase tracking-wider">Aide & Facturation</h4>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  Les nouveaux paiements passent par le checkout sécurisé Ava. Ava active automatiquement l&apos;abonnement après confirmation, et les anciens abonnements restent reconnus jusqu&apos;à leur date actuelle.
+                  Les nouveaux paiements passent temporairement par crypto via NOWPayments. Ava active automatiquement l&apos;abonnement après confirmation blockchain, et les anciens abonnements restent reconnus jusqu&apos;à leur date actuelle.
                   {subscriptionManagementLabel(user) ? ` ${subscriptionManagementLabel(user)}` : ''}
                 </p>
                 <div className="pt-2">
@@ -1528,7 +1585,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             <div className="mx-auto max-w-2xl space-y-2 text-center">
               <h3 className="text-2xl font-black text-white">Toutes les formules disponibles</h3>
               <p className="text-sm text-slate-400">
-                Découvrez nos formules et changez d&apos;offre ou abonnez-vous à tout moment.
+                Choisissez une formule Custom et payez directement par crypto.
               </p>
             </div>
             
