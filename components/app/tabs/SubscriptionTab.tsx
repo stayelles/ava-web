@@ -27,6 +27,7 @@ import {
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
 
+const GENIUSPAY_PHONE_STORAGE_KEY = 'ava_geniuspay_phone'
 declare global {
   interface Window {
     paypal?: {
@@ -517,6 +518,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   const [selectedPlanKey, setSelectedPlanKey] = useState<string | null>(null)
   const [paymentChoicePlan, setPaymentChoicePlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [paypalPlan, setPaypalPlan] = useState<typeof ALL_PLANS[number] | null>(null)
+  const [geniusPayPhone, setGeniusPayPhone] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    return window.localStorage.getItem(GENIUSPAY_PHONE_STORAGE_KEY) ?? ''
+  })
   const [countryPromptPlan, setCountryPromptPlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [billingCountryCode, setBillingCountryCode] = useState(() => cleanCountryCode(user.billing_country_code))
   const paypalButtonRef = useRef<HTMLDivElement | null>(null)
@@ -606,6 +611,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
   }
 
   const startCheckout = (plan: typeof ALL_PLANS[number]) => {
+    const source = String(user.subscription_source ?? '')
     if (user.subscription_source === 'airwallex' && user.airwallex_subscription_id && activePlanKey && activePlanKey !== plan.key) {
       if (customPlanRank(plan.key) <= customPlanRank(activePlanKey)) {
         setBillingError('Le passage à une formule inférieure est désactivé pour éviter une erreur de facturation.')
@@ -614,7 +620,26 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     }
 
     if (isPlanCheckoutReady(plan)) {
-      startAirwallexCheckout(plan)
+      if (source === 'paypal' && activePlanKey && activePlanKey !== plan.key) {
+        if (!user.paypal_subscription_id) {
+          setBillingMessage('Votre abonnement PayPal est actif, mais le lien PayPal n’est pas encore complet. Contactez le support Ava pour modifier la formule sans doublon.')
+          return
+        }
+        setPaypalPlan(plan)
+        return
+      }
+      if (activePlanKey && activePlanKey !== plan.key && ['wise', 'gumroad'].includes(source)) {
+        setBillingMessage(`Votre accès ${legacyRenewalSourceLabel} reste actif. Le nouveau paiement passera par GeniusPay, PayPal ou Apple Pay, puis Ava appliquera la nouvelle formule après confirmation.`)
+        setPaymentChoicePlan(plan)
+        return
+      }
+      if (activePlanKey && activePlanKey !== plan.key && source === 'paddle' && !paddleRenewalStopped) {
+        setBillingMessage('Paddle est un ancien moyen de paiement. Arrêtez d’abord le renouvellement Paddle, puis choisissez une nouvelle formule par carte bancaire.')
+        return
+      }
+      // Whop is temporarily unavailable. New card subscriptions use GeniusPay,
+      // while PayPal and wallet options remain available from the payment modal.
+      setPaymentChoicePlan(plan)
       return
     }
 
@@ -625,6 +650,47 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     if (!paymentChoicePlan) return
     setPaypalPlan(paymentChoicePlan)
     setPaymentChoicePlan(null)
+  }
+
+  const startGeniusPayCheckout = async (planOverride?: typeof ALL_PLANS[number]) => {
+    const plan = planOverride ?? paymentChoicePlan
+    if (!plan) return
+    const phone = geniusPayPhone.trim().replace(/\s+/g, '')
+    if (!/^\+[1-9]\d{7,14}$/.test(phone)) {
+      setBillingError('Entrez un numéro de téléphone international valide, par exemple +2250102030405.')
+      return
+    }
+    setBillingLoading(true)
+    setBillingError('')
+    setBillingMessage('')
+    try {
+      window.localStorage.setItem(GENIUSPAY_PHONE_STORAGE_KEY, phone)
+    } catch {}
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/geniuspay-subscription`, {
+        method: 'POST',
+        headers: SUPABASE_HEADERS,
+        body: JSON.stringify({
+          user_id: user.id,
+          target_plan: plan.key,
+          customer_phone: phone,
+        }),
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok || result.error || !result.ok) {
+        setBillingError(result.error ?? 'Paiement par carte indisponible pour le moment.')
+        return
+      }
+      if (result.redirect_url) {
+        window.location.href = String(result.redirect_url)
+        return
+      }
+      setBillingError('GeniusPay n’a pas renvoyé de lien de paiement.')
+    } catch {
+      setBillingError('Erreur réseau. Réessayez dans un instant.')
+    } finally {
+      setBillingLoading(false)
+    }
   }
 
   const startMollieCheckout = async () => {
@@ -1527,6 +1593,58 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
               )}
 
               <div className="space-y-3">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition-colors hover:border-emerald-400/30">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                    <div className="flex shrink-0 items-center gap-2">
+                      <div className="flex h-12 w-16 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm">
+                        <Image src="/payment/visa.png" alt="Visa" width={64} height={40} className="h-full w-full object-cover" />
+                      </div>
+                      <div className="flex h-12 w-16 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm">
+                        <Image src="/payment/mastercard.png" alt="Mastercard" width={64} height={40} className="h-full w-full object-cover" />
+                      </div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-black text-white">Carte bancaire</p>
+                        <span className="rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-emerald-200">
+                          GeniusPay
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-400">
+                        Visa ou Mastercard via checkout sécurisé. Activation automatique après confirmation.
+                      </p>
+                    </div>
+                  </div>
+                  <label className="mt-4 block space-y-2">
+                    <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-slate-500">
+                      <Smartphone size={13} />
+                      Téléphone de facturation
+                    </span>
+                    <input
+                      type="tel"
+                      value={geniusPayPhone}
+                      onChange={(event) => setGeniusPayPhone(event.target.value)}
+                      placeholder="+2250102030405"
+                      className="h-12 w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 text-sm font-semibold text-white outline-none transition-colors placeholder:text-slate-600 focus:border-emerald-300/60"
+                    />
+                  </label>
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => startGeniusPayCheckout()}
+                      disabled={billingLoading}
+                      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-5 text-sm font-black text-slate-950 transition-all hover:bg-emerald-300 disabled:opacity-60"
+                    >
+                      {billingLoading ? 'Ouverture...' : 'Continuer par carte'}
+                      <ExternalLink size={14} />
+                    </button>
+                  </div>
+                  <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
+                    <ShieldCheck size={14} className="text-emerald-300" />
+                    Paiement initial sécurisé, puis renouvellement mensuel automatique.
+                  </div>
+                </div>
+
                 <button
                   type="button"
                   onClick={startPayPalCheckout}
@@ -1544,40 +1662,6 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                   </div>
                   <ArrowRight size={18} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
                 </button>
-
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition-colors hover:border-emerald-400/30">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                    <div className="flex shrink-0 items-center gap-2">
-                      <div className="flex h-12 w-16 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm">
-                        <Image src="/payment/visa.png" alt="Visa" width={64} height={40} className="h-full w-full object-cover" />
-                      </div>
-                      <div className="flex h-12 w-16 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm">
-                        <Image src="/payment/mastercard.png" alt="Mastercard" width={64} height={40} className="h-full w-full object-cover" />
-                      </div>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-black text-white">Carte bancaire</p>
-                      <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                        Paiement sécurisé par Mollie, avec 3D Secure si nécessaire.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <button
-                      type="button"
-                      onClick={startMollieCheckout}
-                      disabled={billingLoading}
-                      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-5 text-sm font-black text-slate-950 transition-all hover:bg-emerald-300 disabled:opacity-60"
-                    >
-                      {billingLoading ? 'Ouverture...' : 'Continuer par carte'}
-                      <ExternalLink size={14} />
-                    </button>
-                  </div>
-                  <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
-                    <ShieldCheck size={14} className="text-emerald-300" />
-                    Paiement initial sécurisé, puis renouvellement mensuel automatique.
-                  </div>
-                </div>
 
                 <button
                   type="button"
