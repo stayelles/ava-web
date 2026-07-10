@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Apple, Mic, MessageSquare, User, Crown, Users, Settings, LogOut, Download, Terminal, X } from 'lucide-react'
+import { Apple, Cloud, Mic, MessageSquare, User, Crown, Users, Settings, LogOut, Download, Terminal, X } from 'lucide-react'
 import { FaWindows } from 'react-icons/fa'
 import Image from 'next/image'
 import type { AppTab } from './types'
@@ -10,6 +10,7 @@ import type { AppTab } from './types'
 const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'voice', label: 'Conversation', icon: Mic },
   { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'cloud', label: 'Ava Cloud', icon: Cloud },
   { id: 'profile', label: 'Profil', icon: User },
   { id: 'subscription', label: 'Abonnement', icon: Crown },
   { id: 'referral', label: 'Affiliation', icon: Users },
@@ -258,7 +259,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-300">MT5 Bridge</p>
                 <h2 className="mt-1 text-lg font-black text-white">Télécharger AvaBridgeEA</h2>
                 <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
-                  Choisissez la version à installer manuellement dans MetaTrader 5 si l'installation automatique ne suffit pas.
+                  Choisissez la version à installer manuellement dans MetaTrader 5 si l&apos;installation automatique ne suffit pas.
                 </p>
               </div>
               <button

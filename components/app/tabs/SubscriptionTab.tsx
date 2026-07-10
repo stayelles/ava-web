@@ -1,13 +1,12 @@
 'use client'
 
-import Image from 'next/image'
 import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, 
   Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock,
   CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight, X, Ticket,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Coins
 } from 'lucide-react'
 import {
   PADDLE_PRICE_PRO_STARTER,
@@ -470,12 +469,6 @@ function subscriptionManagementLabel(user: UserData) {
   return ''
 }
 
-function airwallexMethodForUser(user: UserData): AirwallexPaymentMethod | undefined {
-  const method = paymentMethodFromEvent(user.airwallex_last_event_type)
-  if (method === 'apple_pay' || method === 'google_pay') return method
-  return undefined
-}
-
 function daysUntil(raw: string | null | undefined) {
   if (!raw) return null
   const parsed = Date.parse(raw)
@@ -708,7 +701,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
   const checkoutLabel = (plan: typeof ALL_PLANS[number]) => {
     if (!isPlanCheckoutReady(plan)) return 'Paiement en attente'
-    if (isNowPaymentsPlan(plan)) return `Payer ${plan.label.replace(/^Custom\s+/i, '')} en crypto`
+    if (isNowPaymentsPlan(plan)) return `Choisir le paiement`
     if (subscriptionExpired && plan.key === lastPlanKey) {
       return `Renouveler ${plan.label.replace(/^Custom\s+/i, '')}`
     }
@@ -883,11 +876,6 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
   const startCheckout = (plan: typeof ALL_PLANS[number]) => {
     const source = String(user.subscription_source ?? '')
-    if (isNowPaymentsPlan(plan)) {
-      void startNowPaymentsCheckout(plan)
-      return
-    }
-
     if (user.subscription_source === 'airwallex' && user.airwallex_subscription_id && activePlanKey && activePlanKey !== plan.key) {
       if (customPlanRank(plan.key) <= customPlanRank(activePlanKey)) {
         setBillingError('Le passage à une formule inférieure est désactivé pour éviter une erreur de facturation.')
@@ -896,29 +884,17 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
     }
 
     if (isPlanCheckoutReady(plan)) {
-      if (source === 'airwallex' && activePlanKey && activePlanKey !== plan.key) {
-        if (!user.airwallex_subscription_id) {
-          setBillingMessage('Votre abonnement actuel est lié à Apple Pay / Google Pay. Contactez le support Ava pour modifier la formule sans créer un deuxième abonnement.')
-          return
-        }
-        startAirwallexCheckout(plan, undefined, airwallexMethodForUser(user))
-        return
-      }
       if (source === 'whop' && activePlanKey && activePlanKey !== plan.key) {
         if (!user.whop_membership_id) {
           setBillingMessage('Votre abonnement carte bancaire est actif, mais le lien de gestion n’est pas encore complet. Contactez le support Ava pour modifier la formule sans doublon.')
           return
         }
-        startWhopCheckout('card', plan)
-        return
       }
       if (source === 'paypal' && activePlanKey && activePlanKey !== plan.key) {
         if (!user.paypal_subscription_id) {
           setBillingMessage('Votre abonnement PayPal est actif, mais le lien PayPal n’est pas encore complet. Contactez le support Ava pour modifier la formule sans doublon.')
           return
         }
-        setPaypalPlan(plan)
-        return
       }
       if (activePlanKey && activePlanKey !== plan.key && ['wise', 'gumroad'].includes(source)) {
         setBillingMessage(`Votre abonnement actuel vient de ${subscriptionPaymentLabel(user)}. Pour renouveler ou changer de formule avec ce même moyen de paiement, contactez le support Ava afin d’éviter un double abonnement.`)
@@ -928,19 +904,13 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
         setBillingMessage('Paddle est un ancien moyen de paiement. Arrêtez d’abord le renouvellement Paddle, puis choisissez une nouvelle formule par carte bancaire.')
         return
       }
-      // New subscriptions now go through Whop while Airwallex stays available
-      // for existing Airwallex accounts and future reactivation.
-      startWhopCheckout('card', plan)
+      setBillingError('')
+      setBillingMessage('')
+      setPaymentChoicePlan(plan)
       return
     }
 
     setBillingError('Le paiement est indisponible pour cette formule.')
-  }
-
-  const startPayPalCheckout = () => {
-    if (!paymentChoicePlan) return
-    setPaypalPlan(paymentChoicePlan)
-    setPaymentChoicePlan(null)
   }
 
   const startWhopCheckout = async (
@@ -1585,7 +1555,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             <div className="mx-auto max-w-2xl space-y-2 text-center">
               <h3 className="text-2xl font-black text-white">Toutes les formules disponibles</h3>
               <p className="text-sm text-slate-400">
-                Choisissez une formule Custom et payez directement par crypto.
+                Choisissez une formule Custom, puis payez par banque/carte ou crypto-monnaie.
               </p>
             </div>
             
@@ -1735,35 +1705,27 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-slate-900 p-6 md:p-8 shadow-2xl space-y-6"
+              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#070b16] p-5 shadow-2xl shadow-black/40"
             >
               <button
                 type="button"
                 onClick={() => setPaymentChoicePlan(null)}
-                className="absolute right-4 top-4 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-400 transition-colors hover:bg-white/10 hover:text-white"
+                className="absolute right-5 top-5 inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-slate-400 transition-colors hover:text-white"
                 aria-label="Fermer"
               >
                 <X size={16} />
               </button>
 
-              <div className="space-y-3 pr-10">
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Choix du paiement</p>
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                  <div>
-                    <h3 className="text-2xl font-black text-white tracking-tight">{paymentChoicePlan.label}</h3>
-                    <p className="mt-1 text-sm text-slate-400 leading-relaxed">
-                      Choisissez votre moyen de paiement sécurisé.
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-2 text-right">
-                    <p className="text-lg font-black text-white">{paymentChoicePlan.price}</p>
-                    <p className="text-[11px] font-semibold text-slate-500">{paymentChoicePlan.per}</p>
-                  </div>
-                </div>
+              <div className="pr-10">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-rose-300">Paiement</p>
+                <h3 className="mt-1 text-lg font-black text-white">{paymentChoicePlan.label}</h3>
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  {paymentChoicePlan.price} {paymentChoicePlan.per}
+                </p>
               </div>
 
               {(billingError || billingMessage) && (
-                <div className={`rounded-2xl border px-4 py-3 text-xs font-semibold ${
+                <div className={`mt-5 rounded-2xl border px-4 py-3 text-xs font-semibold ${
                   billingError
                     ? 'border-rose-500/20 bg-rose-500/10 text-rose-200'
                     : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-200'
@@ -1772,95 +1734,55 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 </div>
               )}
 
-              <div className="space-y-3">
+              <div className="mt-5 space-y-3">
                 <button
                   type="button"
-                  onClick={startPayPalCheckout}
+                  onClick={() => startWhopCheckout('card')}
                   disabled={billingLoading}
-                  className="group flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:border-[#0070ba]/45 hover:bg-[#0070ba]/10 disabled:opacity-60"
+                  className="group flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-left transition-colors hover:border-rose-400/35 hover:bg-white/[0.06] disabled:opacity-60"
                 >
-                  <div className="flex h-14 w-16 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm">
-                    <Image src="/payment/paypal.png" alt="PayPal" width={42} height={42} className="h-10 w-10 object-contain" />
-                  </div>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-rose-300">
+                    <CreditCard size={18} />
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-white">PayPal</p>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                      Abonnement récurrent via PayPal. Confirmation automatique après validation.
+                    <p className="text-sm font-black text-white">Banque et carte</p>
+                    <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
+                      Carte, PayPal, banque et renouvellement mensuel sécurisé.
                     </p>
                   </div>
-                  <ArrowRight size={18} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                  {billingLoading ? (
+                    <span className="h-4 w-4 shrink-0 rounded-full border-2 border-slate-500 border-t-white animate-spin" />
+                  ) : (
+                    <ExternalLink size={15} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                  )}
                 </button>
 
-                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition-colors hover:border-emerald-400/30">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center">
-                    <div className="flex shrink-0 items-center gap-2">
-                      <div className="flex h-12 w-16 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm">
-                        <Image src="/payment/visa.png" alt="Visa" width={64} height={40} className="h-full w-full object-cover" />
-                      </div>
-                      <div className="flex h-12 w-16 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm">
-                        <Image src="/payment/mastercard.png" alt="Mastercard" width={64} height={40} className="h-full w-full object-cover" />
-                      </div>
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-black text-white">Carte bancaire</p>
-                      <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                        Visa ou Mastercard, avec validation sécurisée si nécessaire.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-4">
-                    <button
-                      type="button"
-                      onClick={() => startWhopCheckout('card')}
-                      disabled={billingLoading}
-                      className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-5 text-sm font-black text-slate-950 transition-all hover:bg-emerald-300 disabled:opacity-60"
-                    >
-                      {billingLoading ? 'Ouverture...' : 'Continuer par carte'}
-                      <ExternalLink size={14} />
-                    </button>
-                  </div>
-                  <div className="mt-3 flex items-center gap-2 text-[11px] font-semibold text-slate-500">
-                    <ShieldCheck size={14} className="text-emerald-300" />
-                    Paiement initial sécurisé, puis renouvellement mensuel automatique.
-                  </div>
+                <button
+                  type="button"
+                  onClick={() => startNowPaymentsCheckout()}
+                  disabled={billingLoading || !isNowPaymentsPlan(paymentChoicePlan)}
+                  className="group flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-left transition-colors hover:border-rose-400/35 hover:bg-white/[0.06] disabled:opacity-60"
+                >
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-rose-300">
+                    <Coins size={18} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-black text-white">Crypto-monnaie</span>
+                    <span className="block truncate text-xs font-semibold text-slate-500">
+                      Paiement direct NOWPayments, activation après confirmation blockchain.
+                    </span>
+                  </span>
+                  {billingLoading ? (
+                    <span className="h-4 w-4 shrink-0 rounded-full border-2 border-slate-500 border-t-white animate-spin" />
+                  ) : (
+                    <ExternalLink size={15} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                  )}
+                </button>
+
+                <div className="flex items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.025] px-4 py-3 text-[11px] font-semibold leading-relaxed text-slate-500">
+                  <ShieldCheck size={14} className="shrink-0 text-rose-300" />
+                  Banque et carte passe par Whop. Crypto-monnaie passe par NOWPayments.
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => startAirwallexCheckout(paymentChoicePlan, undefined, 'apple_pay')}
-                  disabled={billingLoading}
-                  className="group flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:border-white/30 hover:bg-white/[0.08] disabled:opacity-60"
-                >
-                  <div className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black shadow-sm">
-                    <Image src="/payment/apple-pay.svg" alt="Apple Pay" width={80} height={32} className="h-full w-full object-contain" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-white">Apple Pay</p>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                      Paiement rapide avec votre wallet Apple.
-                    </p>
-                  </div>
-                  <ExternalLink size={16} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => startAirwallexCheckout(paymentChoicePlan, undefined, 'google_pay')}
-                  disabled={billingLoading}
-                  className="group flex w-full items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left transition-all hover:border-white/30 hover:bg-white/[0.08] disabled:opacity-60"
-                >
-                  <div className="flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-black shadow-sm">
-                    <Image src="/payment/google-pay.svg" alt="Google Pay" width={80} height={32} className="h-full w-full object-contain" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-white">Google Pay</p>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                      Paiement rapide avec votre wallet Google.
-                    </p>
-                  </div>
-                  <ExternalLink size={16} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
-                </button>
-
               </div>
             </motion.div>
           </div>

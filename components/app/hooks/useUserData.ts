@@ -32,7 +32,7 @@ function applyVoiceReset(u: UserData): UserData {
 }
 
 const SESSION_KEY = 'ava_web_session'
-const SELECT_FIELDS = 'id,email,credits,free_daily_credits,subscription_source,subscription_expires_at,subscription_plan,subscription_tier,paddle_subscription_id,paddle_renewal_cancelled_at,paddle_scheduled_cancel_at,paypal_subscription_id,paypal_plan_id,geniuspay_subscription_uuid,geniuspay_stripe_subscription_id,geniuspay_customer_id,mollie_customer_id,mollie_subscription_id,mollie_first_payment_id,mollie_last_payment_id,airwallex_customer_id,airwallex_checkout_id,airwallex_subscription_id,airwallex_price_id,airwallex_last_event_type,whop_checkout_id,whop_plan_id,whop_payment_id,whop_membership_id,whop_user_id,whop_last_event_type,nowpayments_payment_id,nowpayments_invoice_id,nowpayments_subscription_id,nowpayments_subscription_plan_id,nowpayments_last_status,nowpayments_last_event_id,billing_country_code,billing_country_name,billing_country_confirmed_at,ava_trading_trial_used,ava_trading_trial_started_at,ava_trading_trial_plan,ava_trading_trial_subscription_id,plan_switch_count,last_plan_change_at,subscription_abuse_flag,referral_code,telegram_id,first_name,last_name,voice_minutes_used,voice_quota_reset_at,custom_plan_expires_at,gemini_api_key_enc,gemini_api_key_iv,gemini_key_hint,text_messages_used,text_quota_reset_at'
+const SELECT_FIELDS = 'id,email,is_admin,credits,free_daily_credits,subscription_source,subscription_expires_at,subscription_plan,subscription_tier,paddle_subscription_id,paddle_renewal_cancelled_at,paddle_scheduled_cancel_at,paypal_subscription_id,paypal_plan_id,geniuspay_subscription_uuid,geniuspay_stripe_subscription_id,geniuspay_customer_id,mollie_customer_id,mollie_subscription_id,mollie_first_payment_id,mollie_last_payment_id,airwallex_customer_id,airwallex_checkout_id,airwallex_subscription_id,airwallex_price_id,airwallex_last_event_type,whop_checkout_id,whop_plan_id,whop_payment_id,whop_membership_id,whop_user_id,whop_last_event_type,nowpayments_payment_id,nowpayments_invoice_id,nowpayments_subscription_id,nowpayments_subscription_plan_id,nowpayments_last_status,nowpayments_last_event_id,billing_country_code,billing_country_name,billing_country_confirmed_at,ava_trading_trial_used,ava_trading_trial_started_at,ava_trading_trial_plan,ava_trading_trial_subscription_id,plan_switch_count,last_plan_change_at,subscription_abuse_flag,referral_code,telegram_id,first_name,last_name,voice_minutes_used,voice_quota_reset_at,custom_plan_expires_at,gemini_api_key_enc,gemini_api_key_iv,gemini_key_hint,text_messages_used,text_quota_reset_at'
 
 async function fetchMemory(userId: string): Promise<string> {
   try {
@@ -83,7 +83,7 @@ export function useUserData() {
         }
         fetchUserProfile(u.id).then(fresh => {
           if (!fresh) return
-          const updated = applyVoiceReset({ ...fresh, memorySummary: u.memorySummary })
+          const updated = applyVoiceReset({ ...fresh, web_session_token: u.web_session_token, memorySummary: u.memorySummary })
           setUser(updated)
           setPermissions(resolvePermissions(updated))
           const { memorySummary: _, ...toStore } = updated
@@ -113,7 +113,7 @@ export function useUserData() {
       }
       const result = await res.json()
       if (result.user) {
-        const u = applyVoiceReset(result.user as UserData)
+        const u = applyVoiceReset({ ...(result.user as UserData), web_session_token: result.web_session_token ?? result.user.web_session_token ?? null })
         const perms = resolvePermissions(u)
         setPermissions(perms)
         setUser(u)
@@ -224,10 +224,11 @@ export function useUserData() {
     try {
       const fresh = await fetchUserProfile(user.id)
       if (fresh) {
-        const u = { ...fresh, memorySummary: user.memorySummary }
+        const u = { ...fresh, web_session_token: user.web_session_token, memorySummary: user.memorySummary }
         setUser(u)
         setPermissions(resolvePermissions(u))
-        localStorage.setItem(SESSION_KEY, JSON.stringify(fresh))
+        const { memorySummary: _, ...toStore } = u
+        localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
         // Re-fetch memory so the next session benefits from the updated summary
         fetchMemory(u.id).then(memorySummary => {
           if (memorySummary) setUser(prev => prev ? { ...prev, memorySummary } : prev)

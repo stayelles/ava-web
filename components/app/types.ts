@@ -1,6 +1,8 @@
 export interface UserData {
   id: string
   email: string
+  is_admin?: boolean | null
+  web_session_token?: string | null
   credits: number
   free_daily_credits: number
   subscription_source: string | null
@@ -71,7 +73,7 @@ export interface TranscriptItem {
 
 export type SessionState = 'idle' | 'connecting' | 'connected' | 'error'
 
-export type AppTab = 'voice' | 'chat' | 'profile' | 'subscription' | 'referral' | 'settings'
+export type AppTab = 'voice' | 'chat' | 'cloud' | 'profile' | 'subscription' | 'referral' | 'settings'
 
 export interface AppSettings {
   language: 'fr' | 'en' | 'tr' | 'de' | 'es'

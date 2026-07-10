@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar'
 import { BottomTabs } from './BottomTabs'
 import { VoiceTab } from './tabs/VoiceTab'
 import { ChatTab } from './tabs/ChatTab'
+import { CloudTab } from './tabs/CloudTab'
 import { ProfileTab } from './tabs/ProfileTab'
 import { SubscriptionTab } from './tabs/SubscriptionTab'
 import { ReferralTab } from './tabs/ReferralTab'
@@ -42,11 +43,11 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
     const tab = params.get('tab') as AppTab | null
     const plan = params.get('plan')
     if (plan) {
-      setActiveTab('subscription')
+      window.setTimeout(() => setActiveTab('subscription'), 0)
       return
     }
-    if (tab && ['voice', 'chat', 'profile', 'subscription', 'referral', 'settings'].includes(tab)) {
-      setActiveTab(tab)
+    if (tab && ['voice', 'chat', 'cloud', 'profile', 'subscription', 'referral', 'settings'].includes(tab)) {
+      window.setTimeout(() => setActiveTab(tab), 0)
     }
   }, [])
 
@@ -54,12 +55,12 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
   useEffect(() => {
     const saved = localStorage.getItem(LANG_STORAGE_KEY) as AppSettings['language'] | null
     if (saved && SUPPORTED_LANGUAGES.includes(saved)) {
-      setSettings(s => ({ ...s, language: saved }))
+      window.setTimeout(() => setSettings(s => ({ ...s, language: saved })), 0)
       return
     }
     const browserLang = navigator.language.slice(0, 2).toLowerCase() as AppSettings['language']
     const detected = SUPPORTED_LANGUAGES.includes(browserLang) ? browserLang : 'en'
-    setSettings(s => ({ ...s, language: detected }))
+    window.setTimeout(() => setSettings(s => ({ ...s, language: detected })), 0)
   }, [])
 
   const handleSettingsChange = useCallback((s: AppSettings) => {
@@ -136,6 +137,9 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               sharedApiKey={permissions.canUseCustomApiKey ? null : sharedGeminiKey}
               onGoToSettings={handleGoToSettings}
             />
+          )}
+          {activeTab === 'cloud' && (
+            <CloudTab user={user} onGoToSubscription={handleGoToSubscription} />
           )}
           {activeTab === 'profile' && (
             <ProfileTab user={user} onUpdatePin={onUpdatePin} />

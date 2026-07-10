@@ -39,6 +39,16 @@ When changing desktop download links, keep filenames versioned so older installe
 
 If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before publishing: update Desktop required bridge version, web `AVA_BRIDGE_EA_VERSION`, download filenames, release assets, and docs together. Never ship a changed `.ex5` under an old bridge version.
 
+## Ava Cloud
+
+- Public product name is `Ava Cloud`.
+- Never show the technical term VPS in user-facing Ava Web UI. Use `Ava Cloud`, `ordinateur Ava Cloud`, `environnement Ava`, or `accès 24/7`.
+- Ava Cloud is a separate `390 EUR/month` option for `custom_pro`, `custom_ultra`, and `custom_max` users.
+- The `/app` Cloud tab calls the Supabase `ava-cloud` Edge Function for status, Whop/crypto checkout, provisioning, browser access, and commands.
+- Browser access must use short-lived gateway URLs; never expose Windows credentials in Ava Web.
+- Ava Web sends the signed `web_session_token` returned by the `login` Edge Function for Cloud actions.
+- After payment, the Cloud tab auto-starts provisioning when the entitlement is active and no machine exists yet.
+
 ## macOS Signature & Notarization (Apple Developer)
 
 To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
