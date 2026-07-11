@@ -31,9 +31,9 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.2.61-arm64.dmg`
-- `Ava-1.2.61-x64.dmg`
-- `AvaSetup-1.2.61.exe`
+- `Ava-1.2.62-arm64.dmg`
+- `Ava-1.2.62-x64.dmg`
+- `AvaSetup-1.2.62.exe`
 - `AvaBridgeEA-1.42.ex5` (recommended for Ava Volatility Boom/Crash and modern Ava Trading)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
