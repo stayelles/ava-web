@@ -139,7 +139,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
             />
           )}
           {activeTab === 'cloud' && (
-            <CloudTab user={user} onGoToSubscription={handleGoToSubscription} />
+            <CloudTab user={user} onGoToSubscription={handleGoToSubscription} onSessionExpired={onLogout} />
           )}
           {activeTab === 'profile' && (
             <ProfileTab user={user} onUpdatePin={onUpdatePin} />

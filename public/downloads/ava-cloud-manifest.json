@@ -11,8 +11,8 @@
     "sha256": "62c801d8ad245fe1f27db3cf8d6d78b5e03c7771c9b1cbed9d6abfb39adbae20"
   },
   "agent": {
-    "version": "0.3.0",
-    "url": "https://call-ava.com/downloads/AvaCloudAgent-0.3.0.zip",
-    "sha256": "82f8e55fa842573aba8a77cbcb606012958ed531c059e1f527c51c83e64c67f1"
+    "version": "0.3.1",
+    "url": "https://call-ava.com/downloads/AvaCloudAgent-0.3.1.zip",
+    "sha256": "71027935f013e1ebaf10594ed30c88bd7b4e2dadbc2424bb37f7f7976b663255"
   }
 }

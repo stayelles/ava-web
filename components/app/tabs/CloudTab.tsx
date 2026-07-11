@@ -72,9 +72,12 @@ type CloudStatus = {
   instance?: CloudInstance | null
   events?: CloudEvent[]
   cloud_config?: CloudConfig | null
+  cloud_config_source?: string | null
+  cloud_config_updated_at?: string | null
   cloud_presets?: CloudPreset[]
   plan_limits?: CloudPlanLimits | null
   runtime?: CloudRuntime | null
+  agent_connected?: boolean
   error?: string
 }
 
@@ -146,6 +149,11 @@ type CloudRuntime = {
   account?: Record<string, unknown> | null
   desktop?: Record<string, unknown> | null
   last_command?: Record<string, unknown> | null
+  agent_connected?: boolean
+  config_source?: string | null
+  config_updated_at?: string | null
+  config_pending?: boolean
+  desktop_status?: Record<string, unknown> | null
 }
 
 type TradingGlobalControl = {
@@ -309,7 +317,7 @@ function Pill({ active, label }: { active?: boolean | null; label: string }) {
   )
 }
 
-export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToSubscription?: () => void }) {
+export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user: UserData; onGoToSubscription?: () => void; onSessionExpired?: () => void }) {
   const eligible = useMemo(() => isCloudEligible(user), [user])
   const [data, setData] = useState<CloudStatus | null>(null)
   const [loading, setLoading] = useState(true)
@@ -340,9 +348,14 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
       body: JSON.stringify({ user_id: user.id, web_session_token: user.web_session_token, ...payload }),
     })
     const json = await res.json().catch(() => ({}))
-    if (!res.ok || json.ok === false) throw new Error(String(json.error ?? 'Action indisponible.'))
+    const message = String(json.error ?? 'Action indisponible.')
+    if (res.status === 401 || message.toLowerCase().includes('session ava web expiree') || message.toLowerCase().includes('session ava web expirée')) {
+      onSessionExpired?.()
+      throw new Error('Session Ava Web expirée. Reconnectez-vous.')
+    }
+    if (!res.ok || json.ok === false) throw new Error(message)
     return json
-  }, [user.id, user.web_session_token])
+  }, [onSessionExpired, user.id, user.web_session_token])
 
   const callAdminControl = useCallback(async (payload: Record<string, unknown>) => {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/trading-admin-control`, {
@@ -351,9 +364,14 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
       body: JSON.stringify({ user_id: user.id, web_session_token: user.web_session_token, ...payload }),
     })
     const json = await res.json().catch(() => ({}))
-    if (!res.ok || json.ok === false) throw new Error(String(json.error ?? 'Controle admin indisponible.'))
+    const message = String(json.error ?? 'Controle admin indisponible.')
+    if (res.status === 401 || message.toLowerCase().includes('session ava web expiree') || message.toLowerCase().includes('session ava web expirée')) {
+      onSessionExpired?.()
+      throw new Error('Session Ava Web expirée. Reconnectez-vous.')
+    }
+    if (!res.ok || json.ok === false) throw new Error(message)
     return json
-  }, [user.id, user.web_session_token])
+  }, [onSessionExpired, user.id, user.web_session_token])
 
   const callCloudSupport = useCallback(async (payload: Record<string, unknown>) => {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/ava-cloud-support`, {
@@ -362,9 +380,14 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
       body: JSON.stringify({ user_id: user.id, web_session_token: user.web_session_token, ...payload }),
     })
     const json = await res.json().catch(() => ({}))
-    if (!res.ok || json.ok === false) throw new Error(String(json.error ?? 'Support Ava Cloud indisponible.'))
+    const message = String(json.error ?? 'Support Ava Cloud indisponible.')
+    if (res.status === 401 || message.toLowerCase().includes('session ava web expiree') || message.toLowerCase().includes('session ava web expirée')) {
+      onSessionExpired?.()
+      throw new Error('Session Ava Web expirée. Reconnectez-vous.')
+    }
+    if (!res.ok || json.ok === false) throw new Error(message)
     return json
-  }, [user.id, user.web_session_token])
+  }, [onSessionExpired, user.id, user.web_session_token])
 
   const load = useCallback(async (showBusy = false) => {
     if (!eligible) {
@@ -428,9 +451,23 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
   const state = data?.state ?? 'inactive'
   const status = STATUS_COPY[state] ?? STATUS_COPY.inactive
   const instance = data?.instance
+  const runtime = data?.runtime
   const entitlement = data?.entitlement
   const browserAccessReady = data?.browser_access_ready === true
-  const agentConnected = Boolean(instance?.last_heartbeat_at)
+  const heartbeatTime = instance?.last_heartbeat_at ? Date.parse(instance.last_heartbeat_at) : Number.NaN
+  const hasHeartbeat = Number.isFinite(heartbeatTime)
+  const heartbeatRecent = hasHeartbeat && now - heartbeatTime <= 4 * 60 * 1000
+  const agentConnected = Boolean(data?.agent_connected ?? runtime?.agent_connected ?? heartbeatRecent)
+  const agentStale = hasHeartbeat && !agentConnected
+  const configSource = data?.cloud_config_source ?? runtime?.config_source ?? null
+  const configUpdatedAt = data?.cloud_config_updated_at ?? runtime?.config_updated_at ?? null
+  const configPending = Boolean(runtime?.config_pending || instance?.metrics?.cloud_config_pending)
+  const livePositions = agentConnected && Array.isArray(runtime?.positions) ? runtime.positions : []
+  const recentTrades = agentConnected && Array.isArray(runtime?.recent_trades) ? runtime.recent_trades : []
+  const journalLines = agentConnected && Array.isArray(runtime?.journal) ? runtime.journal : []
+  const bridgeVersion = String(instance?.bridge_version ?? '').replace(/^v/i, '')
+  const bridgeVersionNumber = Number.parseFloat(bridgeVersion)
+  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.42
   const canRunCommands = agentConnected && (state === 'ready' || state === 'online' || state === 'attention')
   const canOpen = browserAccessReady && (state === 'ready' || state === 'online' || state === 'attention')
   const canProvision = state === 'not_created' || state === 'delayed'
@@ -497,7 +534,6 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
       setBusy(null)
     }
   }, [callCloudSupport, refreshSupportStatus, supportSelected])
-  const runtime = data?.runtime
   const planLimits = data?.plan_limits
   const presets = data?.cloud_presets ?? []
 
@@ -641,21 +677,59 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
               <Pill active={instance?.bridge_connected} label="AvaBridge connecté" />
             </div>
 
-            {state === 'ready' && !agentConnected && (
+            {state === 'ready' && !hasHeartbeat && (
               <div className="mt-5 rounded-2xl border border-sky-400/15 bg-sky-400/[0.06] p-4">
-                <p className="text-sm font-black text-sky-100">Connexion des services Ava en cours</p>
+                <p className="text-sm font-black text-sky-100">Agent en attente</p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  L’ordinateur Ava Cloud est créé. Windows termine le démarrage et l’agent Ava va se connecter automatiquement ; les commandes seront disponibles après le premier signal.
+                  L’ordinateur Ava Cloud est créé. Windows termine le démarrage et l’agent Ava va envoyer son premier signal ; les données réelles s’afficheront ensuite.
+                </p>
+              </div>
+            )}
+
+            {state === 'ready' && agentStale && (
+              <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] p-4">
+                <p className="text-sm font-black text-amber-100">Agent non connecté</p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  Dernier signal reçu le {formatDate(instance?.last_heartbeat_at)}. Les positions, trades, versions et configurations affichés peuvent être incomplets tant que l’agent ne répond pas.
+                </p>
+              </div>
+            )}
+
+            {bridgeOutdated && (
+              <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] p-4">
+                <p className="text-sm font-black text-amber-100">AvaBridge version ancienne</p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  AvaBridge {instance?.bridge_version} est détecté. La version recommandée est 1.42 ou plus pour une synchronisation fiable des positions.
+                </p>
+              </div>
+            )}
+
+            {configPending && (
+              <div className="mt-5 rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/[0.08] p-4">
+                <p className="text-sm font-black text-fuchsia-100">Configuration envoyée à Ava Desktop</p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  Ava Web attend la confirmation de l’agent. La configuration sera marquée synchronisée au prochain heartbeat Desktop.
+                </p>
+              </div>
+            )}
+
+            {agentConnected && !configPending && configSource && (
+              <div className="mt-5 rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.06] p-4">
+                <p className="text-sm font-black text-emerald-100">
+                  Configuration synchronisée depuis {configSource === 'desktop' ? 'Ava Desktop' : 'Ava Web'}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  Dernière mise à jour: {formatDate(configUpdatedAt)}.
                 </p>
               </div>
             )}
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {[
-                ['Marché actif', instance?.active_market || '—'],
-                ['Balance', metric(instance?.balance, '$')],
-                ['Equity', metric(instance?.equity, '$')],
-                ['Profit flottant', metric(instance?.floating_profit, '$')],
+                ['Marché actif', agentConnected ? instance?.active_market || '—' : 'Agent non connecté'],
+                ['Balance', agentConnected ? metric(instance?.balance, '$') : '—'],
+                ['Equity', agentConnected ? metric(instance?.equity, '$') : '—'],
+                ['Profit flottant', agentConnected ? metric(instance?.floating_profit, '$') : '—'],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
                   <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">{label}</p>
@@ -1022,16 +1096,32 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
                 <p className="mt-1 text-xs leading-5 text-slate-500">
                   Ava applique ces valeurs dans l’ordinateur Ava Cloud selon les limites de votre plan.
                 </p>
+                {!data?.cloud_config && !agentConnected && (
+                  <p className="mt-2 text-xs font-bold text-amber-200">
+                    En attente de la configuration réelle d’Ava Desktop. Les champs restent modifiables, mais ils ne sont pas encore confirmés par l’agent.
+                  </p>
+                )}
               </div>
-              <button
-                type="button"
-                disabled={!instance || !canRunCommands || !!busy}
-                onClick={() => run('apply_config', { action: 'command', type: 'apply_config', payload: { config: cloudConfig } })}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-black text-slate-950 transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {busy === 'apply_config' ? <Loader2 className="animate-spin" size={16} /> : <Settings2 size={16} />}
-                Appliquer
-              </button>
+              <div className="grid gap-2 sm:min-w-[230px]">
+                <button
+                  type="button"
+                  disabled={!instance || !canRunCommands || !!busy}
+                  onClick={() => run('apply_config', { action: 'command', type: 'apply_config', payload: { config: cloudConfig } })}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-black text-slate-950 transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy === 'apply_config' ? <Loader2 className="animate-spin" size={16} /> : <Settings2 size={16} />}
+                  {configPending ? 'En attente' : 'Appliquer'}
+                </button>
+                <button
+                  type="button"
+                  disabled={!instance || !canRunCommands || !!busy}
+                  onClick={() => run('sync_desktop', { action: 'command', type: 'diagnose', payload: { sync_config: true } })}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-400/25 bg-sky-400/10 px-4 py-3 text-sm font-black text-sky-100 transition-colors hover:bg-sky-400/15 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {busy === 'sync_desktop' ? <Loader2 className="animate-spin" size={16} /> : <RefreshCcw size={16} />}
+                  Synchroniser depuis Ava Desktop
+                </button>
+              </div>
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -1228,13 +1318,13 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
             <div className="flex items-center justify-between gap-3">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Positions et trades</p>
-              <span className="text-xs font-bold text-slate-500">{runtime?.positions?.length ?? 0} ouverte(s)</span>
+              <span className="text-xs font-bold text-slate-500">{livePositions.length} ouverte(s)</span>
             </div>
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3">
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Positions</p>
                 <div className="mt-3 space-y-2">
-                  {(runtime?.positions?.length ? runtime.positions : [{ symbol: 'Aucune position ouverte.' }]).slice(0, 6).map((row, index) => (
+                  {(!agentConnected ? [{ symbol: 'Agent non connecté.' }] : livePositions.length ? livePositions : [{ symbol: 'Aucune position ouverte.' }]).slice(0, 6).map((row, index) => (
                     <div key={index} className="grid grid-cols-3 gap-2 text-xs">
                       <span className="font-bold text-slate-200">{formatCell(row.symbol ?? row.market ?? row.type)}</span>
                       <span className="text-slate-400">{formatCell(row.lot ?? row.volume)}</span>
@@ -1246,7 +1336,7 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
               <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-3">
                 <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Trades récents</p>
                 <div className="mt-3 space-y-2">
-                  {(runtime?.recent_trades?.length ? runtime.recent_trades : [{ symbol: 'Aucun trade récent.' }]).slice(0, 6).map((row, index) => (
+                  {(!agentConnected ? [{ symbol: 'Agent non connecté.' }] : recentTrades.length ? recentTrades : [{ symbol: 'Aucun trade récent.' }]).slice(0, 6).map((row, index) => (
                     <div key={index} className="grid grid-cols-3 gap-2 text-xs">
                       <span className="font-bold text-slate-200">{formatCell(row.symbol ?? row.type ?? row.direction)}</span>
                       <span className="text-slate-400">{formatCell(row.lot ?? row.volume)}</span>
@@ -1259,7 +1349,7 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
             <div className="mt-3 rounded-2xl border border-white/10 bg-slate-950/45 p-3">
               <p className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">Journal</p>
               <div className="mt-3 space-y-1 font-mono text-xs text-slate-400">
-                {(runtime?.journal?.length ? runtime.journal : ['Aucun journal récent.']).slice(0, 6).map((line, index) => (
+                {(!agentConnected ? ['Agent non connecté.'] : journalLines.length ? journalLines : ['Aucun journal récent.']).slice(0, 6).map((line, index) => (
                   <p key={index}>{line}</p>
                 ))}
               </div>
@@ -1267,7 +1357,7 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
           </div>
         </section>
 
-        <section className="grid gap-3 pb-4 sm:grid-cols-3">
+        <section className="grid gap-3 pb-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Version Ava</p>
             <p className="mt-2 text-sm font-black text-white">{instance?.ava_version || '—'}</p>
@@ -1275,6 +1365,10 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Version AvaBridge</p>
             <p className="mt-2 text-sm font-black text-white">{instance?.bridge_version || '—'}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Version Agent</p>
+            <p className="mt-2 text-sm font-black text-white">{instance?.agent_version || '—'}</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Dernier signal</p>
