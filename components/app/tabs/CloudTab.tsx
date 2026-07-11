@@ -15,6 +15,7 @@ import {
   RotateCw,
   Settings2,
   ShieldCheck,
+  Terminal,
 } from 'lucide-react'
 import { SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
 import type { UserData } from '../types'
@@ -30,10 +31,13 @@ type CloudEntitlement = {
 }
 
 type CloudInstance = {
+  id?: string | null
+  user_id?: string | null
   created_at?: string | null
   updated_at?: string | null
   state?: string | null
   region?: string | null
+  rdp_host?: string | null
   last_provision_attempt_at?: string | null
   last_heartbeat_at?: string | null
   ava_running?: boolean | null
@@ -41,6 +45,7 @@ type CloudInstance = {
   bridge_connected?: boolean | null
   ava_version?: string | null
   bridge_version?: string | null
+  agent_version?: string | null
   active_market?: string | null
   balance?: number | null
   equity?: number | null
@@ -148,6 +153,25 @@ type TradingGlobalControl = {
   block_below_equity_enabled?: boolean | null
   min_equity_usd?: number | null
   public_reason?: string | null
+  updated_at?: string | null
+}
+
+type SupportUser = {
+  id?: string
+  email?: string | null
+  subscription_plan?: string | null
+  subscription_source?: string | null
+  instance?: CloudInstance & { id?: string; user_id?: string; desktop?: Record<string, unknown> | null; account?: Record<string, unknown> | null }
+  entitlement?: CloudEntitlement | null
+}
+
+type SupportCommand = {
+  id?: string
+  type?: string
+  status?: string
+  result?: Record<string, unknown> | null
+  error?: string | null
+  created_at?: string | null
   updated_at?: string | null
 }
 
@@ -297,6 +321,11 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
   const [naturalCommand, setNaturalCommand] = useState('')
   const [adminControl, setAdminControl] = useState<TradingGlobalControl | null>(null)
   const [adminLoaded, setAdminLoaded] = useState(false)
+  const [supportQuery, setSupportQuery] = useState('')
+  const [supportUsers, setSupportUsers] = useState<SupportUser[]>([])
+  const [supportSelected, setSupportSelected] = useState<SupportUser | null>(null)
+  const [supportCommands, setSupportCommands] = useState<SupportCommand[]>([])
+  const [supportShell, setSupportShell] = useState('Get-Process -Name Ava,terminal64 -ErrorAction SilentlyContinue | Select-Object ProcessName,Id,StartTime | ConvertTo-Json')
   const autoProvisionStartedRef = useRef(false)
   const isLocalDevAdmin = useMemo(() => {
     if (process.env.NODE_ENV !== 'development' || user.is_admin !== true) return false
@@ -323,6 +352,17 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
     })
     const json = await res.json().catch(() => ({}))
     if (!res.ok || json.ok === false) throw new Error(String(json.error ?? 'Controle admin indisponible.'))
+    return json
+  }, [user.id, user.web_session_token])
+
+  const callCloudSupport = useCallback(async (payload: Record<string, unknown>) => {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/ava-cloud-support`, {
+      method: 'POST',
+      headers: SUPABASE_HEADERS,
+      body: JSON.stringify({ user_id: user.id, web_session_token: user.web_session_token, ...payload }),
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok || json.ok === false) throw new Error(String(json.error ?? 'Support Ava Cloud indisponible.'))
     return json
   }, [user.id, user.web_session_token])
 
@@ -413,6 +453,50 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
   const updateAdminControl = useCallback((patch: Partial<TradingGlobalControl>) => {
     setAdminControl(current => ({ ...(current ?? { min_equity_usd: 10000 }), ...patch }))
   }, [])
+  const runSupportSearch = useCallback(async () => {
+    try {
+      setBusy('support_search')
+      setError(null)
+      const result = await callCloudSupport({ action: 'search', email: supportQuery })
+      const users = Array.isArray(result.users) ? result.users as SupportUser[] : []
+      setSupportUsers(users)
+      setSupportSelected(users[0] ?? null)
+      setSupportCommands([])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Recherche support impossible.')
+    } finally {
+      setBusy(null)
+    }
+  }, [callCloudSupport, supportQuery])
+  const refreshSupportStatus = useCallback(async (selected = supportSelected) => {
+    const instanceId = selected?.instance?.id
+    if (!instanceId) return
+    try {
+      setBusy('support_status')
+      setError(null)
+      const result = await callCloudSupport({ action: 'status', instance_id: instanceId })
+      setSupportSelected(current => current ? { ...current, instance: result.instance ?? current.instance } : current)
+      setSupportCommands(Array.isArray(result.commands) ? result.commands as SupportCommand[] : [])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Statut support impossible.')
+    } finally {
+      setBusy(null)
+    }
+  }, [callCloudSupport, supportSelected])
+  const runSupportCommand = useCallback(async (type: string, payload: Record<string, unknown> = {}) => {
+    const instanceId = supportSelected?.instance?.id
+    if (!instanceId) return
+    try {
+      setBusy(`support_${type}`)
+      setError(null)
+      await callCloudSupport({ action: 'command', instance_id: instanceId, type, payload })
+      await refreshSupportStatus(supportSelected)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Commande support impossible.')
+    } finally {
+      setBusy(null)
+    }
+  }, [callCloudSupport, refreshSupportStatus, supportSelected])
   const runtime = data?.runtime
   const planLimits = data?.plan_limits
   const presets = data?.cloud_presets ?? []
@@ -651,6 +735,165 @@ export function CloudTab({ user, onGoToSubscription }: { user: UserData; onGoToS
             )}
           </div>
         </section>
+
+        {isLocalDevAdmin && (
+          <section className="rounded-2xl border border-sky-400/20 bg-sky-400/[0.06] p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-200">
+                  <Terminal size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Support local</p>
+                  <h2 className="mt-1 text-lg font-black text-white">Diagnostic machines Ava Cloud</h2>
+                  <p className="mt-1 text-xs leading-5 text-slate-400">
+                    Recherche par email, diagnostic agent, redémarrages et mises à jour sans ouvrir la session Cloud utilisateur.
+                  </p>
+                </div>
+              </div>
+              <div className="flex w-full gap-2 lg:w-[420px]">
+                <input
+                  value={supportQuery}
+                  onChange={event => setSupportQuery(event.target.value)}
+                  onKeyDown={event => {
+                    if (event.key === 'Enter') runSupportSearch()
+                  }}
+                  placeholder="email utilisateur"
+                  className="min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-950/60 px-3 py-3 text-sm font-bold text-white outline-none placeholder:text-slate-600"
+                />
+                <button
+                  type="button"
+                  disabled={busy === 'support_search' || supportQuery.trim().length < 3}
+                  onClick={runSupportSearch}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-300 px-4 py-3 text-sm font-black text-slate-950 transition-colors hover:bg-sky-200 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {busy === 'support_search' ? <Loader2 className="animate-spin" size={16} /> : <RefreshCcw size={16} />}
+                  Chercher
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
+              <div className="space-y-2">
+                {(supportUsers.length ? supportUsers : [{ email: 'Aucun utilisateur chargé.' }]).map((item, index) => {
+                  const active = item.id && item.id === supportSelected?.id
+                  return (
+                    <button
+                      key={item.id ?? index}
+                      type="button"
+                      disabled={!item.id}
+                      onClick={() => {
+                        setSupportSelected(item)
+                        setSupportCommands([])
+                      }}
+                      className={`w-full rounded-2xl border px-4 py-3 text-left transition-colors ${active ? 'border-sky-300/40 bg-sky-300/10' : 'border-white/10 bg-slate-950/45 hover:bg-white/[0.06]'} disabled:cursor-default disabled:opacity-60`}
+                    >
+                      <p className="text-sm font-black text-white">{item.email}</p>
+                      <p className="mt-1 text-xs font-bold text-slate-500">
+                        {item.subscription_plan ?? '—'} · {item.instance?.state ?? 'sans machine'} · agent {item.instance?.agent_version ?? '—'}
+                      </p>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Machine sélectionnée</p>
+                    <p className="mt-2 text-sm font-black text-white">{supportSelected?.email ?? '—'}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {supportSelected?.instance?.rdp_host ?? 'IP inconnue'} · dernier signal {formatDate(supportSelected?.instance?.last_heartbeat_at)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!supportSelected?.instance?.id || busy === 'support_status'}
+                    onClick={() => refreshSupportStatus()}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-black text-slate-100 hover:bg-white/[0.08] disabled:opacity-50"
+                  >
+                    {busy === 'support_status' ? <Loader2 className="animate-spin" size={14} /> : <RefreshCcw size={14} />}
+                    Actualiser
+                  </button>
+                </div>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-3">
+                  {[
+                    ['Ava', supportSelected?.instance?.ava_version ?? '—'],
+                    ['Bridge', supportSelected?.instance?.bridge_version ?? '—'],
+                    ['Equity', metric(supportSelected?.instance?.equity, '$')],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">{label}</p>
+                      <p className="mt-1 text-sm font-black text-white">{value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  {[
+                    ['check_versions', 'Versions'],
+                    ['collect_logs', 'Logs'],
+                    ['restart_ava', 'Relancer Ava'],
+                    ['restart_mt5', 'Relancer MT5'],
+                    ['update_all', 'Update tout'],
+                    ['update_ava', 'Update Ava'],
+                    ['update_bridge', 'Update Bridge'],
+                    ['update_agent', 'Update Agent'],
+                    ['diagnose', 'Diagnostic UI'],
+                  ].map(([type, label]) => (
+                    <button
+                      key={type}
+                      type="button"
+                      disabled={!supportSelected?.instance?.id || !!busy}
+                      onClick={() => runSupportCommand(type)}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-black text-slate-100 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {busy === `support_${type}` ? <Loader2 className="animate-spin" size={14} /> : <Terminal size={14} />}
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">PowerShell diagnostic</p>
+                  <textarea
+                    value={supportShell}
+                    onChange={event => setSupportShell(event.target.value)}
+                    rows={3}
+                    className="mt-2 w-full resize-none rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 font-mono text-xs text-slate-100 outline-none"
+                  />
+                  <button
+                    type="button"
+                    disabled={!supportSelected?.instance?.id || !!busy || !supportShell.trim()}
+                    onClick={() => runSupportCommand('support_shell', { command: supportShell })}
+                    className="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-300 px-3 py-2 text-xs font-black text-slate-950 hover:bg-sky-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {busy === 'support_support_shell' ? <Loader2 className="animate-spin" size={14} /> : <Terminal size={14} />}
+                    Exécuter diagnostic
+                  </button>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  {(supportCommands.length ? supportCommands : [{ type: 'Aucune commande récente.' }]).slice(0, 5).map((command, index) => (
+                    <div key={command.id ?? index} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs font-black text-slate-100">{command.type}</p>
+                        <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">{command.status ?? '—'}</span>
+                      </div>
+                      {command.error && <p className="mt-2 text-xs text-rose-300">{command.error}</p>}
+                      {command.result && (
+                        <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-950/80 p-2 font-mono text-[11px] leading-5 text-slate-300">
+                          {JSON.stringify(command.result, null, 2).slice(0, 4000)}
+                        </pre>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {isLocalDevAdmin && (
           <section className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-5">
