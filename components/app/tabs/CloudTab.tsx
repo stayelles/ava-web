@@ -213,8 +213,15 @@ const EXECUTION_OPTIONS = [
   { value: 'deriv-demo', label: 'Deriv Demo' },
 ]
 
-const CLOUD_PRICE = 390
+const CLOUD_PRICE = 499.99
 const CLOUD_CURRENCY = 'EUR'
+
+function formatCloudPrice(value: number | null | undefined) {
+  return new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number.isFinite(Number(value)) ? Number(value) : CLOUD_PRICE)
+}
 
 function defaultConfig(): CloudConfig {
   return {
@@ -600,7 +607,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
           </div>
           <div className="rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3">
             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Option séparée</p>
-            <p className="mt-1 text-2xl font-black text-white">{data?.price ?? CLOUD_PRICE} €<span className="text-sm text-slate-500">/mois</span></p>
+            <p className="mt-1 text-2xl font-black text-white">{formatCloudPrice(data?.price)} €<span className="text-sm text-slate-500">/mois</span></p>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-600">{data?.currency?.toUpperCase() ?? CLOUD_CURRENCY}</p>
           </div>
         </section>
@@ -747,7 +754,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
             <p className="mt-2 text-sm leading-6 text-slate-400">
               {entitlement?.status === 'active'
                 ? `Actif jusqu’au ${formatDate(entitlement.expires_at)}`
-                : 'Activez Ava Cloud via Whop ou crypto pour lancer la configuration automatique.'}
+                : 'Activez Ava Cloud par carte, PayPal ou crypto pour lancer la configuration automatique.'}
             </p>
 
             {entitlement?.status !== 'active' ? (
@@ -761,8 +768,16 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   })}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-rose-400 disabled:opacity-60"
                 >
-                  {busy === 'whop' ? <Loader2 className="animate-spin" size={17} /> : <CheckCircle2 size={17} />}
-                  Payer par carte avec Whop
+                  {busy === 'whop' ? (
+                    <Loader2 className="animate-spin" size={17} />
+                  ) : (
+                    <span className="flex items-center gap-1.5">
+                      <img src="/payment/visa.png" alt="" className="h-4 w-auto rounded-sm bg-white/90 px-1" />
+                      <img src="/payment/mastercard.png" alt="" className="h-4 w-auto rounded-sm bg-white/90 px-1" />
+                      <img src="/payment/paypal.png" alt="" className="h-4 w-auto rounded-sm bg-white/90 px-1" />
+                    </span>
+                  )}
+                  Payer par carte ou PayPal
                 </button>
                 <button
                   type="button"
@@ -774,7 +789,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-black text-white transition-colors hover:bg-white/[0.08] disabled:opacity-60"
                 >
                   {busy === 'crypto' ? <Loader2 className="animate-spin" size={17} /> : <Coins size={17} />}
-                  Payer en crypto
+                  Paiement en crypto
                 </button>
               </div>
             ) : (
