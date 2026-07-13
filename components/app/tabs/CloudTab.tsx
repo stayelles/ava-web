@@ -158,6 +158,8 @@ type CloudRuntime = {
 
 type TradingGlobalControl = {
   block_all_entries?: boolean | null
+  block_buy_entries?: boolean | null
+  block_sell_entries?: boolean | null
   block_below_equity_enabled?: boolean | null
   min_equity_usd?: number | null
   public_reason?: string | null
@@ -994,6 +996,8 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     const result = await callAdminControl({
                       action: 'update',
                       block_all_entries: adminControl?.block_all_entries === true,
+                      block_buy_entries: adminControl?.block_buy_entries === true,
+                      block_sell_entries: adminControl?.block_sell_entries === true,
                       block_below_equity_enabled: adminControl?.block_below_equity_enabled === true,
                       min_equity_usd: Number(adminControl?.min_equity_usd ?? 10000),
                     })
@@ -1010,7 +1014,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 Enregistrer
               </button>
             </div>
-            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            <div className="mt-4 grid gap-3 lg:grid-cols-5">
               <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-bold text-slate-100">
                 <input
                   type="checkbox"
@@ -1019,6 +1023,24 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   className="h-4 w-4 accent-amber-300"
                 />
                 Bloquer toutes les positions
+              </label>
+              <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-bold text-slate-100">
+                <input
+                  type="checkbox"
+                  checked={adminControl?.block_buy_entries === true}
+                  onChange={event => updateAdminControl({ block_buy_entries: event.target.checked })}
+                  className="h-4 w-4 accent-emerald-300"
+                />
+                Bloquer BUY
+              </label>
+              <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-bold text-slate-100">
+                <input
+                  type="checkbox"
+                  checked={adminControl?.block_sell_entries === true}
+                  onChange={event => updateAdminControl({ block_sell_entries: event.target.checked })}
+                  className="h-4 w-4 accent-rose-300"
+                />
+                Bloquer SELL
               </label>
               <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-bold text-slate-100">
                 <input

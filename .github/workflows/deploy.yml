@@ -34,10 +34,10 @@ jobs:
           gh release download v1.2.63 --repo stayelles/ava-desktop-releases --pattern 'Ava-1.2.63-arm64.dmg.blockmap' --dir out/downloads --clobber
           gh release download v1.2.63 --repo stayelles/ava-desktop-releases --pattern 'Ava-1.2.63-x64.dmg' --dir out/downloads --clobber
           gh release download v1.2.63 --repo stayelles/ava-desktop-releases --pattern 'Ava-1.2.63-x64.dmg.blockmap' --dir out/downloads --clobber
-          gh release download v1.2.63 --repo stayelles/ava-desktop-releases --pattern 'AvaSetup-1.2.63.exe' --dir out/downloads --clobber
-          gh release download v1.2.63 --repo stayelles/ava-desktop-releases --pattern 'AvaSetup-1.2.63.exe.blockmap' --dir out/downloads --clobber
+          gh release download v1.2.65 --repo stayelles/ava-desktop-releases --pattern 'AvaSetup-1.2.65.exe' --dir out/downloads --clobber
+          gh release download v1.2.65 --repo stayelles/ava-desktop-releases --pattern 'AvaSetup-1.2.65.exe.blockmap' --dir out/downloads --clobber
           gh release download v1.2.63 --repo stayelles/ava-desktop-releases --pattern 'latest-mac.yml' --dir out/downloads --clobber
-          gh release download v1.2.63 --repo stayelles/ava-desktop-releases --pattern 'latest.yml' --dir out/downloads --clobber
+          gh release download v1.2.65 --repo stayelles/ava-desktop-releases --pattern 'latest.yml' --dir out/downloads --clobber
           mkdir -p out/downloads/mac-arm64 out/downloads/mac-x64
           gh release download v1.2.63 --repo stayelles/ava-desktop-releases --pattern 'latest-mac-arm64.yml' --dir out/downloads/mac-arm64 --clobber
           gh release download v1.2.63 --repo stayelles/ava-desktop-releases --pattern 'latest-mac-x64.yml' --dir out/downloads/mac-x64 --clobber

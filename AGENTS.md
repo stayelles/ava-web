@@ -33,7 +33,7 @@ When changing desktop download links, keep filenames versioned so older installe
 
 - `Ava-1.2.63-arm64.dmg`
 - `Ava-1.2.63-x64.dmg`
-- `AvaSetup-1.2.63.exe`
+- `AvaSetup-1.2.65.exe`
 - `AvaBridgeEA-1.42.ex5` (recommended for Ava Volatility Boom/Crash and modern Ava Trading)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
