@@ -20,7 +20,7 @@ import {
 import { SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
 import type { UserData } from '../types'
 
-type CloudState = 'inactive' | 'not_created' | 'provisioning' | 'configuring' | 'ready' | 'online' | 'attention' | 'suspended' | 'delayed'
+type CloudState = 'inactive' | 'not_created' | 'provisioning' | 'configuring' | 'ready' | 'online' | 'attention' | 'suspended' | 'delayed' | 'deleted' | 'terminated'
 
 type CloudEntitlement = {
   status?: string | null
@@ -188,6 +188,8 @@ type SupportCommand = {
 const STATUS_COPY: Record<CloudState, { label: string; detail: string; color: string }> = {
   inactive: { label: 'Non activé', detail: 'Activez votre accès 24/7 pour créer votre ordinateur Ava Cloud.', color: '#94a3b8' },
   not_created: { label: 'Prêt à configurer', detail: 'Votre accès est actif. Lancez la configuration automatique.', color: '#38bdf8' },
+  deleted: { label: 'Prêt à configurer', detail: 'L’ancien ordinateur Ava Cloud a été supprimé. Lancez une nouvelle configuration.', color: '#38bdf8' },
+  terminated: { label: 'Prêt à configurer', detail: 'L’ancien ordinateur Ava Cloud a été supprimé. Lancez une nouvelle configuration.', color: '#38bdf8' },
   provisioning: { label: 'Configuration', detail: 'Ava prépare votre environnement Ava sécurisé. Cette étape peut prendre jusqu’à 10 minutes.', color: '#f59e0b' },
   configuring: { label: 'Configuration', detail: 'Ava prépare votre environnement Ava sécurisé. Cette étape peut prendre jusqu’à 10 minutes.', color: '#f59e0b' },
   ready: { label: 'Prêt', detail: 'Votre ordinateur Ava Cloud est disponible.', color: '#22c55e' },
@@ -479,7 +481,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.42
   const canRunCommands = agentConnected && (state === 'ready' || state === 'online' || state === 'attention')
   const canOpen = browserAccessReady && (state === 'ready' || state === 'online' || state === 'attention')
-  const canProvision = state === 'not_created' || state === 'delayed'
+  const canProvision = state === 'not_created' || state === 'delayed' || state === 'deleted' || state === 'terminated'
   const isConfiguring = state === 'provisioning' || state === 'configuring'
   const progressStartedAt = setupStartedAt(instance, data?.events)
   const progress = isConfiguring ? setupProgress(progressStartedAt, now) : 0
@@ -547,10 +549,10 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const presets = data?.cloud_presets ?? []
 
   useEffect(() => {
-    if (!eligible || state !== 'not_created' || entitlement?.status !== 'active' || autoProvisionStartedRef.current) return
+    if (!eligible || !canProvision || entitlement?.status !== 'active' || autoProvisionStartedRef.current) return
     autoProvisionStartedRef.current = true
     run('provision', { action: 'provision', region: 'auto' })
-  }, [eligible, entitlement?.status, run, state])
+  }, [canProvision, eligible, entitlement?.status, run])
 
   useEffect(() => {
     if (!isConfiguring) return undefined
