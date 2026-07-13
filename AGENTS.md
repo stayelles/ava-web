@@ -48,6 +48,7 @@ If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before pub
 - Browser access must use short-lived gateway URLs; never expose Windows credentials in Ava Web.
 - Ava Web sends the signed `web_session_token` returned by the `login` Edge Function for Cloud actions.
 - After payment, the Cloud tab auto-starts provisioning when the entitlement is active and no machine exists yet.
+- If a Kamatera server was manually removed, `ava_cloud_instances.state` may be `deleted` or `terminated`. Treat those states exactly like `not_created`: show "Prêt à configurer" and allow/auto-start provisioning. Never leave a deleted instance stuck as "Configuration" at 96%.
 
 ## macOS Signature & Notarization (Apple Developer)
 
