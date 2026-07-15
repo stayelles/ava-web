@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   AlertCircle,
   CheckCircle2,
@@ -347,7 +347,6 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const [supportSelected, setSupportSelected] = useState<SupportUser | null>(null)
   const [supportCommands, setSupportCommands] = useState<SupportCommand[]>([])
   const [supportShell, setSupportShell] = useState('Get-Process -Name Ava,terminal64 -ErrorAction SilentlyContinue | Select-Object ProcessName,Id,StartTime | ConvertTo-Json')
-  const autoProvisionStartedRef = useRef(false)
   const isLocalDevAdmin = useMemo(() => {
     if (process.env.NODE_ENV !== 'development' || user.is_admin !== true) return false
     if (typeof window === 'undefined') return false
@@ -552,12 +551,6 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   }, [callCloudSupport, refreshSupportStatus, supportSelected])
   const planLimits = data?.plan_limits
   const presets = data?.cloud_presets ?? []
-
-  useEffect(() => {
-    if (!eligible || !canProvision || entitlement?.status !== 'active' || autoProvisionStartedRef.current) return
-    autoProvisionStartedRef.current = true
-    run('provision', { action: 'provision', region: 'auto' })
-  }, [canProvision, eligible, entitlement?.status, run])
 
   useEffect(() => {
     if (!isConfiguring) return undefined
