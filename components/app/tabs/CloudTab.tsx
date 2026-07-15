@@ -162,6 +162,8 @@ type TradingGlobalControl = {
   block_sell_entries?: boolean | null
   block_below_equity_enabled?: boolean | null
   min_equity_usd?: number | null
+  volatility_sell_min_profit_override_enabled?: boolean | null
+  volatility_sell_min_profit_usd?: number | null
   public_reason?: string | null
   updated_at?: string | null
 }
@@ -499,7 +501,10 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     setCloudConfig(current => ({ ...current, ...patch }))
   }, [])
   const updateAdminControl = useCallback((patch: Partial<TradingGlobalControl>) => {
-    setAdminControl(current => ({ ...(current ?? { min_equity_usd: 10000 }), ...patch }))
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      ...patch,
+    }))
   }, [])
   const runSupportSearch = useCallback(async () => {
     try {
@@ -1017,6 +1022,8 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       block_sell_entries: adminControl?.block_sell_entries === true,
                       block_below_equity_enabled: adminControl?.block_below_equity_enabled === true,
                       min_equity_usd: Number(adminControl?.min_equity_usd ?? 10000),
+                      volatility_sell_min_profit_override_enabled: adminControl?.volatility_sell_min_profit_override_enabled === true,
+                      volatility_sell_min_profit_usd: Number(adminControl?.volatility_sell_min_profit_usd ?? 0.5),
                     })
                     setAdminControl(result.control ?? adminControl)
                   } catch (err) {
@@ -1031,7 +1038,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 Enregistrer
               </button>
             </div>
-            <div className="mt-4 grid gap-3 lg:grid-cols-5">
+            <div className="mt-4 grid gap-3 lg:grid-cols-3 2xl:grid-cols-6">
               <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-bold text-slate-100">
                 <input
                   type="checkbox"
@@ -1076,6 +1083,26 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   step="100"
                   value={Number(adminControl?.min_equity_usd ?? 10000)}
                   onChange={event => updateAdminControl({ min_equity_usd: toNumber(event.target.value, 10000) })}
+                  className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
+                />
+              </label>
+              <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-bold text-slate-100">
+                <input
+                  type="checkbox"
+                  checked={adminControl?.volatility_sell_min_profit_override_enabled === true}
+                  onChange={event => updateAdminControl({ volatility_sell_min_profit_override_enabled: event.target.checked })}
+                  className="h-4 w-4 accent-rose-300"
+                />
+                Forcer profit SELL
+              </label>
+              <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Profit SELL force USD</span>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={Number(adminControl?.volatility_sell_min_profit_usd ?? 0.5)}
+                  onChange={event => updateAdminControl({ volatility_sell_min_profit_usd: toNumber(event.target.value, 0.5) })}
                   className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
                 />
               </label>
