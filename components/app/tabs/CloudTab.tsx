@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   AlertCircle,
-  CheckCircle2,
+  Bell,
   Cloud,
   Coins,
+  Crosshair,
   ExternalLink,
   LockKeyhole,
   Loader2,
@@ -13,9 +14,11 @@ import {
   Power,
   RefreshCcw,
   RotateCw,
+  Search,
   Settings2,
   ShieldCheck,
   Terminal,
+  Users,
 } from 'lucide-react'
 import { SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
 import type { UserData } from '../types'
@@ -187,6 +190,60 @@ type SupportCommand = {
   updated_at?: string | null
 }
 
+type AdminConsoleCriteria = {
+  email?: string
+  plans?: string[]
+  equityMin?: number | null
+  floatingLossMin?: number | null
+  positionsMin?: number | null
+  positionsMax?: number | null
+  agentConnected?: boolean
+  requiredSymbol?: string
+}
+
+type ConnectedMarket = {
+  symbol?: string | null
+  symbol_key?: string | null
+  bridge_version?: string | null
+  connected?: boolean | null
+  updated_at?: number | null
+}
+
+type AdminConsoleTarget = {
+  user_id: string
+  email?: string | null
+  plan?: string | null
+  source?: string | null
+  instance_id?: string | null
+  agent_connected?: boolean
+  equity?: number | null
+  floating_profit?: number | null
+  positions_count?: number | null
+  active_market?: string | null
+  connected_markets?: ConnectedMarket[]
+  selected_market?: ConnectedMarket | null
+  exclusion_reason?: string | null
+  order_payload?: Record<string, unknown> | null
+}
+
+type AdminVertexOrderInput = {
+  symbol: string
+  direction: 'BUY' | 'SELL'
+  orderType: 'MARKET' | 'BUY_LIMIT' | 'SELL_LIMIT' | 'BUY_STOP' | 'SELL_STOP'
+  lotMode: 'user_config' | 'fixed'
+  lot: number
+  entryPrice?: number | null
+  sl?: number | null
+  tp?: number | null
+  expirySeconds?: number
+  maxSignalAgeSeconds?: number
+  maxSlippagePoints?: number
+  minProfit?: number | null
+  takeProfitPoints?: number | null
+  equityTiers?: Array<Record<string, unknown>>
+  reason?: string
+}
+
 const STATUS_COPY: Record<CloudState, { label: string; detail: string; color: string }> = {
   inactive: { label: 'Non activé', detail: 'Activez votre accès 24/7 pour créer votre ordinateur Ava Cloud.', color: '#94a3b8' },
   not_created: { label: 'Prêt à configurer', detail: 'Votre accès est actif. Lancez la configuration automatique.', color: '#38bdf8' },
@@ -347,6 +404,26 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const [supportSelected, setSupportSelected] = useState<SupportUser | null>(null)
   const [supportCommands, setSupportCommands] = useState<SupportCommand[]>([])
   const [supportShell, setSupportShell] = useState('Get-Process -Name Ava,terminal64 -ErrorAction SilentlyContinue | Select-Object ProcessName,Id,StartTime | ConvertTo-Json')
+  const [adminCriteria, setAdminCriteria] = useState<AdminConsoleCriteria>({ agentConnected: true })
+  const [adminTargets, setAdminTargets] = useState<AdminConsoleTarget[]>([])
+  const [adminConsoleMessage, setAdminConsoleMessage] = useState('')
+  const [adminPolicyName, setAdminPolicyName] = useState('Max BUY equity >= 5000')
+  const [adminPolicyJson, setAdminPolicyJson] = useState('{\n  "boomReboundMaxOpen": 5,\n  "boomReboundMode": "strict"\n}')
+  const [adminVertexOrder, setAdminVertexOrder] = useState<AdminVertexOrderInput>({
+    symbol: 'Boom 1000 Index',
+    direction: 'BUY',
+    orderType: 'MARKET',
+    lotMode: 'user_config',
+    lot: 0.2,
+    expirySeconds: 300,
+    maxSignalAgeSeconds: 10,
+    maxSlippagePoints: 25,
+    minProfit: 0.5,
+    reason: 'Ava Vertex',
+  })
+  const [adminVertexTiersJson, setAdminVertexTiersJson] = useState('[\n  { "name": "0-2000", "minEquity": 0, "maxEquity": 2000, "lot": 0.1, "minProfit": 0.5 },\n  { "name": "2000-5000", "minEquity": 2000, "maxEquity": 5000, "lot": 0.2, "minProfit": 1 },\n  { "name": "5000+", "minEquity": 5000, "lot": 0.3, "minProfit": 1.5 }\n]')
+  const [adminNotificationTitle, setAdminNotificationTitle] = useState('Message Ava')
+  const [adminNotificationBody, setAdminNotificationBody] = useState('')
   const isLocalDevAdmin = useMemo(() => {
     if (process.env.NODE_ENV !== 'development' || user.is_admin !== true) return false
     if (typeof window === 'undefined') return false
@@ -377,6 +454,22 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     })
     const json = await res.json().catch(() => ({}))
     const message = String(json.error ?? 'Controle admin indisponible.')
+    if (res.status === 401 || message.toLowerCase().includes('session ava web expiree') || message.toLowerCase().includes('session ava web expirée')) {
+      onSessionExpired?.()
+      throw new Error('Session Ava Web expirée. Reconnectez-vous.')
+    }
+    if (!res.ok || json.ok === false) throw new Error(message)
+    return json
+  }, [onSessionExpired, user.id, user.web_session_token])
+
+  const callAdminConsole = useCallback(async (payload: Record<string, unknown>) => {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/trading-admin-console`, {
+      method: 'POST',
+      headers: SUPABASE_HEADERS,
+      body: JSON.stringify({ user_id: user.id, web_session_token: user.web_session_token, ...payload }),
+    })
+    const json = await res.json().catch(() => ({}))
+    const message = String(json.error ?? 'Console admin indisponible.')
     if (res.status === 401 || message.toLowerCase().includes('session ava web expiree') || message.toLowerCase().includes('session ava web expirée')) {
       onSessionExpired?.()
       throw new Error('Session Ava Web expirée. Reconnectez-vous.')
@@ -479,7 +572,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const journalLines = agentConnected && Array.isArray(runtime?.journal) ? runtime.journal : []
   const bridgeVersion = String(instance?.bridge_version ?? '').replace(/^v/i, '')
   const bridgeVersionNumber = Number.parseFloat(bridgeVersion)
-  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.42
+  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.44
   const canRunCommands = agentConnected && (state === 'ready' || state === 'online' || state === 'attention')
   const canOpen = browserAccessReady && (state === 'ready' || state === 'online' || state === 'attention')
   const canProvision = state === 'not_created' || state === 'delayed' || state === 'deleted' || state === 'terminated'
@@ -549,6 +642,123 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
       setBusy(null)
     }
   }, [callCloudSupport, refreshSupportStatus, supportSelected])
+  const adminCriteriaPayload = useCallback(() => ({
+    email: adminCriteria.email?.trim() || undefined,
+    plans: adminCriteria.plans?.length ? adminCriteria.plans : undefined,
+    min_equity: adminCriteria.equityMin ?? undefined,
+    min_floating_loss: adminCriteria.floatingLossMin ?? undefined,
+    min_positions: adminCriteria.positionsMin ?? undefined,
+    max_positions: adminCriteria.positionsMax ?? undefined,
+    agent_connected: adminCriteria.agentConnected === true ? true : undefined,
+    required_symbol: adminCriteria.requiredSymbol?.trim() || undefined,
+  }), [adminCriteria])
+  const adminVertexOrderPayload = useCallback(() => {
+    let equityTiers: Array<Record<string, unknown>> = []
+    if (adminVertexTiersJson.trim()) {
+      const parsed = JSON.parse(adminVertexTiersJson)
+      if (!Array.isArray(parsed)) throw new Error('Les paliers equity doivent être un tableau JSON.')
+      equityTiers = parsed
+    }
+    return {
+      ...adminVertexOrder,
+      symbol: adminVertexOrder.symbol.trim(),
+      equityTiers,
+    }
+  }, [adminVertexOrder, adminVertexTiersJson])
+  const runAdminPreview = useCallback(async () => {
+    try {
+      setBusy('admin_preview')
+      setError(null)
+      setAdminConsoleMessage('')
+      const result = await callAdminConsole({ action: 'targets.preview', criteria: adminCriteriaPayload() })
+      const targets = Array.isArray(result.targets) ? result.targets as AdminConsoleTarget[] : []
+      setAdminTargets(targets)
+      setAdminConsoleMessage(`${targets.length} compte(s) ciblé(s).`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Prévisualisation admin impossible.')
+    } finally {
+      setBusy(null)
+    }
+  }, [adminCriteriaPayload, callAdminConsole])
+  const applyAdminPolicy = useCallback(async () => {
+    try {
+      setBusy('admin_policy')
+      setError(null)
+      const overrides = JSON.parse(adminPolicyJson || '{}')
+      const result = await callAdminConsole({
+        action: 'policy.upsert',
+        name: adminPolicyName,
+        criteria: adminCriteriaPayload(),
+        config_overrides: overrides,
+        dispatch: true,
+      })
+      setAdminTargets(Array.isArray(result.targets) ? result.targets as AdminConsoleTarget[] : adminTargets)
+      setAdminConsoleMessage(`Policy envoyée à ${Number(result.dispatched ?? 0)} machine(s).`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Policy admin impossible.')
+    } finally {
+      setBusy(null)
+    }
+  }, [adminCriteriaPayload, adminPolicyJson, adminPolicyName, adminTargets, callAdminConsole])
+  const previewVertexOrder = useCallback(async () => {
+    try {
+      setBusy('admin_vertex_preview')
+      setError(null)
+      const order = adminVertexOrderPayload()
+      const result = await callAdminConsole({
+        action: 'vertex_order.preview',
+        criteria: { ...adminCriteriaPayload(), required_symbol: order.symbol },
+        order,
+      })
+      const targets = [
+        ...(Array.isArray(result.targets) ? result.targets as AdminConsoleTarget[] : []),
+        ...(Array.isArray(result.excluded) ? result.excluded as AdminConsoleTarget[] : []),
+      ]
+      setAdminTargets(targets)
+      setAdminConsoleMessage(`${Number(result.target_count ?? 0)} cible(s), ${Number(result.excluded_count ?? 0)} exclue(s).`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Prévisualisation Ava Vertex impossible.')
+    } finally {
+      setBusy(null)
+    }
+  }, [adminCriteriaPayload, adminVertexOrderPayload, callAdminConsole])
+  const dispatchVertexOrder = useCallback(async () => {
+    try {
+      setBusy('admin_vertex')
+      setError(null)
+      const order = adminVertexOrderPayload()
+      const result = await callAdminConsole({
+        action: 'vertex_order.dispatch',
+        criteria: { ...adminCriteriaPayload(), required_symbol: order.symbol },
+        order,
+        idempotency_key: `vertex-${Date.now()}`,
+      })
+      setAdminTargets(Array.isArray(result.targets) ? result.targets as AdminConsoleTarget[] : adminTargets)
+      setAdminConsoleMessage(`Ordre Ava Vertex envoyé à ${Number(result.dispatched ?? 0)} machine(s).`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Ordre Ava Vertex impossible.')
+    } finally {
+      setBusy(null)
+    }
+  }, [adminCriteriaPayload, adminTargets, adminVertexOrderPayload, callAdminConsole])
+  const sendAdminNotification = useCallback(async () => {
+    try {
+      setBusy('admin_notification')
+      setError(null)
+      const result = await callAdminConsole({
+        action: 'notification.send',
+        criteria: adminCriteriaPayload(),
+        title: adminNotificationTitle,
+        body: adminNotificationBody,
+      })
+      setAdminTargets(Array.isArray(result.targets) ? result.targets as AdminConsoleTarget[] : adminTargets)
+      setAdminConsoleMessage(`Notification envoyée à ${Number(result.sent ?? 0)} appareil(s).`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Notification admin impossible.')
+    } finally {
+      setBusy(null)
+    }
+  }, [adminCriteriaPayload, adminNotificationBody, adminNotificationTitle, adminTargets, callAdminConsole])
   const planLimits = data?.plan_limits
   const presets = data?.cloud_presets ?? []
 
@@ -708,7 +918,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] p-4">
                 <p className="text-sm font-black text-amber-100">AvaBridge version ancienne</p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  AvaBridge {instance?.bridge_version} est détecté. La version recommandée est 1.42 ou plus pour une synchronisation fiable des positions.
+                  AvaBridge {instance?.bridge_version} est détecté. La version recommandée est 1.44 ou plus pour une synchronisation fiable des positions multi-marchés.
                 </p>
               </div>
             )}
@@ -980,6 +1190,308 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {isLocalDevAdmin && (
+          <section className="rounded-2xl border border-sky-400/20 bg-sky-400/[0.05] p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-200">
+                  <Users size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Admin console local</p>
+                  <h2 className="mt-1 text-lg font-black text-white">Policies, Ava Vertex et notifications</h2>
+                  <p className="mt-1 text-xs leading-5 text-slate-400">
+                    Les actions ciblent uniquement les machines Ava Cloud connectées par agent. Prévisualise toujours les comptes avant d’envoyer.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={busy === 'admin_preview'}
+                onClick={runAdminPreview}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-300 px-4 py-3 text-sm font-black text-slate-950 transition-colors hover:bg-sky-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {busy === 'admin_preview' ? <Loader2 className="animate-spin" size={16} /> : <Search size={16} />}
+                Prévisualiser
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-6">
+              <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 lg:col-span-2">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Email utilisateur</span>
+                <input
+                  value={adminCriteria.email ?? ''}
+                  onChange={event => setAdminCriteria(current => ({ ...current, email: event.target.value }))}
+                  placeholder="email ou vide"
+                  className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none placeholder:text-slate-600"
+                />
+              </label>
+              <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Equity min</span>
+                <input
+                  type="number"
+                  value={adminCriteria.equityMin ?? ''}
+                  onChange={event => setAdminCriteria(current => ({ ...current, equityMin: event.target.value ? toNumber(event.target.value) : null }))}
+                  className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
+                />
+              </label>
+              <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Perte flottante min</span>
+                <input
+                  type="number"
+                  value={adminCriteria.floatingLossMin ?? ''}
+                  onChange={event => setAdminCriteria(current => ({ ...current, floatingLossMin: event.target.value ? toNumber(event.target.value) : null }))}
+                  className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
+                />
+              </label>
+              <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Positions min</span>
+                <input
+                  type="number"
+                  value={adminCriteria.positionsMin ?? ''}
+                  onChange={event => setAdminCriteria(current => ({ ...current, positionsMin: event.target.value ? toNumber(event.target.value) : null }))}
+                  className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
+                />
+              </label>
+              <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
+                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Positions max</span>
+                <input
+                  type="number"
+                  value={adminCriteria.positionsMax ?? ''}
+                  onChange={event => setAdminCriteria(current => ({ ...current, positionsMax: event.target.value ? toNumber(event.target.value) : null }))}
+                  className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
+                />
+              </label>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {['custom_pro', 'custom_ultra', 'custom_max'].map(plan => {
+                const selected = adminCriteria.plans?.includes(plan) === true
+                return (
+                  <button
+                    key={plan}
+                    type="button"
+                    onClick={() => setAdminCriteria(current => {
+                      const plans = current.plans ?? []
+                      return { ...current, plans: selected ? plans.filter(item => item !== plan) : [...plans, plan] }
+                    })}
+                    className={`rounded-xl border px-3 py-2 text-xs font-black ${selected ? 'border-sky-300 bg-sky-300/15 text-sky-100' : 'border-white/10 bg-slate-950/35 text-slate-400'}`}
+                  >
+                    {plan.replace('custom_', 'Custom ')}
+                  </button>
+                )
+              })}
+              <label className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-slate-950/35 px-3 py-2 text-xs font-black text-slate-200">
+                <input
+                  type="checkbox"
+                  checked={adminCriteria.agentConnected === true}
+                  onChange={event => setAdminCriteria(current => ({ ...current, agentConnected: event.target.checked }))}
+                  className="h-4 w-4 accent-sky-300"
+                />
+                Agent connecté seulement
+              </label>
+              {adminConsoleMessage && <span className="inline-flex items-center rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-black text-emerald-200">{adminConsoleMessage}</span>}
+            </div>
+
+            <div className="mt-4 grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
+              <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Cibles</p>
+                  <span className="text-xs font-black text-slate-400">{adminTargets.length} compte(s)</span>
+                </div>
+                <div className="mt-3 max-h-72 space-y-2 overflow-auto pr-1">
+                  {(adminTargets.length ? adminTargets : [{ user_id: 'empty', email: 'Aucune cible prévisualisée.' }]).slice(0, 30).map(target => (
+                    <div key={`${target.user_id}-${target.instance_id ?? ''}`} className="rounded-xl border border-white/10 bg-black/20 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="truncate text-sm font-black text-white">{target.email ?? target.user_id}</p>
+                        <span className={`text-[10px] font-black uppercase tracking-[0.14em] ${target.agent_connected ? 'text-emerald-300' : 'text-slate-500'}`}>
+                          {target.exclusion_reason ? 'exclu' : target.agent_connected ? 'agent ok' : 'hors ligne'}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {target.plan ?? 'plan —'} · equity {metric(target.equity, '$')} · float {metric(target.floating_profit, '$')} · pos {target.positions_count ?? '—'}
+                      </p>
+                      {target.connected_markets?.length ? (
+                        <p className="mt-1 text-[11px] font-bold text-sky-200">
+                          Marchés: {target.connected_markets.map(item => item.symbol ?? item.symbol_key).filter(Boolean).join(', ')}
+                        </p>
+                      ) : null}
+                      {target.order_payload ? (
+                        <p className="mt-1 text-[11px] font-bold text-emerald-200">
+                          Lot {(target.order_payload as any).lot ?? '—'} · palier {(target.order_payload as any).equity_tier ?? 'defaut'}
+                        </p>
+                      ) : null}
+                      {target.exclusion_reason ? (
+                        <p className="mt-1 text-[11px] font-bold text-rose-200">{target.exclusion_reason}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-4 lg:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4">
+                  <div className="flex items-center gap-2 text-sky-100">
+                    <Settings2 size={16} />
+                    <p className="text-sm font-black">Policy Volatility</p>
+                  </div>
+                  <input
+                    value={adminPolicyName}
+                    onChange={event => setAdminPolicyName(event.target.value)}
+                    className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm font-bold text-white outline-none"
+                  />
+                  <textarea
+                    value={adminPolicyJson}
+                    onChange={event => setAdminPolicyJson(event.target.value)}
+                    rows={5}
+                    className="mt-3 w-full resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs text-slate-100 outline-none"
+                  />
+                  <button
+                    type="button"
+                    disabled={busy === 'admin_policy'}
+                    onClick={applyAdminPolicy}
+                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-300 px-3 py-2 text-xs font-black text-slate-950 hover:bg-sky-200 disabled:opacity-50"
+                  >
+                    {busy === 'admin_policy' ? <Loader2 className="animate-spin" size={14} /> : <ShieldCheck size={14} />}
+                    Appliquer policy
+                  </button>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4">
+                  <div className="flex items-center gap-2 text-rose-100">
+                    <Crosshair size={16} />
+                    <p className="text-sm font-black">Ordre Ava Vertex</p>
+                  </div>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                    <select
+                      value={adminVertexOrder.direction}
+                      onChange={event => setAdminVertexOrder(current => ({ ...current, direction: event.target.value as 'BUY' | 'SELL' }))}
+                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none"
+                    >
+                      <option value="BUY">BUY</option>
+                      <option value="SELL">SELL</option>
+                    </select>
+                    <select
+                      value={adminVertexOrder.orderType}
+                      onChange={event => setAdminVertexOrder(current => ({ ...current, orderType: event.target.value as AdminVertexOrderInput['orderType'] }))}
+                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none"
+                    >
+                      {['MARKET', 'BUY_LIMIT', 'SELL_LIMIT', 'BUY_STOP', 'SELL_STOP'].map(type => <option key={type} value={type}>{type}</option>)}
+                    </select>
+                    <input
+                      value={adminVertexOrder.symbol}
+                      onChange={event => setAdminVertexOrder(current => ({ ...current, symbol: event.target.value }))}
+                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none"
+                    />
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={adminVertexOrder.lot}
+                      onChange={event => setAdminVertexOrder(current => ({ ...current, lot: toNumber(event.target.value, 0.2), lotMode: 'fixed' }))}
+                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Entrée pending"
+                      value={adminVertexOrder.entryPrice ?? ''}
+                      onChange={event => setAdminVertexOrder(current => ({ ...current, entryPrice: event.target.value ? toNumber(event.target.value) : null }))}
+                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
+                    />
+                    <input
+                      type="number"
+                      placeholder="TP prix"
+                      value={adminVertexOrder.tp ?? ''}
+                      onChange={event => setAdminVertexOrder(current => ({ ...current, tp: event.target.value ? toNumber(event.target.value) : null }))}
+                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Profit min $"
+                      value={adminVertexOrder.minProfit ?? ''}
+                      onChange={event => setAdminVertexOrder(current => ({ ...current, minProfit: event.target.value ? toNumber(event.target.value) : null }))}
+                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
+                    />
+                    <input
+                      type="number"
+                      placeholder="TP points"
+                      value={adminVertexOrder.takeProfitPoints ?? ''}
+                      onChange={event => setAdminVertexOrder(current => ({ ...current, takeProfitPoints: event.target.value ? toNumber(event.target.value) : null }))}
+                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Age max signal s"
+                      value={adminVertexOrder.maxSignalAgeSeconds ?? ''}
+                      onChange={event => setAdminVertexOrder(current => ({ ...current, maxSignalAgeSeconds: event.target.value ? toNumber(event.target.value, 10) : undefined }))}
+                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Slippage max pts"
+                      value={adminVertexOrder.maxSlippagePoints ?? ''}
+                      onChange={event => setAdminVertexOrder(current => ({ ...current, maxSlippagePoints: event.target.value ? toNumber(event.target.value, 25) : undefined }))}
+                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
+                    />
+                  </div>
+                  <textarea
+                    value={adminVertexTiersJson}
+                    onChange={event => setAdminVertexTiersJson(event.target.value)}
+                    rows={5}
+                    className="mt-3 w-full resize-none rounded-xl border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs text-slate-100 outline-none"
+                  />
+                  <button
+                    type="button"
+                    disabled={busy === 'admin_vertex_preview'}
+                    onClick={previewVertexOrder}
+                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-rose-300/30 bg-rose-300/10 px-3 py-2 text-xs font-black text-rose-100 hover:bg-rose-300/15 disabled:opacity-50"
+                  >
+                    {busy === 'admin_vertex_preview' ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />}
+                    Prévisualiser Ava Vertex
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy === 'admin_vertex'}
+                    onClick={dispatchVertexOrder}
+                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-400 px-3 py-2 text-xs font-black text-slate-950 hover:bg-rose-300 disabled:opacity-50"
+                  >
+                    {busy === 'admin_vertex' ? <Loader2 className="animate-spin" size={14} /> : <Crosshair size={14} />}
+                    Envoyer Ava Vertex
+                  </button>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 lg:col-span-2">
+                  <div className="flex items-center gap-2 text-emerald-100">
+                    <Bell size={16} />
+                    <p className="text-sm font-black">Notification mobile</p>
+                  </div>
+                  <div className="mt-3 grid gap-2 lg:grid-cols-[0.35fr_1fr_auto]">
+                    <input
+                      value={adminNotificationTitle}
+                      onChange={event => setAdminNotificationTitle(event.target.value)}
+                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none"
+                    />
+                    <input
+                      value={adminNotificationBody}
+                      onChange={event => setAdminNotificationBody(event.target.value)}
+                      placeholder="Message à envoyer"
+                      className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
+                    />
+                    <button
+                      type="button"
+                      disabled={busy === 'admin_notification' || !adminNotificationBody.trim()}
+                      onClick={sendAdminNotification}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-300 px-3 py-2 text-xs font-black text-slate-950 hover:bg-emerald-200 disabled:opacity-50"
+                    >
+                      {busy === 'admin_notification' ? <Loader2 className="animate-spin" size={14} /> : <Bell size={14} />}
+                      Envoyer
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
