@@ -280,6 +280,73 @@ const EXECUTION_OPTIONS = [
 const CLOUD_PRICE = 499.99
 const CLOUD_CURRENCY = 'EUR'
 
+const ADMIN_HELP = {
+  console:
+    'Console admin avancee.\nElle sert a cibler des comptes Ava Cloud, appliquer des policies, envoyer des ordres Ava Vertex et notifier les utilisateurs.\nToujours previsualiser avant d envoyer, surtout quand plusieurs comptes sont cibles.\nExemple: filtrer custom_max + equity >= 3000, verifier les cibles, puis envoyer.',
+  preview:
+    'Previsualisation des cibles.\nAucun ordre n est envoye a cette etape.\nAva calcule seulement qui correspond aux filtres, quel agent est connecte et pourquoi un compte est exclu.\nExemple: verifier que seul le compte test est cible avant un ordre Vertex.',
+  email:
+    'Filtre par email utilisateur.\nRenseigne un email pour cibler un compte precis, ou laisse vide pour travailler par segment.\nC est le filtre le plus sur pour tester une action admin.\nExemple: dennyden805@gmail.com cible uniquement ce compte.',
+  equityMin:
+    'Equity minimale du compte MT5.\nL equity correspond au capital actuel avec le flottant deja inclus.\nLe compte est cible seulement si son equity est superieure ou egale a cette valeur.\nExemple: 5000 cible les comptes avec au moins 5000 USD d equity.',
+  floatingLossMin:
+    'Perte flottante minimale.\nUtilise la perte ouverte actuelle pour cibler les comptes en drawdown.\nEntre une valeur positive pour dire: au moins cette perte flottante.\nExemple: 300 cible les comptes qui perdent environ 300 USD ou plus en positions ouvertes.',
+  positionsMin:
+    'Nombre minimal de positions ouvertes.\nLe compte est cible seulement s il a au moins ce nombre de positions.\nUtile pour agir sur les comptes deja exposes.\nExemple: 10 cible les comptes avec 10 positions ou plus.',
+  positionsMax:
+    'Nombre maximal de positions ouvertes.\nLe compte est cible seulement s il ne depasse pas ce nombre.\nUtile pour eviter d envoyer un ordre a un compte deja trop charge.\nExemple: 30 exclut les comptes avec plus de 30 positions.',
+  plans:
+    'Filtre par plan Ava.\nSelectionne un ou plusieurs plans pour limiter les actions aux clients concernes.\nSi aucun plan n est selectionne, le filtre plan est plus large.\nExemple: Custom max uniquement pour une action reservee aux comptes Max.',
+  agentConnected:
+    'Agent connecte seulement.\nQuand actif, Ava cible uniquement les machines qui envoient un heartbeat recent.\nCela evite d envoyer une commande a une machine hors ligne.\nExemple: garde cette option activee pour les ordres Ava Vertex.',
+  targets:
+    'Liste des comptes previsualises.\nElle montre le plan, l equity, le flottant, les positions et les marches connectes.\nUn compte exclu affiche la raison au lieu de recevoir l action.\nExemple: Crash 1000 non connecte exclut un compte pour un ordre Crash.',
+  policy:
+    'Policy Volatility.\nUne policy est un override admin de configuration Ava Volatility.\nElle ne supprime pas la config locale utilisateur: elle s applique au-dessus, puis les limites du plan restent le garde-fou.\nExemple: forcer boomReboundMaxOpen a 5 pour les comptes equity >= 3000.',
+  policyName:
+    'Nom interne de la policy.\nChoisis un nom clair pour reconnaitre la regle dans l audit et les listes admin.\nCe nom n est pas le parametre lui-meme.\nExemple: Max BUY equity >= 3000.',
+  policyJson:
+    'Configuration JSON de la policy.\nChaque cle correspond a un reglage Ava Volatility compris par Desktop/Agent.\nGarde un JSON valide, avec guillemets doubles et valeurs numeriques propres.\nExemple: {"boomReboundMaxOpen":5,"boomReboundMode":"strict"}.',
+  applyPolicy:
+    'Appliquer la policy aux cibles previsualisees.\nAva envoie l override aux agents concernes et garde une trace audit.\nA utiliser apres verification de la liste Cibles.\nExemple: appliquer une cadence stricte seulement aux comptes connectes.',
+  vertex:
+    'Ordre Ava Vertex.\nC est un ordre admin envoye vers les comptes cibles, affiche comme Ava Vertex dans l historique.\nIl est route par marche: Boom 1000, Crash 1000, etc.\nExemple: SELL MARKET sur Crash 1000 seulement si le bridge Crash est connecte.',
+  direction:
+    'Direction de l ordre.\nBUY ouvre une position d achat, SELL ouvre une position de vente.\nChoisis selon le scenario du marche et le symbole cible.\nExemple: SELL sur Crash 1000, BUY sur Boom 1000.',
+  orderType:
+    'Type d ordre.\nMARKET execute maintenant au prix disponible.\nBUY_LIMIT achete plus bas; SELL_LIMIT vend plus haut.\nBUY_STOP achete apres cassure vers le haut; SELL_STOP vend apres cassure vers le bas.',
+  symbol:
+    'Marche/symbole vise.\nLe nom doit correspondre au marche connecte par AvaBridge sur MT5.\nSi ce bridge n est pas connecte, l ordre est refuse clairement.\nExemple: Boom 1000 Index ou Crash 1000 Index.',
+  lot:
+    'Lot fixe de l ordre.\nCette valeur peut etre remplacee par les paliers equity si les paliers sont remplis.\nReste prudent: les limites du plan et du compte s appliquent encore.\nExemple: 0.2 ouvre un ordre de 0.20 lot.',
+  entryPrice:
+    'Prix d entree pour les ordres pending.\nUtilise ce champ pour BUY_LIMIT, SELL_LIMIT, BUY_STOP ou SELL_STOP.\nPour MARKET, ce champ peut rester vide.\nExemple: BUY_LIMIT sous le prix actuel, SELL_STOP sous le prix actuel.',
+  tp:
+    'Take Profit en prix exact.\nLe bot ferme ou place la sortie autour de ce niveau si le bridge le supporte.\nSi tu utilises TP points ou profit min, ce champ peut rester vide.\nExemple: 14480 sur Boom 1000.',
+  minProfit:
+    'Profit minimum en dollars.\nAva peut utiliser ce seuil pour fermer un panier/ordre quand le gain atteint la valeur.\nUtile quand tu raisonnes par gain net plutot que par points.\nExemple: 1.5 signifie viser environ +1.50 USD.',
+  takeProfitPoints:
+    'Take Profit en points.\nAva calcule la sortie en distance de points depuis l entree.\nUtile pour scalping rapide quand le prix exact change vite.\nExemple: 25 points de TP.',
+  maxSignalAge:
+    'Age maximal du signal en secondes.\nSi la commande arrive trop tard, Ava refuse l execution.\nC est une protection importante pour le scalping.\nExemple: 10 refuse un signal vieux de plus de 10 secondes.',
+  slippage:
+    'Slippage maximal autorise en points.\nSi le prix a trop bouge entre l envoi et l execution, Ava refuse.\nCela evite d entrer trop loin du prix voulu.\nExemple: 25 points maximum.',
+  tiers:
+    'Paliers par equity nette.\nAva choisit le lot/profit selon l equity du compte cible.\nChaque palier peut definir minEquity, maxEquity, lot et minProfit.\nExemple: 0-2000 lot 0.1, 2000-5000 lot 0.2.',
+  vertexPreview:
+    'Previsualiser l ordre Vertex.\nAucun trade n est envoye.\nAva calcule les cibles, les marches connectes, les lots et les exclusions.\nExemple: verifier que Crash 1000 est connecte avant d envoyer.',
+  vertexDispatch:
+    'Envoyer Ava Vertex.\nCette action envoie vraiment l ordre aux comptes cibles previsualises.\nA utiliser seulement apres verification des cibles et des paliers.\nExemple: envoyer un SELL MARKET a un compte test connecte.',
+  notification:
+    'Notification mobile admin.\nPermet d envoyer un message push aux utilisateurs cibles ayant un token mobile.\nLa notification suit les memes filtres que la previsualisation.\nExemple: prevenir les clients Max d une intervention.',
+  notificationTitle:
+    'Titre de notification.\nTexte court visible en haut de la notification mobile.\nReste clair et direct.\nExemple: Mise a jour Ava Cloud.',
+  notificationBody:
+    'Message de notification.\nTexte principal envoye au telephone de l utilisateur.\nEvite les messages trop longs.\nExemple: Votre Ava Cloud sera redemarre dans quelques minutes.',
+  notificationSend:
+    'Envoyer la notification mobile.\nL action cible les comptes previsualises avec token push disponible.\nAucune position trading n est modifiee.\nExemple: envoyer une annonce aux comptes Custom max connectes.',
+} satisfies Record<string, string>
+
 function formatCloudPrice(value: number | null | undefined) {
   return new Intl.NumberFormat('fr-FR', {
     minimumFractionDigits: 2,
@@ -386,6 +453,18 @@ function Pill({ active, label }: { active?: boolean | null; label: string }) {
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ background: active ? '#22c55e' : '#f43f5e' }} />
       {label}
+    </span>
+  )
+}
+
+function HelpHint({ text }: { text: string }) {
+  return (
+    <span
+      title={text}
+      aria-label={text}
+      className="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-[10px] font-black leading-none text-slate-400"
+    >
+      ?
     </span>
   )
 }
@@ -1408,9 +1487,12 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border border-sky-400/20 bg-sky-400/10 text-sky-200">
                   <Users size={20} />
                 </div>
-                <div>
+                <div title={ADMIN_HELP.console}>
                   <p className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Admin console</p>
-                  <h2 className="mt-1 text-lg font-black text-white">Policies, Ava Vertex et notifications</h2>
+                  <h2 className="mt-1 inline-flex items-center gap-2 text-lg font-black text-white">
+                    Policies, Ava Vertex et notifications
+                    <HelpHint text={ADMIN_HELP.console} />
+                  </h2>
                   <p className="mt-1 text-xs leading-5 text-slate-400">
                     Les actions ciblent uniquement les machines Ava Cloud connectées par agent. Prévisualise toujours les comptes avant d’envoyer.
                   </p>
@@ -1418,6 +1500,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               </div>
               <button
                 type="button"
+                title={ADMIN_HELP.preview}
                 disabled={busy === 'admin_preview'}
                 onClick={runAdminPreview}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-sky-300 px-4 py-3 text-sm font-black text-slate-950 transition-colors hover:bg-sky-200 disabled:cursor-not-allowed disabled:opacity-60"
@@ -1428,45 +1511,65 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
             </div>
 
             <div className="mt-4 grid gap-3 lg:grid-cols-6">
-              <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 lg:col-span-2">
-                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Email utilisateur</span>
+              <label title={ADMIN_HELP.email} className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 lg:col-span-2">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                  Email utilisateur
+                  <HelpHint text={ADMIN_HELP.email} />
+                </span>
                 <input
+                  title={ADMIN_HELP.email}
                   value={adminCriteria.email ?? ''}
                   onChange={event => setAdminCriteria(current => ({ ...current, email: event.target.value }))}
                   placeholder="email ou vide"
                   className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none placeholder:text-slate-600"
                 />
               </label>
-              <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Equity min</span>
+              <label title={ADMIN_HELP.equityMin} className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                  Equity min
+                  <HelpHint text={ADMIN_HELP.equityMin} />
+                </span>
                 <input
+                  title={ADMIN_HELP.equityMin}
                   type="number"
                   value={adminCriteria.equityMin ?? ''}
                   onChange={event => setAdminCriteria(current => ({ ...current, equityMin: event.target.value ? toNumber(event.target.value) : null }))}
                   className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
                 />
               </label>
-              <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Perte flottante min</span>
+              <label title={ADMIN_HELP.floatingLossMin} className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                  Perte flottante min
+                  <HelpHint text={ADMIN_HELP.floatingLossMin} />
+                </span>
                 <input
+                  title={ADMIN_HELP.floatingLossMin}
                   type="number"
                   value={adminCriteria.floatingLossMin ?? ''}
                   onChange={event => setAdminCriteria(current => ({ ...current, floatingLossMin: event.target.value ? toNumber(event.target.value) : null }))}
                   className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
                 />
               </label>
-              <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Positions min</span>
+              <label title={ADMIN_HELP.positionsMin} className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                  Positions min
+                  <HelpHint text={ADMIN_HELP.positionsMin} />
+                </span>
                 <input
+                  title={ADMIN_HELP.positionsMin}
                   type="number"
                   value={adminCriteria.positionsMin ?? ''}
                   onChange={event => setAdminCriteria(current => ({ ...current, positionsMin: event.target.value ? toNumber(event.target.value) : null }))}
                   className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
                 />
               </label>
-              <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Positions max</span>
+              <label title={ADMIN_HELP.positionsMax} className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                  Positions max
+                  <HelpHint text={ADMIN_HELP.positionsMax} />
+                </span>
                 <input
+                  title={ADMIN_HELP.positionsMax}
                   type="number"
                   value={adminCriteria.positionsMax ?? ''}
                   onChange={event => setAdminCriteria(current => ({ ...current, positionsMax: event.target.value ? toNumber(event.target.value) : null }))}
@@ -1482,6 +1585,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   <button
                     key={plan}
                     type="button"
+                    title={ADMIN_HELP.plans}
                     onClick={() => setAdminCriteria(current => {
                       const plans = current.plans ?? []
                       return { ...current, plans: selected ? plans.filter(item => item !== plan) : [...plans, plan] }
@@ -1492,22 +1596,27 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   </button>
                 )
               })}
-              <label className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-slate-950/35 px-3 py-2 text-xs font-black text-slate-200">
+              <label title={ADMIN_HELP.agentConnected} className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-slate-950/35 px-3 py-2 text-xs font-black text-slate-200">
                 <input
+                  title={ADMIN_HELP.agentConnected}
                   type="checkbox"
                   checked={adminCriteria.agentConnected === true}
                   onChange={event => setAdminCriteria(current => ({ ...current, agentConnected: event.target.checked }))}
                   className="h-4 w-4 accent-sky-300"
                 />
                 Agent connecté seulement
+                <HelpHint text={ADMIN_HELP.agentConnected} />
               </label>
               {adminConsoleMessage && <span className="inline-flex items-center rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-black text-emerald-200">{adminConsoleMessage}</span>}
             </div>
 
             <div className="mt-4 grid gap-4 xl:grid-cols-[0.85fr_1.15fr]">
-              <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4">
+              <div title={ADMIN_HELP.targets} className="rounded-2xl border border-white/10 bg-slate-950/35 p-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Cibles</p>
+                  <p className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                    Cibles
+                    <HelpHint text={ADMIN_HELP.targets} />
+                  </p>
                   <span className="text-xs font-black text-slate-400">{adminTargets.length} compte(s)</span>
                 </div>
                 <div className="mt-3 max-h-72 space-y-2 overflow-auto pr-1">
@@ -1542,16 +1651,19 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4">
-                  <div className="flex items-center gap-2 text-sky-100">
+                  <div title={ADMIN_HELP.policy} className="flex items-center gap-2 text-sky-100">
                     <Settings2 size={16} />
                     <p className="text-sm font-black">Policy Volatility</p>
+                    <HelpHint text={ADMIN_HELP.policy} />
                   </div>
                   <input
+                    title={ADMIN_HELP.policyName}
                     value={adminPolicyName}
                     onChange={event => setAdminPolicyName(event.target.value)}
                     className="mt-3 w-full rounded-xl border border-white/10 bg-black/20 px-3 py-2 text-sm font-bold text-white outline-none"
                   />
                   <textarea
+                    title={ADMIN_HELP.policyJson}
                     value={adminPolicyJson}
                     onChange={event => setAdminPolicyJson(event.target.value)}
                     rows={5}
@@ -1559,6 +1671,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   />
                   <button
                     type="button"
+                    title={ADMIN_HELP.applyPolicy}
                     disabled={busy === 'admin_policy'}
                     onClick={applyAdminPolicy}
                     className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-sky-300 px-3 py-2 text-xs font-black text-slate-950 hover:bg-sky-200 disabled:opacity-50"
@@ -1569,12 +1682,14 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4">
-                  <div className="flex items-center gap-2 text-rose-100">
+                  <div title={ADMIN_HELP.vertex} className="flex items-center gap-2 text-rose-100">
                     <Crosshair size={16} />
                     <p className="text-sm font-black">Ordre Ava Vertex</p>
+                    <HelpHint text={ADMIN_HELP.vertex} />
                   </div>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     <select
+                      title={ADMIN_HELP.direction}
                       value={adminVertexOrder.direction}
                       onChange={event => setAdminVertexOrder(current => ({ ...current, direction: event.target.value as 'BUY' | 'SELL' }))}
                       className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none"
@@ -1583,6 +1698,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       <option value="SELL">SELL</option>
                     </select>
                     <select
+                      title={ADMIN_HELP.orderType}
                       value={adminVertexOrder.orderType}
                       onChange={event => setAdminVertexOrder(current => ({ ...current, orderType: event.target.value as AdminVertexOrderInput['orderType'] }))}
                       className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none"
@@ -1590,11 +1706,13 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       {['MARKET', 'BUY_LIMIT', 'SELL_LIMIT', 'BUY_STOP', 'SELL_STOP'].map(type => <option key={type} value={type}>{type}</option>)}
                     </select>
                     <input
+                      title={ADMIN_HELP.symbol}
                       value={adminVertexOrder.symbol}
                       onChange={event => setAdminVertexOrder(current => ({ ...current, symbol: event.target.value }))}
                       className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none"
                     />
                     <input
+                      title={ADMIN_HELP.lot}
                       type="number"
                       step="0.01"
                       value={adminVertexOrder.lot}
@@ -1602,6 +1720,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none"
                     />
                     <input
+                      title={ADMIN_HELP.entryPrice}
                       type="number"
                       placeholder="Entrée pending"
                       value={adminVertexOrder.entryPrice ?? ''}
@@ -1609,6 +1728,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
                     />
                     <input
+                      title={ADMIN_HELP.tp}
                       type="number"
                       placeholder="TP prix"
                       value={adminVertexOrder.tp ?? ''}
@@ -1616,6 +1736,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
                     />
                     <input
+                      title={ADMIN_HELP.minProfit}
                       type="number"
                       placeholder="Profit min $"
                       value={adminVertexOrder.minProfit ?? ''}
@@ -1623,6 +1744,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
                     />
                     <input
+                      title={ADMIN_HELP.takeProfitPoints}
                       type="number"
                       placeholder="TP points"
                       value={adminVertexOrder.takeProfitPoints ?? ''}
@@ -1630,6 +1752,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
                     />
                     <input
+                      title={ADMIN_HELP.maxSignalAge}
                       type="number"
                       placeholder="Age max signal s"
                       value={adminVertexOrder.maxSignalAgeSeconds ?? ''}
@@ -1637,6 +1760,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
                     />
                     <input
+                      title={ADMIN_HELP.slippage}
                       type="number"
                       placeholder="Slippage max pts"
                       value={adminVertexOrder.maxSlippagePoints ?? ''}
@@ -1645,6 +1769,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     />
                   </div>
                   <textarea
+                    title={ADMIN_HELP.tiers}
                     value={adminVertexTiersJson}
                     onChange={event => setAdminVertexTiersJson(event.target.value)}
                     rows={5}
@@ -1652,6 +1777,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   />
                   <button
                     type="button"
+                    title={ADMIN_HELP.vertexPreview}
                     disabled={busy === 'admin_vertex_preview'}
                     onClick={previewVertexOrder}
                     className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-rose-300/30 bg-rose-300/10 px-3 py-2 text-xs font-black text-rose-100 hover:bg-rose-300/15 disabled:opacity-50"
@@ -1661,6 +1787,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   </button>
                   <button
                     type="button"
+                    title={ADMIN_HELP.vertexDispatch}
                     disabled={busy === 'admin_vertex'}
                     onClick={dispatchVertexOrder}
                     className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rose-400 px-3 py-2 text-xs font-black text-slate-950 hover:bg-rose-300 disabled:opacity-50"
@@ -1671,17 +1798,20 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-4 lg:col-span-2">
-                  <div className="flex items-center gap-2 text-emerald-100">
+                  <div title={ADMIN_HELP.notification} className="flex items-center gap-2 text-emerald-100">
                     <Bell size={16} />
                     <p className="text-sm font-black">Notification mobile</p>
+                    <HelpHint text={ADMIN_HELP.notification} />
                   </div>
                   <div className="mt-3 grid gap-2 lg:grid-cols-[0.35fr_1fr_auto]">
                     <input
+                      title={ADMIN_HELP.notificationTitle}
                       value={adminNotificationTitle}
                       onChange={event => setAdminNotificationTitle(event.target.value)}
                       className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none"
                     />
                     <input
+                      title={ADMIN_HELP.notificationBody}
                       value={adminNotificationBody}
                       onChange={event => setAdminNotificationBody(event.target.value)}
                       placeholder="Message à envoyer"
@@ -1689,6 +1819,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     />
                     <button
                       type="button"
+                      title={ADMIN_HELP.notificationSend}
                       disabled={busy === 'admin_notification' || !adminNotificationBody.trim()}
                       onClick={sendAdminNotification}
                       className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-300 px-3 py-2 text-xs font-black text-slate-950 hover:bg-emerald-200 disabled:opacity-50"
