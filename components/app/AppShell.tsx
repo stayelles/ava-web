@@ -161,6 +161,8 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               customApiKey={customApiKey}
               onSaveApiKey={onSaveApiKey}
               onRemoveApiKey={onRemoveApiKey}
+              userEmail={user.email}
+              onLogout={onLogout}
             />
           )}
         </div>

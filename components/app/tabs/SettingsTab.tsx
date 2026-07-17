@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Globe, Search, Info, Lock, Key } from 'lucide-react'
+import { Globe, Search, Info, Lock, Key, LogOut, User } from 'lucide-react'
 import type { AppSettings } from '../types'
 
 interface Props {
@@ -15,6 +15,8 @@ interface Props {
   customApiKey?: string | null
   onSaveApiKey?: (key: string, pin: string) => Promise<{ ok: boolean; error?: string }>
   onRemoveApiKey?: () => Promise<{ ok: boolean }>
+  userEmail?: string
+  onLogout?: () => void
 }
 
 const LANGUAGES = [
@@ -28,6 +30,7 @@ const LANGUAGES = [
 export function SettingsTab({
   settings, onSettingsChange, isPro, onGoToSubscription,
   canUseCustomApiKey, geminiKeyHint, customApiKey, onSaveApiKey, onRemoveApiKey,
+  userEmail, onLogout,
 }: Props) {
   const [apiKeyInput, setApiKeyInput] = useState('')
   const [pinInput, setPinInput]       = useState('')
@@ -244,6 +247,48 @@ export function SettingsTab({
                 </button>
               </>
             )}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Account */}
+      {onLogout && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.14 }}
+          className="rounded-2xl overflow-hidden"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <User size={13} style={{ color: '#475569' }} />
+            <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#475569' }}>
+              Compte
+            </p>
+          </div>
+          <div className="px-4 py-4 space-y-3">
+            {userEmail && (
+              <div className="flex items-center gap-3 rounded-xl px-3 py-2.5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div
+                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                  style={{ background: 'rgba(225,29,72,0.18)', color: '#f43f5e' }}
+                >
+                  {userEmail.charAt(0).toUpperCase()}
+                </div>
+                <span className="min-w-0 truncate text-xs font-semibold" style={{ color: '#64748b' }}>
+                  {userEmail}
+                </span>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={onLogout}
+              className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold transition-colors"
+              style={{ background: 'rgba(225,29,72,0.12)', color: '#fb7185', border: '1px solid rgba(225,29,72,0.24)' }}
+            >
+              <LogOut size={16} />
+              Se déconnecter
+            </button>
           </div>
         </motion.div>
       )}
