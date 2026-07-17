@@ -1555,7 +1555,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
             <div className="mx-auto max-w-2xl space-y-2 text-center">
               <h3 className="text-2xl font-black text-white">Toutes les formules disponibles</h3>
               <p className="text-sm text-slate-400">
-                Choisissez une formule Custom, puis payez par banque/carte ou crypto-monnaie.
+                Choisissez une formule Custom, puis payez par crypto-monnaie.
               </p>
             </div>
             
@@ -1737,7 +1737,10 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
               <div className="mt-5 space-y-3">
                 <button
                   type="button"
-                  onClick={() => startWhopCheckout('card')}
+                  onClick={() => {
+                    setBillingMessage('')
+                    setBillingError('Le paiement par carte ou PayPal est temporairement indisponible. Utilisez le paiement en crypto pour finaliser votre abonnement.')
+                  }}
                   disabled={billingLoading}
                   className="group flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-left transition-colors hover:border-rose-400/35 hover:bg-white/[0.06] disabled:opacity-60"
                 >
@@ -1745,15 +1748,15 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                     <CreditCard size={18} />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-white">Banque et carte</p>
+                    <p className="text-sm font-black text-white">Carte / PayPal indisponible</p>
                     <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
-                      Carte, PayPal, banque et renouvellement mensuel sécurisé.
+                      Temporairement suspendu. Utilisez le paiement en crypto.
                     </p>
                   </div>
                   {billingLoading ? (
                     <span className="h-4 w-4 shrink-0 rounded-full border-2 border-slate-500 border-t-white animate-spin" />
                   ) : (
-                    <ExternalLink size={15} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
+                    <AlertCircle size={15} className="shrink-0 text-slate-500 transition-colors group-hover:text-white" />
                   )}
                 </button>
 
@@ -1781,7 +1784,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
 
                 <div className="flex items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.025] px-4 py-3 text-[11px] font-semibold leading-relaxed text-slate-500">
                   <ShieldCheck size={14} className="shrink-0 text-rose-300" />
-                  Banque et carte passe par Whop. Crypto-monnaie passe par NOWPayments.
+                  Carte et PayPal sont temporairement indisponibles. Crypto-monnaie passe par NOWPayments.
                 </div>
               </div>
             </motion.div>
