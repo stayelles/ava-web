@@ -23,6 +23,9 @@ import {
 import { SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
 import type { UserData } from '../types'
 
+const ADMIN_ACCESS_TOKEN_KEY = 'ava_admin_access_token'
+const ADMIN_TRUSTED_DEVICE_KEY = 'ava_admin_trusted_device_token'
+
 type CloudState = 'inactive' | 'not_created' | 'provisioning' | 'configuring' | 'ready' | 'online' | 'attention' | 'suspended' | 'delayed' | 'deleted' | 'terminated'
 
 type CloudEntitlement = {
@@ -409,6 +412,14 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const [adminConsoleMessage, setAdminConsoleMessage] = useState('')
   const [adminPolicyName, setAdminPolicyName] = useState('Max BUY equity >= 5000')
   const [adminPolicyJson, setAdminPolicyJson] = useState('{\n  "boomReboundMaxOpen": 5,\n  "boomReboundMode": "strict"\n}')
+  const [adminAccessChecked, setAdminAccessChecked] = useState(false)
+  const [adminAccessGranted, setAdminAccessGranted] = useState(false)
+  const [adminAccessToken, setAdminAccessToken] = useState('')
+  const [adminAccessMessage, setAdminAccessMessage] = useState('')
+  const [adminCode, setAdminCode] = useState('')
+  const [adminCodeSent, setAdminCodeSent] = useState(false)
+  const [adminRememberDevice, setAdminRememberDevice] = useState(true)
+  const [adminCodeDeadline, setAdminCodeDeadline] = useState<number | null>(null)
   const [adminVertexOrder, setAdminVertexOrder] = useState<AdminVertexOrderInput>({
     symbol: 'Boom 1000 Index',
     direction: 'BUY',
@@ -431,6 +442,22 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     return ['localhost', '127.0.0.1'].includes(hostname) || hostname === 'call-ava.com' || hostname.endsWith('.call-ava.com')
   }, [user.is_admin])
 
+  const callAdminAccess = useCallback(async (payload: Record<string, unknown>) => {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-access`, {
+      method: 'POST',
+      headers: SUPABASE_HEADERS,
+      body: JSON.stringify({ user_id: user.id, web_session_token: user.web_session_token, ...payload }),
+    })
+    const json = await res.json().catch(() => ({}))
+    const message = String(json.error ?? 'Verification admin indisponible.')
+    if (res.status === 401 || message.toLowerCase().includes('session ava web expiree') || message.toLowerCase().includes('session ava web expirée')) {
+      onSessionExpired?.()
+      throw new Error('Session Ava Web expirée. Reconnectez-vous.')
+    }
+    if (!res.ok || json.ok === false) throw new Error(message)
+    return json
+  }, [onSessionExpired, user.id, user.web_session_token])
+
   const callCloud = useCallback(async (payload: Record<string, unknown>) => {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/ava-cloud`, {
       method: 'POST',
@@ -448,10 +475,11 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   }, [onSessionExpired, user.id, user.web_session_token])
 
   const callAdminControl = useCallback(async (payload: Record<string, unknown>) => {
+    const token = adminAccessToken || (typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) ?? '' : '')
     const res = await fetch(`${SUPABASE_URL}/functions/v1/trading-admin-control`, {
       method: 'POST',
       headers: SUPABASE_HEADERS,
-      body: JSON.stringify({ user_id: user.id, web_session_token: user.web_session_token, ...payload }),
+      body: JSON.stringify({ user_id: user.id, web_session_token: user.web_session_token, admin_access_token: token || undefined, ...payload }),
     })
     const json = await res.json().catch(() => ({}))
     const message = String(json.error ?? 'Controle admin indisponible.')
@@ -461,13 +489,14 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     }
     if (!res.ok || json.ok === false) throw new Error(message)
     return json
-  }, [onSessionExpired, user.id, user.web_session_token])
+  }, [adminAccessToken, onSessionExpired, user.id, user.web_session_token])
 
   const callAdminConsole = useCallback(async (payload: Record<string, unknown>) => {
+    const token = adminAccessToken || (typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) ?? '' : '')
     const res = await fetch(`${SUPABASE_URL}/functions/v1/trading-admin-console`, {
       method: 'POST',
       headers: SUPABASE_HEADERS,
-      body: JSON.stringify({ user_id: user.id, web_session_token: user.web_session_token, ...payload }),
+      body: JSON.stringify({ user_id: user.id, web_session_token: user.web_session_token, admin_access_token: token || undefined, ...payload }),
     })
     const json = await res.json().catch(() => ({}))
     const message = String(json.error ?? 'Console admin indisponible.')
@@ -477,7 +506,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     }
     if (!res.ok || json.ok === false) throw new Error(message)
     return json
-  }, [onSessionExpired, user.id, user.web_session_token])
+  }, [adminAccessToken, onSessionExpired, user.id, user.web_session_token])
 
   const callCloudSupport = useCallback(async (payload: Record<string, unknown>) => {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/ava-cloud-support`, {
@@ -521,7 +550,113 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   }, [eligible, load])
 
   useEffect(() => {
-    if (!canUseAdminConsole) return
+    if (!canUseAdminConsole) {
+      setAdminAccessChecked(true)
+      setAdminAccessGranted(false)
+      return undefined
+    }
+    let active = true
+    setAdminAccessChecked(false)
+    setAdminAccessMessage('')
+    const trustedDeviceToken = typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_TRUSTED_DEVICE_KEY) ?? '' : ''
+    callAdminAccess({ action: 'status', trusted_device_token: trustedDeviceToken || undefined })
+      .then((result) => {
+        if (!active) return
+        if (result.adminAccess === true) {
+          const token = String(result.admin_access_token ?? '')
+          setAdminAccessGranted(true)
+          setAdminAccessMessage(result.method === 'ip' ? 'Acces admin autorise par IP.' : 'Appareil admin reconnu.')
+          if (token) {
+            setAdminAccessToken(token)
+            window.localStorage.setItem(ADMIN_ACCESS_TOKEN_KEY, token)
+          }
+          return
+        }
+        setAdminAccessGranted(false)
+        setAdminAccessToken('')
+        window.localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY)
+        setAdminAccessMessage(`Verification email requise${result.email ? ` pour ${result.email}` : ''}.`)
+      })
+      .catch((err) => {
+        if (!active) return
+        setAdminAccessGranted(false)
+        setAdminAccessMessage(err instanceof Error ? err.message : 'Verification admin indisponible.')
+      })
+      .finally(() => {
+        if (active) setAdminAccessChecked(true)
+      })
+    return () => {
+      active = false
+    }
+  }, [callAdminAccess, canUseAdminConsole])
+
+  const requestAdminCode = useCallback(async () => {
+    try {
+      setBusy('admin_access_code')
+      setError(null)
+      const result = await callAdminAccess({ action: 'request_code' })
+      if (result.adminAccess === true) {
+        setAdminAccessGranted(true)
+        setAdminAccessMessage('Acces admin autorise par IP.')
+        return
+      }
+      setAdminCodeSent(true)
+      setAdminCode('')
+      const expiresIn = Number(result.expiresInSeconds ?? 600)
+      setAdminCodeDeadline(Date.now() + expiresIn * 1000)
+      setAdminAccessMessage(`Code envoye${result.email ? ` a ${result.email}` : ''}.`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Impossible d’envoyer le code admin.')
+    } finally {
+      setBusy(null)
+    }
+  }, [callAdminAccess])
+
+  const verifyAdminCode = useCallback(async () => {
+    try {
+      setBusy('admin_access_verify')
+      setError(null)
+      const result = await callAdminAccess({
+        action: 'verify_code',
+        code: adminCode.trim(),
+        remember_device: adminRememberDevice,
+      })
+      const accessToken = String(result.admin_access_token ?? '')
+      const trustedDeviceToken = String(result.trusted_device_token ?? '')
+      if (accessToken) {
+        setAdminAccessToken(accessToken)
+        window.localStorage.setItem(ADMIN_ACCESS_TOKEN_KEY, accessToken)
+      }
+      if (trustedDeviceToken) window.localStorage.setItem(ADMIN_TRUSTED_DEVICE_KEY, trustedDeviceToken)
+      setAdminAccessGranted(true)
+      setAdminCodeSent(false)
+      setAdminCodeDeadline(null)
+      setAdminCode('')
+      setAdminAccessMessage(adminRememberDevice ? 'Appareil reconnu pour les acces admin.' : 'Acces admin valide pour cette session.')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Code admin invalide.')
+    } finally {
+      setBusy(null)
+    }
+  }, [adminCode, adminRememberDevice, callAdminAccess])
+
+  useEffect(() => {
+    if (!adminCodeDeadline || adminAccessGranted) return undefined
+    const timer = window.setInterval(() => {
+      if (Date.now() <= adminCodeDeadline) return
+      window.localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY)
+      setAdminCodeDeadline(null)
+      setAdminAccessMessage('Code admin expire. Session fermee pour securite.')
+      onSessionExpired?.()
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [adminAccessGranted, adminCodeDeadline, onSessionExpired])
+
+  useEffect(() => {
+    if (!canUseAdminConsole || !adminAccessGranted) {
+      setAdminLoaded(false)
+      return
+    }
     let active = true
     callAdminControl({ action: 'status' })
       .then((result) => {
@@ -538,7 +673,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     return () => {
       active = false
     }
-  }, [callAdminControl, canUseAdminConsole])
+  }, [adminAccessGranted, callAdminControl, canUseAdminConsole])
 
   const run = useCallback(async (name: string, payload: Record<string, unknown>, after?: (result: Record<string, unknown>) => void) => {
     try {
@@ -1038,7 +1173,76 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
           </div>
         </section>
 
-        {canUseAdminConsole && (
+        {canUseAdminConsole && !adminAccessGranted && (
+          <section className="rounded-2xl border border-rose-400/20 bg-rose-400/[0.06] p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border border-rose-400/20 bg-rose-400/10 text-rose-200">
+                  <LockKeyhole size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-rose-200">Verification admin</p>
+                  <h2 className="mt-1 text-lg font-black text-white">Confirmer cet acces administrateur</h2>
+                  <p className="mt-1 text-xs leading-5 text-slate-400">
+                    Hors IP autorisee, Ava envoie un code par email. Sans validation, les fonctions administrateur restent verrouillees.
+                  </p>
+                  {adminAccessMessage && <p className="mt-2 text-xs font-bold text-rose-100">{adminAccessMessage}</p>}
+                </div>
+              </div>
+              {!adminAccessChecked && (
+                <span className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-3 py-2 text-xs font-black text-slate-200">
+                  <Loader2 className="animate-spin" size={14} />
+                  Verification...
+                </span>
+              )}
+            </div>
+
+            <div className="mt-4 grid gap-3 lg:grid-cols-[0.8fr_1fr_auto]">
+              <button
+                type="button"
+                disabled={!adminAccessChecked || busy === 'admin_access_code'}
+                onClick={requestAdminCode}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-300 px-4 py-3 text-sm font-black text-slate-950 transition-colors hover:bg-rose-200 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {busy === 'admin_access_code' ? <Loader2 className="animate-spin" size={16} /> : <Bell size={16} />}
+                Envoyer le code
+              </button>
+              <input
+                value={adminCode}
+                onChange={event => setAdminCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+                inputMode="numeric"
+                disabled={!adminCodeSent}
+                placeholder="Code 6 chiffres"
+                className="rounded-xl border border-white/10 bg-slate-950/60 px-4 py-3 text-center text-lg font-black tracking-[0.3em] text-white outline-none placeholder:text-sm placeholder:tracking-normal placeholder:text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <button
+                type="button"
+                disabled={!adminCodeSent || adminCode.trim().length !== 6 || busy === 'admin_access_verify'}
+                onClick={verifyAdminCode}
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-300/30 bg-emerald-300/10 px-4 py-3 text-sm font-black text-emerald-100 transition-colors hover:bg-emerald-300/15 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {busy === 'admin_access_verify' ? <Loader2 className="animate-spin" size={16} /> : <ShieldCheck size={16} />}
+                Valider
+              </button>
+            </div>
+            <label className="mt-3 inline-flex items-center gap-2 rounded-xl border border-white/10 bg-slate-950/35 px-3 py-2 text-xs font-black text-slate-200">
+              <input
+                type="checkbox"
+                checked={adminRememberDevice}
+                onChange={event => setAdminRememberDevice(event.target.checked)}
+                className="h-4 w-4 accent-rose-300"
+              />
+              Reconnaitre cet appareil pendant 30 jours
+            </label>
+            {adminCodeSent && adminCodeDeadline && (
+              <p className="mt-3 text-xs font-bold text-slate-500">
+                Le code expire dans {Math.max(0, Math.ceil((adminCodeDeadline - Date.now()) / 60000))} minute(s). Sans validation, cette session admin sera fermee.
+              </p>
+            )}
+          </section>
+        )}
+
+        {canUseAdminConsole && adminAccessGranted && (
           <section className="rounded-2xl border border-sky-400/20 bg-sky-400/[0.06] p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-3">
@@ -1197,7 +1401,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
           </section>
         )}
 
-        {canUseAdminConsole && (
+        {canUseAdminConsole && adminAccessGranted && (
           <section className="rounded-2xl border border-sky-400/20 bg-sky-400/[0.05] p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-3">
@@ -1499,7 +1703,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
           </section>
         )}
 
-        {canUseAdminConsole && (
+        {canUseAdminConsole && adminAccessGranted && (
           <section className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-3">
