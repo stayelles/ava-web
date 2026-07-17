@@ -424,10 +424,11 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const [adminVertexTiersJson, setAdminVertexTiersJson] = useState('[\n  { "name": "0-2000", "minEquity": 0, "maxEquity": 2000, "lot": 0.1, "minProfit": 0.5 },\n  { "name": "2000-5000", "minEquity": 2000, "maxEquity": 5000, "lot": 0.2, "minProfit": 1 },\n  { "name": "5000+", "minEquity": 5000, "lot": 0.3, "minProfit": 1.5 }\n]')
   const [adminNotificationTitle, setAdminNotificationTitle] = useState('Message Ava')
   const [adminNotificationBody, setAdminNotificationBody] = useState('')
-  const isLocalDevAdmin = useMemo(() => {
-    if (process.env.NODE_ENV !== 'development' || user.is_admin !== true) return false
+  const canUseAdminConsole = useMemo(() => {
+    if (user.is_admin !== true) return false
     if (typeof window === 'undefined') return false
-    return ['localhost', '127.0.0.1'].includes(window.location.hostname)
+    const hostname = window.location.hostname
+    return ['localhost', '127.0.0.1'].includes(hostname) || hostname === 'call-ava.com' || hostname.endsWith('.call-ava.com')
   }, [user.is_admin])
 
   const callCloud = useCallback(async (payload: Record<string, unknown>) => {
@@ -520,7 +521,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   }, [eligible, load])
 
   useEffect(() => {
-    if (!isLocalDevAdmin) return
+    if (!canUseAdminConsole) return
     let active = true
     callAdminControl({ action: 'status' })
       .then((result) => {
@@ -537,7 +538,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     return () => {
       active = false
     }
-  }, [callAdminControl, isLocalDevAdmin])
+  }, [callAdminControl, canUseAdminConsole])
 
   const run = useCallback(async (name: string, payload: Record<string, unknown>, after?: (result: Record<string, unknown>) => void) => {
     try {
@@ -1037,7 +1038,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
           </div>
         </section>
 
-        {isLocalDevAdmin && (
+        {canUseAdminConsole && (
           <section className="rounded-2xl border border-sky-400/20 bg-sky-400/[0.06] p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-3">
@@ -1196,7 +1197,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
           </section>
         )}
 
-        {isLocalDevAdmin && (
+        {canUseAdminConsole && (
           <section className="rounded-2xl border border-sky-400/20 bg-sky-400/[0.05] p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-3">
@@ -1204,7 +1205,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   <Users size={20} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Admin console local</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-sky-200">Admin console</p>
                   <h2 className="mt-1 text-lg font-black text-white">Policies, Ava Vertex et notifications</h2>
                   <p className="mt-1 text-xs leading-5 text-slate-400">
                     Les actions ciblent uniquement les machines Ava Cloud connectées par agent. Prévisualise toujours les comptes avant d’envoyer.
@@ -1498,7 +1499,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
           </section>
         )}
 
-        {isLocalDevAdmin && (
+        {canUseAdminConsole && (
           <section className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.06] p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="flex items-start gap-3">
@@ -1506,10 +1507,10 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   <LockKeyhole size={20} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Admin local</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Admin</p>
                   <h2 className="mt-1 text-lg font-black text-white">Controle global des prises de position</h2>
                   <p className="mt-1 text-xs leading-5 text-slate-400">
-                    Visible uniquement en local. Le journal utilisateur affichera: bloqué par l’IA principale.
+                    Disponible uniquement pour ton compte admin et ton IP autorisée. Le journal utilisateur affichera: bloqué par l’IA principale.
                   </p>
                 </div>
               </div>
