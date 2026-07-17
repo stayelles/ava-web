@@ -964,7 +964,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
             <p className="mt-2 text-sm leading-6 text-slate-400">
               {entitlement?.status === 'active'
                 ? `Actif jusqu’au ${formatDate(entitlement.expires_at)}`
-                : 'Activez Ava Cloud par crypto pour lancer la configuration automatique.'}
+                : 'Activez Ava Cloud par carte, PayPal ou crypto pour lancer la configuration automatique.'}
             </p>
 
             {entitlement?.status !== 'active' ? (
@@ -972,15 +972,22 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 <button
                   type="button"
                   disabled={!!busy}
-                  onClick={() => window.alert('Le paiement par carte ou PayPal est temporairement indisponible. Utilisez le paiement en crypto pour activer Ava Cloud.')}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-black text-slate-300 transition-colors hover:bg-white/[0.08] disabled:opacity-60"
+                  onClick={() => run('whop', { action: 'checkout_whop' }, (result) => {
+                    const url = String(result.redirect_url ?? '')
+                    if (url) window.location.href = url
+                  })}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-rose-400 disabled:opacity-60"
                 >
-                  <span className="flex items-center gap-1.5 opacity-70">
-                    <img src="/payment/visa.png" alt="" className="h-4 w-auto rounded-sm bg-white/90 px-1" />
-                    <img src="/payment/mastercard.png" alt="" className="h-4 w-auto rounded-sm bg-white/90 px-1" />
-                    <img src="/payment/paypal.png" alt="" className="h-4 w-auto rounded-sm bg-white/90 px-1" />
-                  </span>
-                  Carte ou PayPal indisponible
+                  {busy === 'whop' ? (
+                    <Loader2 className="animate-spin" size={17} />
+                  ) : (
+                    <span className="flex items-center gap-1.5">
+                      <img src="/payment/visa.png" alt="" className="h-4 w-auto rounded-sm bg-white/90 px-1" />
+                      <img src="/payment/mastercard.png" alt="" className="h-4 w-auto rounded-sm bg-white/90 px-1" />
+                      <img src="/payment/paypal.png" alt="" className="h-4 w-auto rounded-sm bg-white/90 px-1" />
+                    </span>
+                  )}
+                  Payer par carte ou PayPal
                 </button>
                 <button
                   type="button"
@@ -989,7 +996,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     const url = String(result.invoice_url ?? '')
                     if (url) window.location.href = url
                   })}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-rose-400 disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-black text-white transition-colors hover:bg-white/[0.08] disabled:opacity-60"
                 >
                   {busy === 'crypto' ? <Loader2 className="animate-spin" size={17} /> : <Coins size={17} />}
                   Paiement en crypto
