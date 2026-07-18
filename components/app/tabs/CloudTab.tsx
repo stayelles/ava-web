@@ -210,6 +210,9 @@ type ConnectedMarket = {
   bridge_version?: string | null
   connected?: boolean | null
   updated_at?: number | null
+  price?: number | null
+  bid?: number | null
+  ask?: number | null
 }
 
 type AdminConsoleTarget = {
@@ -247,6 +250,15 @@ type AdminVertexOrderInput = {
   reason?: string
 }
 
+type AdminVertexDispatchStatus = {
+  orderId?: string
+  dispatched: number
+  errors: number
+  count: number
+  excluded: number
+  message: string
+}
+
 const STATUS_COPY: Record<CloudState, { label: string; detail: string; color: string }> = {
   inactive: { label: 'Non activé', detail: 'Activez votre accès 24/7 pour créer votre ordinateur Ava Cloud.', color: '#94a3b8' },
   not_created: { label: 'Prêt à configurer', detail: 'Votre accès est actif. Lancez la configuration automatique.', color: '#38bdf8' },
@@ -270,7 +282,8 @@ const ACTIONS = [
   { type: 'update_ava', label: 'Mettre à jour Ava', icon: RefreshCcw },
 ]
 
-const MARKET_OPTIONS = ['Boom 1000 Index', 'Boom 500 Index', 'Boom 300 Index', 'Volatility 75 Index', 'Crash 1000 Index']
+const MARKET_OPTIONS = ['Boom 1000 Index', 'Crash 1000 Index', 'Boom 500 Index', 'Crash 500 Index', 'Boom 300 Index', 'Crash 300 Index', 'Boom 900 Index', 'Crash 900 Index', 'Volatility 75 Index']
+const ADMIN_VERTEX_MARKET_OPTIONS = ['Boom 1000 Index', 'Crash 1000 Index', 'Boom 500 Index', 'Crash 500 Index', 'Boom 300 Index', 'Crash 300 Index', 'Boom 900 Index', 'Crash 900 Index', 'Boom 600 Index', 'Crash 600 Index', 'Boom 100 Index', 'Crash 100 Index', 'Boom 50 Index', 'Crash 50 Index']
 const SCALP_WINDOWS = ['1s', '5s', '15s', '1m', '5m']
 const EXECUTION_OPTIONS = [
   { value: 'bridge', label: 'EA Bridge' },
@@ -352,6 +365,28 @@ function formatCloudPrice(value: number | null | undefined) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Number.isFinite(Number(value)) ? Number(value) : CLOUD_PRICE)
+}
+
+function normalizeAdminMarketKey(value: unknown) {
+  const raw = String(value ?? '').trim().toUpperCase()
+  if (!raw) return ''
+  const key = raw.replace(/[^A-Z0-9]+/g, '')
+  if (key.includes('BOOM300N') || key.includes('BOOM300')) return 'BOOM300N'
+  if (key.includes('BOOM1000')) return 'BOOM1000'
+  if (key.includes('BOOM900')) return 'BOOM900'
+  if (key.includes('BOOM600')) return 'BOOM600'
+  if (key.includes('BOOM500')) return 'BOOM500'
+  if (key.includes('BOOM100')) return 'BOOM100'
+  if (key.includes('BOOM50')) return 'BOOM50'
+  if (key.includes('CRASH1000')) return 'CRASH1000'
+  if (key.includes('CRASH900')) return 'CRASH900'
+  if (key.includes('CRASH600')) return 'CRASH600'
+  if (key.includes('CRASH500')) return 'CRASH500'
+  if (key.includes('CRASH300')) return 'CRASH300'
+  if (key.includes('CRASH100')) return 'CRASH100'
+  if (key.includes('CRASH50')) return 'CRASH50'
+  if (key === 'GOLD') return 'XAUUSD'
+  return key || raw
 }
 
 function defaultConfig(): CloudConfig {
@@ -511,6 +546,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     minProfit: 0.5,
     reason: 'Ava Vertex',
   })
+  const [adminVertexDispatchStatus, setAdminVertexDispatchStatus] = useState<AdminVertexDispatchStatus | null>(null)
   const [adminVertexTiersJson, setAdminVertexTiersJson] = useState('[\n  { "name": "0-2000", "minEquity": 0, "maxEquity": 2000, "lot": 0.1, "minProfit": 0.5 },\n  { "name": "2000-5000", "minEquity": 2000, "maxEquity": 5000, "lot": 0.2, "minProfit": 1 },\n  { "name": "5000+", "minEquity": 5000, "lot": 0.3, "minProfit": 1.5 }\n]')
   const [adminNotificationTitle, setAdminNotificationTitle] = useState('Message Ava')
   const [adminNotificationBody, setAdminNotificationBody] = useState('')
@@ -520,6 +556,52 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     const hostname = window.location.hostname
     return ['localhost', '127.0.0.1'].includes(hostname) || hostname === 'call-ava.com' || hostname.endsWith('.call-ava.com')
   }, [user.is_admin])
+  const adminVertexMarketOptions = useMemo(() => {
+    const labels: string[] = []
+    const seen = new Set<string>()
+    const add = (value: unknown) => {
+      const label = String(value ?? '').trim()
+      const key = normalizeAdminMarketKey(label)
+      if (!label || !key || seen.has(key)) return
+      seen.add(key)
+      labels.push(label)
+    }
+    for (const target of adminTargets) {
+      for (const market of target.connected_markets ?? []) add(market.symbol || market.symbol_key)
+      add(target.active_market)
+      add(target.selected_market?.symbol || target.selected_market?.symbol_key)
+    }
+    ADMIN_VERTEX_MARKET_OPTIONS.forEach(add)
+    return labels
+  }, [adminTargets])
+  const selectedVertexMarket = useMemo(() => {
+    const wanted = normalizeAdminMarketKey(adminVertexOrder.symbol)
+    if (!wanted) return null
+    for (const target of adminTargets) {
+      const selected = target.selected_market
+      if (selected && normalizeAdminMarketKey(selected.symbol_key || selected.symbol) === wanted) return selected
+      const found = target.connected_markets?.find(market => market.connected !== false && normalizeAdminMarketKey(market.symbol_key || market.symbol) === wanted)
+      if (found) return found
+    }
+    return null
+  }, [adminTargets, adminVertexOrder.symbol])
+  const selectedVertexEligibleTargets = useMemo(() => {
+    const wanted = normalizeAdminMarketKey(adminVertexOrder.symbol)
+    if (!wanted) return []
+    return adminTargets.filter(target => {
+      if (target.exclusion_reason || target.user_id === 'empty') return false
+      if (target.selected_market && normalizeAdminMarketKey(target.selected_market.symbol_key || target.selected_market.symbol) === wanted) return true
+      return target.connected_markets?.some(market => market.connected !== false && normalizeAdminMarketKey(market.symbol_key || market.symbol) === wanted) === true
+    })
+  }, [adminTargets, adminVertexOrder.symbol])
+  const adminEligibleTargetCount = useMemo(
+    () => adminTargets.filter(target => target.user_id !== 'empty' && !target.exclusion_reason).length,
+    [adminTargets],
+  )
+  const adminExcludedTargetCount = useMemo(
+    () => adminTargets.filter(target => target.user_id !== 'empty' && !!target.exclusion_reason).length,
+    [adminTargets],
+  )
 
   const callAdminAccess = useCallback(async (payload: Record<string, unknown>) => {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/admin-access`, {
@@ -930,7 +1012,10 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
         ...(Array.isArray(result.excluded) ? result.excluded as AdminConsoleTarget[] : []),
       ]
       setAdminTargets(targets)
-      setAdminConsoleMessage(`${Number(result.target_count ?? 0)} cible(s), ${Number(result.excluded_count ?? 0)} exclue(s).`)
+      setAdminVertexDispatchStatus(null)
+      const targetCount = Number(result.target_count ?? result.count ?? 0)
+      const excludedCount = Number(result.excluded_count ?? 0)
+      setAdminConsoleMessage(targetCount > 0 ? `${targetCount} cible(s), ${excludedCount} exclue(s).` : `Aucune cible eligible pour ${order.symbol}. ${excludedCount} exclue(s).`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Prévisualisation Ava Vertex impossible.')
     } finally {
@@ -948,8 +1033,21 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
         order,
         idempotency_key: `vertex-${Date.now()}`,
       })
-      setAdminTargets(Array.isArray(result.targets) ? result.targets as AdminConsoleTarget[] : adminTargets)
-      setAdminConsoleMessage(`Ordre Ava Vertex envoyé à ${Number(result.dispatched ?? 0)} machine(s).`)
+      const mergedTargets = [
+        ...(Array.isArray(result.targets) ? result.targets as AdminConsoleTarget[] : []),
+        ...(Array.isArray(result.excluded) ? result.excluded as AdminConsoleTarget[] : []),
+      ]
+      if (mergedTargets.length) setAdminTargets(mergedTargets)
+      const dispatched = Number(result.dispatched ?? 0)
+      const errors = Number(result.errors ?? 0)
+      const count = Number(result.count ?? dispatched)
+      const excluded = Number(result.excluded_count ?? 0)
+      const message = dispatched > 0
+        ? `Ordre ${String(result.order_id ?? '').slice(0, 8) || 'Vertex'} cree: ${dispatched} machine(s) cible(s), ${errors} erreur(s).`
+        : `Aucun ordre envoye: 0 machine cible pour ${order.symbol}. Previsualise et verifie le marche connecte.`
+      setAdminVertexDispatchStatus({ orderId: String(result.order_id ?? ''), dispatched, errors, count, excluded, message })
+      setAdminConsoleMessage(message)
+      if (dispatched <= 0) setError(`Ava Vertex non envoye: aucune machine eligible pour ${order.symbol}.`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ordre Ava Vertex impossible.')
     } finally {
@@ -1617,7 +1715,10 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     Cibles
                     <HelpHint text={ADMIN_HELP.targets} />
                   </p>
-                  <span className="text-xs font-black text-slate-400">{adminTargets.length} compte(s)</span>
+                  <span className="text-xs font-black text-slate-400">
+                    {adminEligibleTargetCount} cible(s)
+                    {adminExcludedTargetCount ? ` · ${adminExcludedTargetCount} exclue(s)` : ''}
+                  </span>
                 </div>
                 <div className="mt-3 max-h-72 space-y-2 overflow-auto pr-1">
                   {(adminTargets.length ? adminTargets : [{ user_id: 'empty', email: 'Aucune cible prévisualisée.' }]).slice(0, 30).map(target => (
@@ -1705,12 +1806,14 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     >
                       {['MARKET', 'BUY_LIMIT', 'SELL_LIMIT', 'BUY_STOP', 'SELL_STOP'].map(type => <option key={type} value={type}>{type}</option>)}
                     </select>
-                    <input
+                    <select
                       title={ADMIN_HELP.symbol}
                       value={adminVertexOrder.symbol}
                       onChange={event => setAdminVertexOrder(current => ({ ...current, symbol: event.target.value }))}
                       className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none"
-                    />
+                    >
+                      {adminVertexMarketOptions.map(symbol => <option key={normalizeAdminMarketKey(symbol)} value={symbol}>{symbol}</option>)}
+                    </select>
                     <input
                       title={ADMIN_HELP.lot}
                       type="number"
@@ -1768,6 +1871,32 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
                     />
                   </div>
+                  <div className={`mt-3 rounded-xl border px-3 py-2 text-xs font-bold ${selectedVertexEligibleTargets.length ? 'border-emerald-300/20 bg-emerald-300/10 text-emerald-100' : 'border-amber-300/20 bg-amber-300/10 text-amber-100'}`}>
+                    {selectedVertexEligibleTargets.length ? (
+                      <>
+                        {adminVertexOrder.symbol} prêt sur {selectedVertexEligibleTargets.length} compte(s).
+                        {selectedVertexMarket?.price || selectedVertexMarket?.bid || selectedVertexMarket?.ask ? (
+                          <span className="ml-1 text-slate-200">
+                            Prix live {metric(selectedVertexMarket.price ?? selectedVertexMarket.bid ?? selectedVertexMarket.ask, '')}
+                            {selectedVertexMarket.bid ? ` · bid ${metric(selectedVertexMarket.bid, '')}` : ''}
+                            {selectedVertexMarket.ask ? ` · ask ${metric(selectedVertexMarket.ask, '')}` : ''}
+                          </span>
+                        ) : (
+                          <span className="ml-1 text-slate-300">Prix live non remonte par cet agent.</span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        Aucun compte eligible previsualise pour {adminVertexOrder.symbol}. Clique d abord Previsualiser et verifie que le bridge de ce marche est connecte.
+                      </>
+                    )}
+                  </div>
+                  {adminVertexDispatchStatus ? (
+                    <div className={`mt-2 rounded-xl border px-3 py-2 text-xs font-bold ${adminVertexDispatchStatus.dispatched > 0 ? 'border-sky-300/20 bg-sky-300/10 text-sky-100' : 'border-rose-300/20 bg-rose-300/10 text-rose-100'}`}>
+                      {adminVertexDispatchStatus.message}
+                      {adminVertexDispatchStatus.orderId ? <span className="ml-1 text-slate-300">ID {adminVertexDispatchStatus.orderId.slice(0, 8)}</span> : null}
+                    </div>
+                  ) : null}
                   <textarea
                     title={ADMIN_HELP.tiers}
                     value={adminVertexTiersJson}
