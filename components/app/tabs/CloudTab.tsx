@@ -166,6 +166,15 @@ type TradingGlobalControl = {
   block_all_entries?: boolean | null
   block_buy_entries?: boolean | null
   block_sell_entries?: boolean | null
+  block_boom_buy_entries?: boolean | null
+  block_boom_sell_entries?: boolean | null
+  block_crash_buy_entries?: boolean | null
+  block_crash_sell_entries?: boolean | null
+  bypass_min_net_equity_usd?: number | null
+  bypass_boom_buy_entries?: boolean | null
+  bypass_boom_sell_entries?: boolean | null
+  bypass_crash_buy_entries?: boolean | null
+  bypass_crash_sell_entries?: boolean | null
   block_below_equity_enabled?: boolean | null
   min_equity_usd?: number | null
   volatility_sell_min_profit_override_enabled?: boolean | null
@@ -1990,6 +1999,15 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       block_all_entries: adminControl?.block_all_entries === true,
                       block_buy_entries: adminControl?.block_buy_entries === true,
                       block_sell_entries: adminControl?.block_sell_entries === true,
+                      block_boom_buy_entries: adminControl?.block_boom_buy_entries === true,
+                      block_boom_sell_entries: adminControl?.block_boom_sell_entries === true,
+                      block_crash_buy_entries: adminControl?.block_crash_buy_entries === true,
+                      block_crash_sell_entries: adminControl?.block_crash_sell_entries === true,
+                      bypass_min_net_equity_usd: Number(adminControl?.bypass_min_net_equity_usd ?? 1000),
+                      bypass_boom_buy_entries: adminControl?.bypass_boom_buy_entries === true,
+                      bypass_boom_sell_entries: adminControl?.bypass_boom_sell_entries === true,
+                      bypass_crash_buy_entries: adminControl?.bypass_crash_buy_entries === true,
+                      bypass_crash_sell_entries: adminControl?.bypass_crash_sell_entries === true,
                       block_below_equity_enabled: adminControl?.block_below_equity_enabled === true,
                       min_equity_usd: Number(adminControl?.min_equity_usd ?? 10000),
                       volatility_sell_min_profit_override_enabled: adminControl?.volatility_sell_min_profit_override_enabled === true,
@@ -2076,6 +2094,107 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
                 />
               </label>
+            </div>
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              <div className="rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.05] p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-emerald-200">Boom 1000</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
+                    <input
+                      type="checkbox"
+                      checked={adminControl?.block_boom_buy_entries === true}
+                      onChange={event => updateAdminControl({ block_boom_buy_entries: event.target.checked })}
+                      className="h-4 w-4 accent-emerald-300"
+                    />
+                    Bloquer BUY Boom
+                  </label>
+                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
+                    <input
+                      type="checkbox"
+                      checked={adminControl?.block_boom_sell_entries === true}
+                      onChange={event => updateAdminControl({ block_boom_sell_entries: event.target.checked })}
+                      className="h-4 w-4 accent-rose-300"
+                    />
+                    Bloquer SELL Boom
+                  </label>
+                </div>
+              </div>
+              <div className="rounded-2xl border border-rose-400/15 bg-rose-400/[0.05] p-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-rose-200">Crash 1000</p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
+                    <input
+                      type="checkbox"
+                      checked={adminControl?.block_crash_buy_entries === true}
+                      onChange={event => updateAdminControl({ block_crash_buy_entries: event.target.checked })}
+                      className="h-4 w-4 accent-emerald-300"
+                    />
+                    Bloquer BUY Crash
+                  </label>
+                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
+                    <input
+                      type="checkbox"
+                      checked={adminControl?.block_crash_sell_entries === true}
+                      onChange={event => updateAdminControl({ block_crash_sell_entries: event.target.checked })}
+                      className="h-4 w-4 accent-rose-300"
+                    />
+                    Bloquer SELL Crash
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4 rounded-2xl border border-sky-400/15 bg-sky-400/[0.05] p-4">
+              <div className="grid gap-3 lg:grid-cols-[minmax(180px,260px)_1fr]">
+                <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                  <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Bypass capital net USD</span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="100"
+                    value={Number(adminControl?.bypass_min_net_equity_usd ?? 1000)}
+                    onChange={event => updateAdminControl({ bypass_min_net_equity_usd: toNumber(event.target.value, 1000) })}
+                    className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
+                  />
+                </label>
+                <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
+                    <input
+                      type="checkbox"
+                      checked={adminControl?.bypass_boom_buy_entries === true}
+                      onChange={event => updateAdminControl({ bypass_boom_buy_entries: event.target.checked })}
+                      className="h-4 w-4 accent-emerald-300"
+                    />
+                    Autoriser BUY Boom
+                  </label>
+                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
+                    <input
+                      type="checkbox"
+                      checked={adminControl?.bypass_boom_sell_entries === true}
+                      onChange={event => updateAdminControl({ bypass_boom_sell_entries: event.target.checked })}
+                      className="h-4 w-4 accent-rose-300"
+                    />
+                    Autoriser SELL Boom
+                  </label>
+                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
+                    <input
+                      type="checkbox"
+                      checked={adminControl?.bypass_crash_buy_entries === true}
+                      onChange={event => updateAdminControl({ bypass_crash_buy_entries: event.target.checked })}
+                      className="h-4 w-4 accent-emerald-300"
+                    />
+                    Autoriser BUY Crash
+                  </label>
+                  <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
+                    <input
+                      type="checkbox"
+                      checked={adminControl?.bypass_crash_sell_entries === true}
+                      onChange={event => updateAdminControl({ bypass_crash_sell_entries: event.target.checked })}
+                      className="h-4 w-4 accent-rose-300"
+                    />
+                    Autoriser SELL Crash
+                  </label>
+                </div>
+              </div>
             </div>
             {adminControl?.updated_at && (
               <p className="mt-3 text-xs font-bold text-slate-500">Derniere mise a jour: {formatDate(adminControl.updated_at)}</p>
@@ -2251,10 +2370,10 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">Volatility avancé</p>
               <div className="mt-4 grid gap-2">
                 {[
-                  ['Rebond BUY', 'boomReboundBuyEnabled'],
+                  ['Rebond Volatility', 'boomReboundBuyEnabled'],
                   ['Burst SELL', 'boomBurstEnabled'],
-                  ['Paliers Rebond BUY', 'boomReboundLevelsEnabled'],
-                  ['Limiter BUY session', 'boomReboundSessionLimitEnabled'],
+                  ['Paliers Rebond', 'boomReboundLevelsEnabled'],
+                  ['Limiter Rebond session', 'boomReboundSessionLimitEnabled'],
                   ['Protection sommet H1/H4', 'boomVertexTopGuardEnabled'],
                 ].map(([label, key]) => (
                   <label key={String(key)} className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-slate-950/45 px-3 py-3 text-sm font-bold text-slate-200">
@@ -2338,7 +2457,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               value={naturalCommand}
               onChange={event => setNaturalCommand(event.target.value)}
               rows={4}
-              placeholder="Ex: Mets le lot à 0.2 et active Rebond BUY"
+              placeholder="Ex: Mets le lot à 0.2 et active Rebond Volatility"
               className="mt-4 w-full resize-none rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3 text-sm font-bold text-white outline-none placeholder:text-slate-600"
             />
             <button
