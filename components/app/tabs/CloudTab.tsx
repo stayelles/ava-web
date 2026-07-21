@@ -878,7 +878,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const journalLines = agentConnected && Array.isArray(runtime?.journal) ? runtime.journal : []
   const bridgeVersion = String(instance?.bridge_version ?? '').replace(/^v/i, '')
   const bridgeVersionNumber = Number.parseFloat(bridgeVersion)
-  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.46
+  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.48
   const canRunCommands = agentConnected && (state === 'ready' || state === 'online' || state === 'attention')
   const canOpen = browserAccessReady && (state === 'ready' || state === 'online' || state === 'attention')
   const canProvision = state === 'not_created' || state === 'delayed' || state === 'deleted' || state === 'terminated'
@@ -1240,7 +1240,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] p-4">
                 <p className="text-sm font-black text-amber-100">AvaBridge version ancienne</p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  AvaBridge {instance?.bridge_version} est détecté. La version recommandée est 1.46 ou plus pour une synchronisation fiable des positions multi-marchés.
+                  AvaBridge {instance?.bridge_version} est détecté. La version recommandée est 1.48 ou plus pour les seuils de profit exacts et les paniers positifs Boom + Crash.
                 </p>
               </div>
             )}
