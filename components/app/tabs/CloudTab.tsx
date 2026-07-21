@@ -170,6 +170,10 @@ type TradingGlobalControl = {
   block_boom_sell_entries?: boolean | null
   block_crash_buy_entries?: boolean | null
   block_crash_sell_entries?: boolean | null
+  max_boom_buy_open_positions?: number | null
+  max_boom_sell_open_positions?: number | null
+  max_crash_buy_open_positions?: number | null
+  max_crash_sell_open_positions?: number | null
   bypass_min_net_equity_usd?: number | null
   bypass_boom_buy_entries?: boolean | null
   bypass_boom_sell_entries?: boolean | null
@@ -439,6 +443,10 @@ function defaultConfig(): CloudConfig {
 function toNumber(value: unknown, fallback = 0) {
   const parsed = Number(value)
   return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function toPositionLimit(value: unknown) {
+  return Math.max(0, Math.min(1000, Math.floor(toNumber(value, 0))))
 }
 
 function formatCell(value: unknown) {
@@ -2003,6 +2011,10 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       block_boom_sell_entries: adminControl?.block_boom_sell_entries === true,
                       block_crash_buy_entries: adminControl?.block_crash_buy_entries === true,
                       block_crash_sell_entries: adminControl?.block_crash_sell_entries === true,
+                      max_boom_buy_open_positions: toPositionLimit(adminControl?.max_boom_buy_open_positions),
+                      max_boom_sell_open_positions: toPositionLimit(adminControl?.max_boom_sell_open_positions),
+                      max_crash_buy_open_positions: toPositionLimit(adminControl?.max_crash_buy_open_positions),
+                      max_crash_sell_open_positions: toPositionLimit(adminControl?.max_crash_sell_open_positions),
                       bypass_min_net_equity_usd: Number(adminControl?.bypass_min_net_equity_usd ?? 1000),
                       bypass_boom_buy_entries: adminControl?.bypass_boom_buy_entries === true,
                       bypass_boom_sell_entries: adminControl?.bypass_boom_sell_entries === true,
@@ -2118,6 +2130,34 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     Bloquer SELL Boom
                   </label>
                 </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Max BUY ouverts</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="1000"
+                      step="1"
+                      value={Number(adminControl?.max_boom_buy_open_positions ?? 0)}
+                      onChange={event => updateAdminControl({ max_boom_buy_open_positions: toPositionLimit(event.target.value) })}
+                      className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                    />
+                    <span className="text-[10px] text-slate-500">0 = limite utilisateur</span>
+                  </label>
+                  <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Max SELL ouverts</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="1000"
+                      step="1"
+                      value={Number(adminControl?.max_boom_sell_open_positions ?? 0)}
+                      onChange={event => updateAdminControl({ max_boom_sell_open_positions: toPositionLimit(event.target.value) })}
+                      className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                    />
+                    <span className="text-[10px] text-slate-500">0 = limite utilisateur</span>
+                  </label>
+                </div>
               </div>
               <div className="rounded-2xl border border-rose-400/15 bg-rose-400/[0.05] p-4">
                 <p className="text-[10px] font-black uppercase tracking-[0.14em] text-rose-200">Crash 1000</p>
@@ -2139,6 +2179,34 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="h-4 w-4 accent-rose-300"
                     />
                     Bloquer SELL Crash
+                  </label>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Max BUY ouverts</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="1000"
+                      step="1"
+                      value={Number(adminControl?.max_crash_buy_open_positions ?? 0)}
+                      onChange={event => updateAdminControl({ max_crash_buy_open_positions: toPositionLimit(event.target.value) })}
+                      className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                    />
+                    <span className="text-[10px] text-slate-500">0 = limite utilisateur</span>
+                  </label>
+                  <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                    <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Max SELL ouverts</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="1000"
+                      step="1"
+                      value={Number(adminControl?.max_crash_sell_open_positions ?? 0)}
+                      onChange={event => updateAdminControl({ max_crash_sell_open_positions: toPositionLimit(event.target.value) })}
+                      className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                    />
+                    <span className="text-[10px] text-slate-500">0 = limite utilisateur</span>
                   </label>
                 </div>
               </div>
