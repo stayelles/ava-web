@@ -5,6 +5,7 @@ import { Sidebar } from './Sidebar'
 import { BottomTabs } from './BottomTabs'
 import { VoiceTab } from './tabs/VoiceTab'
 import { ChatTab } from './tabs/ChatTab'
+import { AvaAiTab } from './tabs/AvaAiTab'
 import { CloudTab } from './tabs/CloudTab'
 import { ProfileTab } from './tabs/ProfileTab'
 import { SubscriptionTab } from './tabs/SubscriptionTab'
@@ -22,7 +23,6 @@ interface Props {
   onDecrementCredits: () => Promise<void>
   onTrackVoiceTime: (seconds: number) => Promise<void>
   customApiKey?: string | null
-  sharedGeminiKey?: string | null
   onSaveApiKey?: (key: string, pin: string) => Promise<{ ok: boolean; error?: string }>
   onRemoveApiKey?: () => Promise<{ ok: boolean }>
   onIncrementTextMessages: () => Promise<{ blocked: boolean }>
@@ -33,7 +33,7 @@ const LANG_STORAGE_KEY = 'ava_language'
 
 const DEFAULT_SETTINGS: AppSettings = { language: 'en', webSearch: false }
 
-export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits, onTrackVoiceTime, customApiKey, sharedGeminiKey, onSaveApiKey, onRemoveApiKey, onIncrementTextMessages }: Props) {
+export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits, onTrackVoiceTime, customApiKey, onSaveApiKey, onRemoveApiKey, onIncrementTextMessages }: Props) {
   const shouldStartOnSubscription = !isPro(user) && !isCustomPlan(user)
   const [activeTab, setActiveTab] = useState<AppTab>(shouldStartOnSubscription ? 'subscription' : 'voice')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
@@ -46,7 +46,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
       window.setTimeout(() => setActiveTab('subscription'), 0)
       return
     }
-    if (tab && ['voice', 'chat', 'cloud', 'profile', 'subscription', 'referral', 'settings'].includes(tab)) {
+    if (tab && ['voice', 'chat', 'ai', 'cloud', 'profile', 'subscription', 'referral', 'settings'].includes(tab)) {
       window.setTimeout(() => setActiveTab(tab), 0)
     }
   }, [])
@@ -122,8 +122,6 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               onGoToSubscription={handleGoToSubscription}
               onVoiceDone={onTrackVoiceTime}
               customApiKey={customApiKey}
-              sharedApiKey={permissions.canUseCustomApiKey ? null : sharedGeminiKey}
-              onGoToSettings={handleGoToSettings}
             />
           )}
           {activeTab === 'chat' && (
@@ -134,10 +132,9 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               webSearch={settings.webSearch}
               onIncrementTextMessages={onIncrementTextMessages}
               customApiKey={customApiKey}
-              sharedApiKey={permissions.canUseCustomApiKey ? null : sharedGeminiKey}
-              onGoToSettings={handleGoToSettings}
             />
           )}
+          {activeTab === 'ai' && <AvaAiTab user={user} />}
           {activeTab === 'cloud' && (
             <CloudTab user={user} onGoToSubscription={handleGoToSubscription} onSessionExpired={onLogout} />
           )}

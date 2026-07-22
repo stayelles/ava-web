@@ -95,7 +95,7 @@ export default function AvaVsOpenClawPage() {
         While OpenClaw focuses specifically on desktop and browser automation, Ava is a complete AI companion:
       </P>
       <Ul>
-        <Li><Highlight>Real-time voice conversations</Highlight> — ultra-low latency via Gemini Live</Li>
+        <Li><Highlight>Real-time voice conversations</Highlight> — ultra-low latency with Ava AI</Li>
         <Li><Highlight>Smart push reminders</Highlight> — set reminders in natural language, receive them on your phone at exactly the right time</Li>
         <Li><Highlight>Web search</Highlight> — Google search integrated directly in your conversations</Li>
         <Li><Highlight>Conversation memory</Highlight> — Ava remembers your preferences, ongoing projects, and past conversations</Li>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Apple, Cloud, Mic, MessageSquare, User, Crown, Users, Settings, LogOut, Download, Terminal, X } from 'lucide-react'
+import { Apple, Bot, Cloud, Mic, MessageSquare, User, Crown, Users, Settings, LogOut, Download, Terminal, X } from 'lucide-react'
 import { FaWindows } from 'react-icons/fa'
 import Image from 'next/image'
 import type { AppTab } from './types'
@@ -10,6 +10,7 @@ import type { AppTab } from './types'
 const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'voice', label: 'Conversation', icon: Mic },
   { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'ai', label: 'Ava AI', icon: Bot },
   { id: 'cloud', label: 'Ava Cloud', icon: Cloud },
   { id: 'profile', label: 'Profil', icon: User },
   { id: 'subscription', label: 'Abonnement', icon: Crown },
@@ -17,8 +18,8 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'settings', label: 'Paramètres', icon: Settings },
 ]
 
-const AVA_DESKTOP_MAC_VERSION = '1.2.75'
-const AVA_DESKTOP_WINDOWS_VERSION = '1.2.75'
+const AVA_DESKTOP_MAC_VERSION = '1.3.0'
+const AVA_DESKTOP_WINDOWS_VERSION = '1.3.0'
 const AVA_BRIDGE_EA_VERSION = '1.48'
 const DOWNLOAD_BASE_URL = 'https://call-ava.com/downloads'
 const DESKTOP_DOWNLOADS = [

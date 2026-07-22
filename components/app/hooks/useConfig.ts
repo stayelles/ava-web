@@ -6,7 +6,7 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants'
 /**
  * Fetches the shared Gemini API key from the Supabase Edge Function.
  * The key is never baked into the bundle — it's fetched at runtime for authenticated users.
- * To rotate the key: update the GEMINI_API_KEY secret in Supabase → all clients pick it up
+ * Les secrets Gemini gérés restent dans Supabase et ne sont jamais renvoyés par cet endpoint.
  * on next session start, no app update required.
  */
 export function useConfig(userId: string | null | undefined) {

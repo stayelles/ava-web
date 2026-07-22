@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     "Ava is the AI voice assistant that listens, acts, and remembers. Control your Mac, set smart reminders, search the web, and have real conversations — on iOS, Android, Mac, PC & web. Free to start.",
   keywords: [
     "AI voice assistant", "voice AI", "Ava AI", "AI companion",
-    "Mac control AI", "AI reminders", "Gemini AI assistant",
+    "Mac control AI", "AI reminders", "Ava AI assistant",
     "AI assistant iOS", "AI assistant Android", "desktop AI agent",
     "AI web search", "real-time AI voice", "AI voice chat",
     "assistant vocal IA", "IA voix", "contrôle Mac IA",
@@ -76,7 +76,7 @@ const jsonLd = {
   applicationCategory: "UtilitiesApplication",
   operatingSystem: "iOS, Android, macOS, Windows, Web Browser",
   description:
-    "Ava is an AI voice assistant powered by Google Gemini Live. Control your Mac, set reminders, search the web, and have real conversations — all with your voice.",
+    "Ava is a real-time AI voice assistant developed by Bromux. Control your Mac, set reminders, search the web, and have natural conversations — all with your voice.",
   url: BASE_URL,
   image: `${BASE_URL}/og-image.png`,
   screenshot: `${BASE_URL}/og-image.png`,
@@ -112,7 +112,7 @@ const jsonLd = {
       name: "Custom Plan",
       price: "14.99",
       priceCurrency: "EUR",
-      description: "Unlimited voice & text with your own Gemini API key",
+      description: "Unlimited voice & text with your compatible personal AI key",
     },
   ],
   aggregateRating: {

@@ -33,7 +33,7 @@ tabs/ReferralTab.tsx      → Referral code share
 - Connects directly to `wss://generativelanguage.googleapis.com` (BidiGenerateContent protocol)
 - Audio: browser mic → 16kHz PCM → WebSocket; 24kHz PCM received → Web Audio API playback
 - Session state: `'idle' | 'connecting' | 'connected' | 'error'`
-- API key exposed client-side via `NEXT_PUBLIC_GEMINI_API_KEY` (by design)
+- La clé Gemini gérée par Ava reste exclusivement dans les secrets Supabase. Les clients utilisent l'Edge Function Ava AI et des jetons Live éphémères.
 
 ### Authentication & Session (`hooks/useUserData.ts`)
 - Login: email/PIN or Telegram ID + PIN → Supabase REST → stored in `localStorage` as `ava_web_session`

@@ -173,7 +173,7 @@ export function SettingsTab({
           <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             <Key size={13} style={{ color: '#475569' }} />
             <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#475569' }}>
-              Clé API Gemini
+              Clé IA personnelle
             </p>
           </div>
           <div className="px-4 py-4 space-y-3">
@@ -208,11 +208,11 @@ export function SettingsTab({
             ) : (
               <>
                 <p className="text-xs" style={{ color: '#64748b' }}>
-                  Utilisez votre propre clé API Gemini à la place de la clé partagée de l&apos;app.
+                  Utilisez votre propre clé IA compatible Ava pour le chat général.
                 </p>
                 <input
                   type="password"
-                  placeholder="Clé API Gemini (AIza…)"
+                  placeholder="Clé API personnelle"
                   value={apiKeyInput}
                   onChange={e => setApiKeyInput(e.target.value)}
                   className="w-full px-3 py-2.5 rounded-xl text-sm outline-none"
@@ -308,7 +308,7 @@ export function SettingsTab({
         </div>
         {[
           { label: 'Version', value: 'Web 1.0' },
-          { label: 'Modèle IA', value: 'Gemini 2.5 Flash' },
+          { label: 'Intelligence', value: 'Ava AI' },
           { label: 'Support', value: 'call-ava.com/support' },
         ].map(({ label, value }) => (
           <div

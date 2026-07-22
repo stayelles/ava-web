@@ -83,7 +83,7 @@ export function useUserData() {
         }
         fetchUserProfile(u.id).then(fresh => {
           if (!fresh) return
-          const updated = applyVoiceReset({ ...fresh, web_session_token: u.web_session_token, memorySummary: u.memorySummary })
+          const updated = applyVoiceReset({ ...fresh, web_session_token: u.web_session_token, ava_session_token: u.ava_session_token, memorySummary: u.memorySummary })
           setUser(updated)
           setPermissions(resolvePermissions(updated))
           const { memorySummary: _, ...toStore } = updated
@@ -104,7 +104,7 @@ export function useUserData() {
       const res = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ identifier: identifier.trim(), pin }),
+        body: JSON.stringify({ identifier: identifier.trim(), pin, surface: 'web' }),
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -113,7 +113,11 @@ export function useUserData() {
       }
       const result = await res.json()
       if (result.user) {
-        const u = applyVoiceReset({ ...(result.user as UserData), web_session_token: result.web_session_token ?? result.user.web_session_token ?? null })
+        const u = applyVoiceReset({
+          ...(result.user as UserData),
+          web_session_token: result.web_session_token ?? result.ava_session_token ?? result.user.web_session_token ?? null,
+          ava_session_token: result.ava_session_token ?? result.web_session_token ?? null,
+        })
         const perms = resolvePermissions(u)
         setPermissions(perms)
         setUser(u)
@@ -224,7 +228,7 @@ export function useUserData() {
     try {
       const fresh = await fetchUserProfile(user.id)
       if (fresh) {
-        const u = { ...fresh, web_session_token: user.web_session_token, memorySummary: user.memorySummary }
+        const u = { ...fresh, web_session_token: user.web_session_token, ava_session_token: user.ava_session_token, memorySummary: user.memorySummary }
         setUser(u)
         setPermissions(resolvePermissions(u))
         const { memorySummary: _, ...toStore } = u

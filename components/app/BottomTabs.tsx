@@ -1,11 +1,12 @@
 'use client'
 
-import { Cloud, Mic, MessageSquare, Crown, Settings } from 'lucide-react'
+import { Bot, Cloud, Mic, MessageSquare, Crown, Settings } from 'lucide-react'
 import type { AppTab } from './types'
 
 const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'voice', label: 'Ava', icon: Mic },
   { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'ai', label: 'Ava AI', icon: Bot },
   { id: 'cloud', label: 'Cloud', icon: Cloud },
   { id: 'subscription', label: 'Pro', icon: Crown },
   { id: 'settings', label: 'Réglages', icon: Settings },

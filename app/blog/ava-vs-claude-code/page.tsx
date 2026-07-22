@@ -88,12 +88,12 @@ export default function AvaVsClaudeCodePage() {
         <Highlight>Claude Code</Highlight> requires a Claude Pro subscription at $20/month, or direct API access which can cost significantly more depending on usage. There is no free tier for production use.
       </P>
       <P>
-        <Highlight>Ava</Highlight> offers a completely free plan with 5 daily credits. The Pro plan starts at €39.90/month (or less with quarterly/semi-annual billing) and includes 250 minutes of voice, 300 text messages per day, and all advanced features. The Custom plan at €14.99/month offers truly unlimited usage with your own Gemini API key.
+        <Highlight>Ava</Highlight> offers a completely free plan with 5 daily credits. The Pro plan starts at €39.90/month (or less with quarterly/semi-annual billing) and includes 250 minutes of voice, 300 text messages per day, and all advanced features. The Custom plan at €14.99/month offers truly unlimited usage with a compatible personal AI key.
       </P>
 
       <H2>Voice vs text: why it matters</H2>
       <P>
-        The biggest practical difference between Ava and Claude Code is <Highlight>voice</Highlight>. Ava uses Google Gemini Live for real-time, ultra-low-latency voice conversations. You speak, she responds — naturally, in under a second. There&apos;s no typing, no waiting for a text box.
+        The biggest practical difference between Ava and Claude Code is <Highlight>voice</Highlight>. Ava AI provides real-time, ultra-low-latency voice conversations. You speak, she responds — naturally, in under a second. There&apos;s no typing, no waiting for a text box.
       </P>
       <P>
         This matters because your most valuable moments aren&apos;t always at a keyboard. You might be driving, cooking, exercising, or simply want to think out loud. Ava is designed for those moments. Claude Code is not.

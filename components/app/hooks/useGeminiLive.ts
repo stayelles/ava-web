@@ -99,12 +99,13 @@ export interface GeminiLiveOptions {
   onTurnComplete?: () => void
   onMemoryUpdated?: (summary: string) => void
   apiKey?: string
+  apiKeyProvider?: () => Promise<string | null>
 }
 
 export function useGeminiLive({
   language, webSearch, memorySummary, userName, userId,
   memoryWordLimit = 800,
-  onSessionEnd, onTurnComplete, onMemoryUpdated, apiKey,
+  onSessionEnd, onTurnComplete, onMemoryUpdated, apiKey, apiKeyProvider,
 }: GeminiLiveOptions) {
   const [sessionState, setSessionState] = useState<SessionState>('idle')
   const [transcript, setTranscript] = useState<TranscriptItem[]>([])
@@ -239,9 +240,11 @@ export function useGeminiLive({
 
   const apiKeyRef = useRef(apiKey)
   useEffect(() => { apiKeyRef.current = apiKey }, [apiKey])
+  const apiKeyProviderRef = useRef(apiKeyProvider)
+  useEffect(() => { apiKeyProviderRef.current = apiKeyProvider }, [apiKeyProvider])
 
   const startSession = useCallback(async () => {
-    const effectiveKey = apiKeyRef.current
+    const effectiveKey = apiKeyRef.current ?? await apiKeyProviderRef.current?.()
     if (!effectiveKey) {
       setStatusText('Clé API manquante — contactez le support')
       setSessionState('error')
@@ -284,7 +287,10 @@ export function useGeminiLive({
     const actualSampleRate = ctx.sampleRate
 
     // WebSocket — binaryType arraybuffer: browsers default to Blob which we can't handle inline
-    const ws = new WebSocket(`${WS_BASE}?key=${effectiveKey}`)
+    const wsUrl = apiKeyRef.current
+      ? `${WS_BASE}?key=${encodeURIComponent(effectiveKey)}`
+      : `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(effectiveKey)}`
+    const ws = new WebSocket(wsUrl)
     ws.binaryType = 'arraybuffer'
     wsRef.current = ws
 

@@ -2,13 +2,14 @@
 
 import { useRef, useEffect, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Mic, MicOff, Phone, Square, MessageCircle, X, ImageIcon, Crown, Key } from 'lucide-react'
+import { Mic, MicOff, Phone, Square, MessageCircle, X, ImageIcon, Crown } from 'lucide-react'
 import { useGeminiLive } from '../hooks/useGeminiLive'
 import { totalCredits, isPro, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import { BackgroundParticles } from '../BackgroundParticles'
 import { FrequencyVisualizer } from '../FrequencyVisualizer'
 import { AvaAvatar } from '../AvaAvatar'
 import type { UserData, AvaPermissions } from '../types'
+import { avaAiRequest } from '../services/avaAi'
 
 interface Props {
   user: UserData
@@ -20,8 +21,6 @@ interface Props {
   onGoToSubscription?: () => void
   onVoiceDone?: (durationSeconds: number) => void
   customApiKey?: string | null
-  sharedApiKey?: string | null
-  onGoToSettings?: () => void
 }
 
 const MAX_IMAGES = 6
@@ -29,49 +28,9 @@ const MAX_IMAGES = 6
 export function VoiceTab({
   user, language, webSearch, permissions,
   onSessionEnd, onTurnComplete, onGoToSubscription, onVoiceDone,
-  customApiKey, sharedApiKey, onGoToSettings,
+  customApiKey,
 }: Props) {
   const callDurationRef = useRef(0)
-
-  if (permissions.canUseCustomApiKey && !customApiKey) {
-    return (
-      <div className="relative h-full w-full flex flex-col items-center justify-center p-6 text-center" style={{ background: '#020617' }}>
-        <BackgroundParticles isActive={false} volume={0} />
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/40 via-transparent to-slate-950 pointer-events-none z-0" />
-        
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="relative z-10 max-w-sm w-full p-8 rounded-3xl border border-white/10 bg-slate-900/20 backdrop-blur-xl flex flex-col items-center gap-6"
-        >
-          <div className="p-4 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500">
-            <Key size={32} />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-white mb-2">Clé API Gemini Requise</h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              Vous avez souscrit au plan <strong>Custom Simple</strong> ou <strong>Custom Pro</strong>.<br />
-              Pour communiquer avec Ava vocalement, vous devez configurer votre propre clé API Gemini (Google AI Studio) dans vos paramètres.
-            </p>
-            <p className="text-[10px] text-slate-500 leading-relaxed mt-2">
-              Cette clé est gratuite et sera chiffrée de bout en bout localement avec votre PIN de sécurité.
-            </p>
-          </div>
-          <button
-            onClick={onGoToSettings}
-            className="w-full py-3 rounded-2xl font-bold text-sm transition-transform hover:scale-[1.02] active:scale-[0.98]"
-            style={{
-              background: '#e11d48',
-              color: '#fff',
-              boxShadow: '0 4px 24px rgba(225,29,72,0.4)',
-            }}
-          >
-            Configurer la clé API
-          </button>
-        </motion.div>
-      </div>
-    )
-  }
 
   const handleSessionEnd = useCallback(() => {
     onVoiceDone?.(callDurationRef.current)
@@ -91,7 +50,11 @@ export function VoiceTab({
     onSessionEnd: handleSessionEnd,
     onTurnComplete,
     onMemoryUpdated: () => { /* memory saved — refreshUser re-fetches it via onSessionEnd */ },
-    apiKey: customApiKey ?? sharedApiKey ?? undefined,
+    apiKey: customApiKey ?? undefined,
+    apiKeyProvider: customApiKey ? undefined : async () => {
+      const data = await avaAiRequest(user, { action: 'live-token', purpose: 'support' })
+      return data.token ?? null
+    },
   })
 
   const [transcriptOpen, setTranscriptOpen] = useState(false)

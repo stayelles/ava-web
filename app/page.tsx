@@ -34,8 +34,8 @@ import {
   PADDLE_PRICE_CUSTOM_MAX,
 } from "@/components/app/constants";
 
-const AVA_DESKTOP_MAC_VERSION = "1.2.75";
-const AVA_DESKTOP_WINDOWS_VERSION = "1.2.75";
+const AVA_DESKTOP_MAC_VERSION = "1.3.0";
+const AVA_DESKTOP_WINDOWS_VERSION = "1.3.0";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = {
   macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_MAC_VERSION}-arm64.dmg`,
@@ -811,7 +811,7 @@ function Pricing() {
       highlighted: true,
       features: [
         'Ava Desktop inclus',
-        'Clé API Gemini personnelle',
+        'Clé IA personnelle compatible Ava',
         'Limites personnalisées',
         'Automatisations avancées',
         'Configuration plus flexible',

@@ -78,7 +78,7 @@ const ALL_PLANS = [
     description: 'Pour démarrer avec Ava Desktop, une clé API personnelle et une configuration prudente.',
     features: [
       'Ava Desktop inclus',
-      'Clé API Gemini personnelle',
+      'Clé IA personnelle compatible Ava',
       'Limites prudentes par défaut',
       'Automatisations essentielles',
       'Support standard',
@@ -134,7 +134,7 @@ const ALL_PLANS = [
       'Configuration plus flexible',
       'Support prioritaire',
       'Ava Desktop inclus',
-      'Clé API Gemini personnelle',
+      'Clé IA personnelle compatible Ava',
     ]
   },
   {
@@ -249,7 +249,7 @@ const CUSTOM_FEATURES = [
   { icon: Monitor, text: 'Ava Desktop inclus', val: 'Inclus' },
   { icon: Bell, text: '∞ Rappels push illimités', val: 'Illimité' },
   { icon: Layers, text: '∞ Intégrations MCP illimitées', val: 'Illimité' },
-  { icon: Key, text: 'Votre propre clé API Gemini (Google AI Studio)', val: 'Requis' },
+  { icon: Key, text: 'Votre propre clé IA compatible Ava', val: 'Requis' },
   { icon: Lock, text: 'Clé chiffrée de bout en bout avec votre PIN', val: 'Chiffré' },
 ]
 
@@ -1438,14 +1438,14 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                       <Key size={18} style={{ color: user.gemini_key_hint ? '#818cf8' : '#f59e0b' }} />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white">Clé API Gemini personnelle</h3>
+                      <h3 className="text-sm font-bold text-white">Clé IA personnelle</h3>
                       {user.gemini_key_hint ? (
                         <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                           Votre clé API ({user.gemini_key_hint}) est configurée et active. Toutes vos conversations sont traitées via vos propres quotas Google.
                         </p>
                       ) : (
                         <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                          <span className="text-amber-400 font-semibold">Action requise :</span> Aucune clé API configurée. Vous devez entrer votre clé Gemini personnelle dans vos paramètres pour interagir avec Ava.
+                          <span className="text-amber-400 font-semibold">Action requise :</span> Aucune clé API configurée. Vous devez entrer votre clé IA personnelle compatible Ava dans vos paramètres pour le chat général.
                         </p>
                       )}
                     </div>
@@ -1617,7 +1617,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
           {renderPlanComparison(true)}
 
           <p className="text-center text-[10px] text-slate-500 max-w-sm mx-auto leading-relaxed mt-4">
-            Pour les plans Custom, vous pourrez configurer votre propre clé API Gemini (Google AI Studio) directement dans vos paramètres après souscription.
+            Pour les plans Custom, vous pourrez configurer votre propre clé IA compatible Ava directement dans vos paramètres après souscription.
           </p>
         </div>
       )}
