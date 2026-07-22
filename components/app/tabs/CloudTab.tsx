@@ -521,6 +521,13 @@ function HelpHint({ text }: { text: string }) {
   )
 }
 
+function isAvaWebSessionExpired(payload: Record<string, unknown>, message: string): boolean {
+  const code = String(payload.code ?? payload.error_code ?? '').trim().toUpperCase()
+  if (['AVA_SESSION_EXPIRED', 'WEB_SESSION_EXPIRED', 'SESSION_EXPIRED'].includes(code)) return true
+  const normalized = message.toLowerCase()
+  return normalized.includes('session ava web expiree') || normalized.includes('session ava web expirée')
+}
+
 export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user: UserData; onGoToSubscription?: () => void; onSessionExpired?: () => void }) {
   const eligible = useMemo(() => isCloudEligible(user), [user])
   const [data, setData] = useState<CloudStatus | null>(null)
@@ -628,7 +635,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     })
     const json = await res.json().catch(() => ({}))
     const message = String(json.error ?? 'Verification admin indisponible.')
-    if (res.status === 401 || message.toLowerCase().includes('session ava web expiree') || message.toLowerCase().includes('session ava web expirée')) {
+    if (isAvaWebSessionExpired(json, message)) {
       onSessionExpired?.()
       throw new Error('Session Ava Web expirée. Reconnectez-vous.')
     }
@@ -644,7 +651,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     })
     const json = await res.json().catch(() => ({}))
     const message = String(json.error ?? 'Action indisponible.')
-    if (res.status === 401 || message.toLowerCase().includes('session ava web expiree') || message.toLowerCase().includes('session ava web expirée')) {
+    if (isAvaWebSessionExpired(json, message)) {
       onSessionExpired?.()
       throw new Error('Session Ava Web expirée. Reconnectez-vous.')
     }
@@ -661,7 +668,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     })
     const json = await res.json().catch(() => ({}))
     const message = String(json.error ?? 'Controle admin indisponible.')
-    if (res.status === 401 || message.toLowerCase().includes('session ava web expiree') || message.toLowerCase().includes('session ava web expirée')) {
+    if (isAvaWebSessionExpired(json, message)) {
       onSessionExpired?.()
       throw new Error('Session Ava Web expirée. Reconnectez-vous.')
     }
@@ -678,7 +685,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     })
     const json = await res.json().catch(() => ({}))
     const message = String(json.error ?? 'Console admin indisponible.')
-    if (res.status === 401 || message.toLowerCase().includes('session ava web expiree') || message.toLowerCase().includes('session ava web expirée')) {
+    if (isAvaWebSessionExpired(json, message)) {
       onSessionExpired?.()
       throw new Error('Session Ava Web expirée. Reconnectez-vous.')
     }
@@ -694,7 +701,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     })
     const json = await res.json().catch(() => ({}))
     const message = String(json.error ?? 'Support Ava Cloud indisponible.')
-    if (res.status === 401 || message.toLowerCase().includes('session ava web expiree') || message.toLowerCase().includes('session ava web expirée')) {
+    if (isAvaWebSessionExpired(json, message)) {
       onSessionExpired?.()
       throw new Error('Session Ava Web expirée. Reconnectez-vous.')
     }
@@ -824,11 +831,12 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
       if (Date.now() <= adminCodeDeadline) return
       window.localStorage.removeItem(ADMIN_ACCESS_TOKEN_KEY)
       setAdminCodeDeadline(null)
-      setAdminAccessMessage('Code admin expire. Session fermee pour securite.')
-      onSessionExpired?.()
+      setAdminCodeSent(false)
+      setAdminCode('')
+      setAdminAccessMessage('Code admin expire. Demandez un nouveau code pour continuer.')
     }, 1000)
     return () => window.clearInterval(timer)
-  }, [adminAccessGranted, adminCodeDeadline, onSessionExpired])
+  }, [adminAccessGranted, adminCodeDeadline])
 
   useEffect(() => {
     if (!canUseAdminConsole || !adminAccessGranted) {
