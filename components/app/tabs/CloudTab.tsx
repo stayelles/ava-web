@@ -11,6 +11,7 @@ import {
   LockKeyhole,
   Loader2,
   Monitor,
+  Plus,
   Power,
   RefreshCcw,
   RotateCw,
@@ -18,6 +19,7 @@ import {
   Settings2,
   ShieldCheck,
   Terminal,
+  Trash2,
   Users,
 } from 'lucide-react'
 import { SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
@@ -183,8 +185,22 @@ type TradingGlobalControl = {
   min_equity_usd?: number | null
   volatility_sell_min_profit_override_enabled?: boolean | null
   volatility_sell_min_profit_usd?: number | null
+  price_guard_rules?: TradingPriceGuardRule[] | null
   public_reason?: string | null
   updated_at?: string | null
+}
+
+type TradingPriceGuardRule = {
+  id: string
+  enabled: boolean
+  market_key: string
+  min_price: number | null
+  max_price: number | null
+  block_buy: boolean
+  block_sell: boolean
+  release_buffer_points: number
+  starts_at?: string | null
+  ends_at?: string | null
 }
 
 type SupportUser = {
@@ -297,6 +313,22 @@ const ACTIONS = [
 
 const MARKET_OPTIONS = ['Boom 1000 Index', 'Crash 1000 Index', 'Boom 500 Index', 'Crash 500 Index', 'Boom 300 Index', 'Crash 300 Index', 'Boom 900 Index', 'Crash 900 Index', 'Volatility 75 Index']
 const ADMIN_VERTEX_MARKET_OPTIONS = ['Boom 1000 Index', 'Crash 1000 Index', 'Boom 500 Index', 'Crash 500 Index', 'Boom 300 Index', 'Crash 300 Index', 'Boom 900 Index', 'Crash 900 Index', 'Boom 600 Index', 'Crash 600 Index', 'Boom 100 Index', 'Crash 100 Index', 'Boom 50 Index', 'Crash 50 Index']
+const PRICE_GUARD_MARKET_OPTIONS = [
+  { key: 'BOOM1000', label: 'Boom 1000' },
+  { key: 'CRASH1000', label: 'Crash 1000' },
+  { key: 'BOOM900', label: 'Boom 900' },
+  { key: 'CRASH900', label: 'Crash 900' },
+  { key: 'BOOM600', label: 'Boom 600' },
+  { key: 'CRASH600', label: 'Crash 600' },
+  { key: 'BOOM500', label: 'Boom 500' },
+  { key: 'CRASH500', label: 'Crash 500' },
+  { key: 'BOOM300N', label: 'Boom 300' },
+  { key: 'CRASH300N', label: 'Crash 300' },
+  { key: 'BOOM100', label: 'Boom 100' },
+  { key: 'CRASH100', label: 'Crash 100' },
+  { key: 'BOOM50', label: 'Boom 50' },
+  { key: 'CRASH50', label: 'Crash 50' },
+]
 const SCALP_WINDOWS = ['1s', '5s', '15s', '1m', '5m']
 const EXECUTION_OPTIONS = [
   { value: 'bridge', label: 'EA Bridge' },
@@ -373,6 +405,49 @@ const ADMIN_HELP = {
     'Envoyer la notification mobile.\nL action cible les comptes previsualises avec token push disponible.\nAucune position trading n est modifiee.\nExemple: envoyer une annonce aux comptes Custom max connectes.',
 } satisfies Record<string, string>
 
+const GLOBAL_CONTROL_HELP = {
+  save:
+    'Enregistre tous les réglages de ce bloc et les transmet à Ava Desktop.\nUne barrière valide reste affichée après l’enregistrement et arrive sur les moteurs actifs en environ 30 secondes.',
+  blockAll:
+    'Bloque toutes les nouvelles prises de position et tous les nouveaux renforts, BUY comme SELL, sur les marchés concernés.\nLes positions déjà ouvertes ne sont pas fermées.',
+  blockBuy:
+    'Bloque globalement toutes les nouvelles positions BUY.\nUtilise les blocages par marché ou les barrières de prix si tu veux cibler uniquement Boom, Crash ou une zone de prix.',
+  blockSell:
+    'Bloque globalement toutes les nouvelles positions SELL.\nUtilise les blocages par marché ou les barrières de prix si tu veux cibler uniquement Boom, Crash ou une zone de prix.',
+  blockBelowEquity:
+    'Quand cette option est active, Ava bloque les nouvelles entrées si l’equity du compte est inférieure au capital minimum défini à côté.',
+  minEquity:
+    'Equity minimale en USD exigée pour autoriser de nouvelles entrées.\nL’equity inclut le capital et le profit ou la perte flottante.',
+  forceSellProfit:
+    'Impose un seuil minimum de profit SELL commun à Ava Volatility.\nCela ne ferme pas une position en perte et ne remplace pas les autres protections.',
+  forcedSellProfit:
+    'Montant minimum en USD utilisé lorsque « Forcer profit SELL » est activé.\nExemple : 0,50 signifie qu’un encaissement SELL doit atteindre au moins +0,50 USD.',
+  marketBlock:
+    'Bloque cette direction uniquement sur ce marché, pour les nouvelles entrées et les nouveaux renforts.\nLes positions déjà ouvertes restent intactes.',
+  maxOpen:
+    'Plafond administrateur de positions ouvertes pour ce marché et cette direction.\n0 conserve la limite configurée par l’utilisateur. Une valeur positive ne peut que réduire cette limite.',
+  barriers:
+    'Une barrière bloque BUY, SELL ou les deux uniquement lorsque le prix du marché se trouve dans la zone définie.\nElle n’agit jamais sur les positions déjà ouvertes.',
+  enabled:
+    'Active ou désactive cette barrière sans la supprimer.\nUne barrière désactivée reste enregistrée mais n’empêche aucune entrée.',
+  market:
+    'Marché exact auquel cette barrière s’applique.\nUne règle Crash 1000 n’affecte ni Boom 1000 ni les autres indices.',
+  minPrice:
+    'Borne basse inclusive de la zone.\nSi le maximum est vide, la barrière agit à partir de ce prix et au-dessus.\nExemple : minimum 7800 bloque à 7800, 7801, etc.',
+  maxPrice:
+    'Borne haute inclusive de la zone.\nSi le minimum est vide, la barrière agit jusqu’à ce prix et en dessous.\nExemple : maximum 5000 bloque à 5000, 4999, etc.',
+  releaseBuffer:
+    'Distance supplémentaire à franchir avant de réautoriser la direction après être sorti de la zone.\nElle évite que le blocage s’active et se désactive sans cesse près de la limite.\nExemple : maximum 5000 + marge 20 réautorise seulement au-dessus de 5020.',
+  blockDirection:
+    'Choisis la ou les directions interdites dans cette zone.\nAu moins BUY ou SELL doit être sélectionné.',
+  schedule:
+    'Facultatif. « Active à partir de » retarde le début de la règle. « Expire à » l’arrête automatiquement.\nSans dates, la barrière reste active jusqu’à modification ou suppression.',
+  bypassEquity:
+    'Seuil d’equity nette à partir duquel les autorisations exceptionnelles ci-contre peuvent contourner certains blocages globaux.\nÀ utiliser avec prudence : les barrières de prix et les limites de sécurité restent prioritaires.',
+  bypassDirection:
+    'Autorisation exceptionnelle de cette direction lorsque l’equity nette atteint le seuil de bypass.\nElle ne supprime pas les protections locales ni les barrières de prix actives.',
+} satisfies Record<string, string>
+
 function formatCloudPrice(value: number | null | undefined) {
   return new Intl.NumberFormat('fr-FR', {
     minimumFractionDigits: 2,
@@ -400,6 +475,38 @@ function normalizeAdminMarketKey(value: unknown) {
   if (key.includes('CRASH50')) return 'CRASH50'
   if (key === 'GOLD') return 'XAUUSD'
   return key || raw
+}
+
+function newPriceGuardRule(): TradingPriceGuardRule {
+  const id = typeof globalThis.crypto?.randomUUID === 'function'
+    ? globalThis.crypto.randomUUID()
+    : `price-guard-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  return {
+    id,
+    enabled: true,
+    market_key: 'CRASH1000',
+    min_price: null,
+    max_price: null,
+    block_buy: false,
+    block_sell: true,
+    release_buffer_points: 0,
+    starts_at: null,
+    ends_at: null,
+  }
+}
+
+function optionalInputNumber(value: string): number | null {
+  if (!value.trim()) return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : null
+}
+
+function localDateTimeValue(value: string | null | undefined): string {
+  if (!value) return ''
+  const parsed = new Date(value)
+  if (!Number.isFinite(parsed.getTime())) return ''
+  const local = new Date(parsed.getTime() - parsed.getTimezoneOffset() * 60_000)
+  return local.toISOString().slice(0, 16)
 }
 
 function defaultConfig(): CloudConfig {
@@ -510,15 +617,54 @@ function Pill({ active, label }: { active?: boolean | null; label: string }) {
 }
 
 function HelpHint({ text }: { text: string }) {
+  const [open, setOpen] = useState(false)
   return (
-    <span
-      title={text}
-      aria-label={text}
-      className="inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-[10px] font-black leading-none text-slate-400"
-    >
-      ?
+    <span className="relative inline-flex flex-shrink-0">
+      <button
+        type="button"
+        title="Afficher l’explication"
+        aria-label="Afficher l’explication"
+        aria-expanded={open}
+        onClick={(event) => {
+          event.preventDefault()
+          event.stopPropagation()
+          setOpen(current => !current)
+        }}
+        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-[11px] font-black leading-none text-slate-300 transition-colors hover:border-sky-300/40 hover:bg-sky-300/10 hover:text-sky-200"
+      >
+        ?
+      </button>
+      {open ? (
+        <span
+          role="note"
+          className="absolute left-1/2 top-7 z-50 w-[min(19rem,calc(100vw-2rem))] -translate-x-1/2 whitespace-pre-line rounded-xl border border-sky-300/20 bg-slate-950 p-3 text-left text-xs font-medium normal-case leading-5 tracking-normal text-slate-200 shadow-2xl shadow-black/60"
+        >
+          {text}
+        </span>
+      ) : null}
     </span>
   )
+}
+
+function validatePriceGuardRules(rules: TradingPriceGuardRule[]) {
+  const errors: Record<string, string> = {}
+  rules.forEach((rule, index) => {
+    const messages: string[] = []
+    if (rule.min_price === null && rule.max_price === null) {
+      messages.push('Renseigne au moins un prix minimum ou maximum.')
+    }
+    if (rule.min_price !== null && rule.max_price !== null && rule.min_price > rule.max_price) {
+      messages.push('Le prix minimum ne peut pas dépasser le prix maximum.')
+    }
+    if (!rule.block_buy && !rule.block_sell) {
+      messages.push('Sélectionne au moins Bloquer BUY ou Bloquer SELL.')
+    }
+    if (rule.starts_at && rule.ends_at && Date.parse(rule.starts_at) >= Date.parse(rule.ends_at)) {
+      messages.push('La date de fin doit être postérieure à la date de début.')
+    }
+    if (messages.length) errors[rule.id] = `Barrière ${index + 1} : ${messages.join(' ')}`
+  })
+  return errors
 }
 
 function isAvaWebSessionExpired(payload: Record<string, unknown>, message: string): boolean {
@@ -540,6 +686,8 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const [naturalCommand, setNaturalCommand] = useState('')
   const [adminControl, setAdminControl] = useState<TradingGlobalControl | null>(null)
   const [adminLoaded, setAdminLoaded] = useState(false)
+  const [adminControlMessage, setAdminControlMessage] = useState('')
+  const [priceGuardErrors, setPriceGuardErrors] = useState<Record<string, string>>({})
   const [supportQuery, setSupportQuery] = useState('')
   const [supportUsers, setSupportUsers] = useState<SupportUser[]>([])
   const [supportSelected, setSupportSelected] = useState<SupportUser | null>(null)
@@ -915,9 +1063,45 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     setCloudConfig(current => ({ ...current, ...patch }))
   }, [])
   const updateAdminControl = useCallback((patch: Partial<TradingGlobalControl>) => {
+    setAdminControlMessage('')
     setAdminControl(current => ({
       ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
       ...patch,
+    }))
+  }, [])
+  const addPriceGuardRule = useCallback(() => {
+    setAdminControlMessage('')
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      price_guard_rules: [...(Array.isArray(current?.price_guard_rules) ? current.price_guard_rules : []), newPriceGuardRule()],
+    }))
+  }, [])
+  const updatePriceGuardRule = useCallback((id: string, patch: Partial<TradingPriceGuardRule>) => {
+    setAdminControlMessage('')
+    setPriceGuardErrors(current => {
+      if (!current[id]) return current
+      const next = { ...current }
+      delete next[id]
+      return next
+    })
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      price_guard_rules: (Array.isArray(current?.price_guard_rules) ? current.price_guard_rules : []).map(rule =>
+        rule.id === id ? { ...rule, ...patch } : rule,
+      ),
+    }))
+  }, [])
+  const removePriceGuardRule = useCallback((id: string) => {
+    setAdminControlMessage('')
+    setPriceGuardErrors(current => {
+      if (!current[id]) return current
+      const next = { ...current }
+      delete next[id]
+      return next
+    })
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      price_guard_rules: (Array.isArray(current?.price_guard_rules) ? current.price_guard_rules : []).filter(rule => rule.id !== id),
     }))
   }, [])
   const runSupportSearch = useCallback(async () => {
@@ -1764,7 +1948,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       ) : null}
                       {target.order_payload ? (
                         <p className="mt-1 text-[11px] font-bold text-emerald-200">
-                          Lot {(target.order_payload as any).lot ?? '—'} · palier {(target.order_payload as any).equity_tier ?? 'defaut'}
+                          Lot {String(target.order_payload.lot ?? '—')} · palier {String(target.order_payload.equity_tier ?? 'defaut')}
                         </p>
                       ) : null}
                       {target.exclusion_reason ? (
@@ -2003,13 +2187,22 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                disabled={!adminLoaded || busy === 'admin_control'}
-                onClick={async () => {
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={!adminLoaded || busy === 'admin_control'}
+                  onClick={async () => {
+                  const rules = Array.isArray(adminControl?.price_guard_rules) ? adminControl.price_guard_rules : []
+                  const validationErrors = validatePriceGuardRules(rules)
+                  if (Object.keys(validationErrors).length > 0) {
+                    setPriceGuardErrors(validationErrors)
+                    setAdminControlMessage('Enregistrement suspendu : complète la barrière signalée ci-dessous. Elle reste affichée et aucune autre valeur n’est perdue.')
+                    return
+                  }
                   try {
                     setBusy('admin_control')
                     setError(null)
+                    setAdminControlMessage('')
                     const result = await callAdminControl({
                       action: 'update',
                       block_all_entries: adminControl?.block_all_entries === true,
@@ -2032,20 +2225,48 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       min_equity_usd: Number(adminControl?.min_equity_usd ?? 10000),
                       volatility_sell_min_profit_override_enabled: adminControl?.volatility_sell_min_profit_override_enabled === true,
                       volatility_sell_min_profit_usd: Number(adminControl?.volatility_sell_min_profit_usd ?? 0.5),
+                      price_guard_rules: rules,
                     })
-                    setAdminControl(result.control ?? adminControl)
+                    const savedControl = result.control as TradingGlobalControl | null | undefined
+                    const savedRules = Array.isArray(savedControl?.price_guard_rules) ? savedControl.price_guard_rules : null
+                    const savedRuleIds = new Set(savedRules?.map(rule => rule.id) ?? [])
+                    const barriersConfirmed = savedRules !== null
+                      && savedRules.length === rules.length
+                      && rules.every(rule => savedRuleIds.has(rule.id))
+                    if (!savedControl || !barriersConfirmed) {
+                      throw new Error('Le serveur n’a pas confirmé toutes les barrières. La saisie reste affichée et aucune confirmation verte n’est donnée.')
+                    }
+                    setAdminControl(savedControl)
+                    setPriceGuardErrors({})
+                    setAdminControlMessage('Configuration enregistrée. Les barrières sont conservées et seront propagées aux moteurs Ava Desktop actifs.')
                   } catch (err) {
-                    setError(err instanceof Error ? err.message : 'Controle admin impossible.')
+                    const message = err instanceof Error ? err.message : 'Controle admin impossible.'
+                    setError(message)
+                    setAdminControlMessage(`Enregistrement impossible : ${message}`)
                   } finally {
                     setBusy(null)
                   }
-                }}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 py-3 text-sm font-black text-slate-950 transition-colors hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {busy === 'admin_control' ? <Loader2 className="animate-spin" size={16} /> : <ShieldCheck size={16} />}
-                Enregistrer
-              </button>
+                  }}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-300 px-4 py-3 text-sm font-black text-slate-950 transition-colors hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {busy === 'admin_control' ? <Loader2 className="animate-spin" size={16} /> : <ShieldCheck size={16} />}
+                  Enregistrer
+                </button>
+                <HelpHint text={GLOBAL_CONTROL_HELP.save} />
+              </div>
             </div>
+            {adminControlMessage ? (
+              <div
+                role="status"
+                className={`mt-4 rounded-xl border px-4 py-3 text-xs font-bold leading-5 ${
+                  Object.keys(priceGuardErrors).length > 0 || adminControlMessage.startsWith('Enregistrement impossible')
+                    ? 'border-amber-300/25 bg-amber-300/10 text-amber-100'
+                    : 'border-emerald-300/25 bg-emerald-300/10 text-emerald-100'
+                }`}
+              >
+                {adminControlMessage}
+              </div>
+            ) : null}
             <div className="mt-4 grid gap-3 lg:grid-cols-3 2xl:grid-cols-6">
               <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-bold text-slate-100">
                 <input
@@ -2055,6 +2276,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   className="h-4 w-4 accent-amber-300"
                 />
                 Bloquer toutes les positions
+                <HelpHint text={GLOBAL_CONTROL_HELP.blockAll} />
               </label>
               <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-bold text-slate-100">
                 <input
@@ -2064,6 +2286,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   className="h-4 w-4 accent-emerald-300"
                 />
                 Bloquer BUY
+                <HelpHint text={GLOBAL_CONTROL_HELP.blockBuy} />
               </label>
               <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-bold text-slate-100">
                 <input
@@ -2073,6 +2296,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   className="h-4 w-4 accent-rose-300"
                 />
                 Bloquer SELL
+                <HelpHint text={GLOBAL_CONTROL_HELP.blockSell} />
               </label>
               <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3 text-sm font-bold text-slate-100">
                 <input
@@ -2082,9 +2306,13 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   className="h-4 w-4 accent-amber-300"
                 />
                 Bloquer sous capital minimum
+                <HelpHint text={GLOBAL_CONTROL_HELP.blockBelowEquity} />
               </label>
               <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Capital minimum USD</span>
+                <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                  Capital minimum USD
+                  <HelpHint text={GLOBAL_CONTROL_HELP.minEquity} />
+                </span>
                 <input
                   type="number"
                   min="0"
@@ -2102,9 +2330,13 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   className="h-4 w-4 accent-rose-300"
                 />
                 Forcer profit SELL
+                <HelpHint text={GLOBAL_CONTROL_HELP.forceSellProfit} />
               </label>
               <label className="block rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
-                <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Profit SELL force USD</span>
+                <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                  Profit SELL forcé USD
+                  <HelpHint text={GLOBAL_CONTROL_HELP.forcedSellProfit} />
+                </span>
                 <input
                   type="number"
                   min="0.01"
@@ -2127,6 +2359,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="h-4 w-4 accent-emerald-300"
                     />
                     Bloquer BUY Boom
+                    <HelpHint text={GLOBAL_CONTROL_HELP.marketBlock} />
                   </label>
                   <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
                     <input
@@ -2136,11 +2369,15 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="h-4 w-4 accent-rose-300"
                     />
                     Bloquer SELL Boom
+                    <HelpHint text={GLOBAL_CONTROL_HELP.marketBlock} />
                   </label>
                 </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Max BUY ouverts</span>
+                    <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                      Max BUY ouverts
+                      <HelpHint text={GLOBAL_CONTROL_HELP.maxOpen} />
+                    </span>
                     <input
                       type="number"
                       min="0"
@@ -2153,7 +2390,10 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     <span className="text-[10px] text-slate-500">0 = limite utilisateur</span>
                   </label>
                   <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Max SELL ouverts</span>
+                    <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                      Max SELL ouverts
+                      <HelpHint text={GLOBAL_CONTROL_HELP.maxOpen} />
+                    </span>
                     <input
                       type="number"
                       min="0"
@@ -2178,6 +2418,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="h-4 w-4 accent-emerald-300"
                     />
                     Bloquer BUY Crash
+                    <HelpHint text={GLOBAL_CONTROL_HELP.marketBlock} />
                   </label>
                   <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
                     <input
@@ -2187,11 +2428,15 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="h-4 w-4 accent-rose-300"
                     />
                     Bloquer SELL Crash
+                    <HelpHint text={GLOBAL_CONTROL_HELP.marketBlock} />
                   </label>
                 </div>
                 <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Max BUY ouverts</span>
+                    <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                      Max BUY ouverts
+                      <HelpHint text={GLOBAL_CONTROL_HELP.maxOpen} />
+                    </span>
                     <input
                       type="number"
                       min="0"
@@ -2204,7 +2449,10 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     <span className="text-[10px] text-slate-500">0 = limite utilisateur</span>
                   </label>
                   <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Max SELL ouverts</span>
+                    <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                      Max SELL ouverts
+                      <HelpHint text={GLOBAL_CONTROL_HELP.maxOpen} />
+                    </span>
                     <input
                       type="number"
                       min="0"
@@ -2219,10 +2467,208 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 </div>
               </div>
             </div>
+            <div className="mt-4 rounded-2xl border border-rose-500/25 bg-rose-500/[0.06] p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-rose-300">Barrières de prix globales</p>
+                  <p className="mt-1 flex items-center gap-2 text-sm font-black text-white">
+                    Bloquer BUY ou SELL dans une zone précise
+                    <HelpHint text={GLOBAL_CONTROL_HELP.barriers} />
+                  </p>
+                  <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
+                    Ces règles sont envoyées à tous les moteurs Ava Desktop. Elles bloquent uniquement les nouvelles entrées et les nouveaux renforts; les positions déjà ouvertes restent intactes.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={(adminControl?.price_guard_rules?.length ?? 0) >= 50}
+                  onClick={addPriceGuardRule}
+                  className="inline-flex flex-shrink-0 items-center justify-center gap-2 rounded-xl bg-rose-500 px-3 py-2 text-xs font-black text-white shadow-lg shadow-rose-500/20 transition-colors hover:bg-rose-400 disabled:opacity-40"
+                >
+                  <Plus size={14} />
+                  Ajouter une barrière
+                </button>
+              </div>
+              <div className="mt-4 space-y-3">
+                {(adminControl?.price_guard_rules ?? []).map((rule, index) => {
+                  const zone = rule.min_price !== null && rule.max_price !== null
+                    ? `${rule.min_price} à ${rule.max_price}`
+                    : rule.min_price !== null
+                      ? `≥ ${rule.min_price}`
+                      : rule.max_price !== null
+                        ? `≤ ${rule.max_price}`
+                        : 'zone à compléter'
+                  const ruleError = priceGuardErrors[rule.id]
+                  return (
+                    <div
+                      key={rule.id}
+                      className={`rounded-2xl border bg-slate-950/55 p-4 ${
+                        ruleError ? 'border-amber-300/40 ring-1 ring-amber-300/10' : 'border-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={rule.enabled !== false}
+                            onChange={event => updatePriceGuardRule(rule.id, { enabled: event.target.checked })}
+                            className="h-4 w-4 accent-rose-500"
+                          />
+                          <div>
+                            <p className="flex items-center gap-2 text-xs font-black text-white">
+                              Barrière {index + 1} · {zone}
+                              <HelpHint text={GLOBAL_CONTROL_HELP.enabled} />
+                            </p>
+                            <p className="text-[10px] text-slate-500">
+                              {rule.block_buy ? 'BUY bloqué' : 'BUY autorisé'} · {rule.block_sell ? 'SELL bloqué' : 'SELL autorisé'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removePriceGuardRule(rule.id)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-500 transition-colors hover:border-rose-500/30 hover:text-rose-300"
+                          title="Supprimer cette barrière"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      {ruleError ? (
+                        <p role="alert" className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-xs font-bold leading-5 text-amber-100">
+                          {ruleError}
+                        </p>
+                      ) : null}
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Marché
+                            <HelpHint text={GLOBAL_CONTROL_HELP.market} />
+                          </span>
+                          <select
+                            value={rule.market_key}
+                            onChange={event => updatePriceGuardRule(rule.id, { market_key: event.target.value })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          >
+                            {PRICE_GUARD_MARKET_OPTIONS.map(option => (
+                              <option key={option.key} value={option.key} className="bg-slate-950">{option.label}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Prix minimum
+                            <HelpHint text={GLOBAL_CONTROL_HELP.minPrice} />
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={rule.min_price ?? ''}
+                            onChange={event => updatePriceGuardRule(rule.id, { min_price: optionalInputNumber(event.target.value) })}
+                            placeholder="Sans minimum"
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none placeholder:text-slate-700"
+                          />
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Prix maximum
+                            <HelpHint text={GLOBAL_CONTROL_HELP.maxPrice} />
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={rule.max_price ?? ''}
+                            onChange={event => updatePriceGuardRule(rule.id, { max_price: optionalInputNumber(event.target.value) })}
+                            placeholder="Sans maximum"
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none placeholder:text-slate-700"
+                          />
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Marge réactivation
+                            <HelpHint text={GLOBAL_CONTROL_HELP.releaseBuffer} />
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={rule.release_buffer_points ?? 0}
+                            onChange={event => updatePriceGuardRule(rule.id, { release_buffer_points: optionalInputNumber(event.target.value) ?? 0 })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          />
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black ${rule.block_buy ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100' : 'border-white/10 bg-black/25 text-slate-500'}`}>
+                            <input
+                              type="checkbox"
+                              checked={rule.block_buy}
+                              onChange={event => updatePriceGuardRule(rule.id, { block_buy: event.target.checked })}
+                              className="h-4 w-4 accent-emerald-400"
+                            />
+                            Bloquer BUY
+                            <HelpHint text={GLOBAL_CONTROL_HELP.blockDirection} />
+                          </label>
+                          <label className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black ${rule.block_sell ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-white/10 bg-black/25 text-slate-500'}`}>
+                            <input
+                              type="checkbox"
+                              checked={rule.block_sell}
+                              onChange={event => updatePriceGuardRule(rule.id, { block_sell: event.target.checked })}
+                              className="h-4 w-4 accent-rose-400"
+                            />
+                            Bloquer SELL
+                            <HelpHint text={GLOBAL_CONTROL_HELP.blockDirection} />
+                          </label>
+                        </div>
+                      </div>
+                      <details className="mt-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                        <summary className="cursor-pointer text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                          Planification facultative
+                          <span className="ml-2 inline-flex align-middle">
+                            <HelpHint text={GLOBAL_CONTROL_HELP.schedule} />
+                          </span>
+                        </summary>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <label className="block">
+                            <span className="text-[10px] font-bold text-slate-500">Active à partir de</span>
+                            <input
+                              type="datetime-local"
+                              value={localDateTimeValue(rule.starts_at)}
+                              onChange={event => updatePriceGuardRule(rule.id, { starts_at: event.target.value ? new Date(event.target.value).toISOString() : null })}
+                              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-xs text-white outline-none"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="text-[10px] font-bold text-slate-500">Expire à</span>
+                            <input
+                              type="datetime-local"
+                              value={localDateTimeValue(rule.ends_at)}
+                              onChange={event => updatePriceGuardRule(rule.id, { ends_at: event.target.value ? new Date(event.target.value).toISOString() : null })}
+                              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-xs text-white outline-none"
+                            />
+                          </label>
+                        </div>
+                      </details>
+                    </div>
+                  )
+                })}
+                {(adminControl?.price_guard_rules?.length ?? 0) === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-slate-500">
+                    Aucune barrière de prix. Exemple : Crash 1000, prix maximum 5000, bloquer SELL.
+                  </div>
+                ) : null}
+              </div>
+              <p className="mt-3 text-[10px] leading-4 text-slate-500">
+                Une borne vide représente l’infini. Les bornes sont inclusives. Si plusieurs barrières correspondent, chaque direction bloquée reste bloquée. La propagation vers les moteurs actifs prend au maximum environ 30 secondes, puis le contrôle du prix est local et immédiat.
+              </p>
+            </div>
             <div className="mt-4 rounded-2xl border border-sky-400/15 bg-sky-400/[0.05] p-4">
               <div className="grid gap-3 lg:grid-cols-[minmax(180px,260px)_1fr]">
                 <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
-                  <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Bypass capital net USD</span>
+                  <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">
+                    Bypass capital net USD
+                    <HelpHint text={GLOBAL_CONTROL_HELP.bypassEquity} />
+                  </span>
                   <input
                     type="number"
                     min="0"
@@ -2241,6 +2687,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="h-4 w-4 accent-emerald-300"
                     />
                     Autoriser BUY Boom
+                    <HelpHint text={GLOBAL_CONTROL_HELP.bypassDirection} />
                   </label>
                   <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
                     <input
@@ -2250,6 +2697,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="h-4 w-4 accent-rose-300"
                     />
                     Autoriser SELL Boom
+                    <HelpHint text={GLOBAL_CONTROL_HELP.bypassDirection} />
                   </label>
                   <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
                     <input
@@ -2259,6 +2707,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="h-4 w-4 accent-emerald-300"
                     />
                     Autoriser BUY Crash
+                    <HelpHint text={GLOBAL_CONTROL_HELP.bypassDirection} />
                   </label>
                   <label className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2 text-sm font-bold text-slate-100">
                     <input
@@ -2268,6 +2717,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       className="h-4 w-4 accent-rose-300"
                     />
                     Autoriser SELL Crash
+                    <HelpHint text={GLOBAL_CONTROL_HELP.bypassDirection} />
                   </label>
                 </div>
               </div>
