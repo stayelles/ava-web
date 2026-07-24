@@ -76,7 +76,7 @@ const jsonLd = {
   applicationCategory: "UtilitiesApplication",
   operatingSystem: "iOS, Android, macOS, Windows, Web Browser",
   description:
-    "Ava is a real-time AI voice assistant developed by Bromux. Control your Mac, set reminders, search the web, and have natural conversations — all with your voice.",
+    "Ava is a real-time artificial intelligence voice assistant developed by Bromuxe. Control your Mac, set reminders, search the web, and have natural conversations — all with your voice.",
   url: BASE_URL,
   image: `${BASE_URL}/og-image.png`,
   screenshot: `${BASE_URL}/og-image.png`,

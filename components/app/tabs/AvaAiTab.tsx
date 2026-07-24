@@ -175,7 +175,7 @@ export function AvaAiTab({ user }: { user: UserData }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center"><Bot className="text-rose-400" size={22} /></div>
-            <div><h1 className="font-black text-white">Ava AI</h1><p className="text-xs text-slate-500">Développée par Bromux · réponses courtes et contrôlées</p></div>
+            <div><h1 className="font-black text-white">Ava AI</h1><p className="text-xs text-slate-500">Intelligence artificielle développée par Bromuxe · réponses courtes et contrôlées</p></div>
           </div>
           <button onClick={requestHuman} className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-white/10 bg-white/[0.04] text-slate-300 text-xs font-bold hover:border-rose-500/30">
             <UserRoundCheck size={16} /> Conseiller humain

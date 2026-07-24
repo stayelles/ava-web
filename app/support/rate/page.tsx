@@ -34,7 +34,7 @@ export default function SupportRatingPage() {
 
   return <LegalLayout title="Noter Ava Support">
     <div className="max-w-xl rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-center">
-      {done ? <><CheckCircle size={46} className="mx-auto text-emerald-400" /><h2 className="text-white text-xl font-black mt-4">Merci pour votre avis</h2><p className="text-slate-400 mt-2">Votre note aidera Bromux à améliorer Ava Support.</p></> : <>
+      {done ? <><CheckCircle size={46} className="mx-auto text-emerald-400" /><h2 className="text-white text-xl font-black mt-4">Merci pour votre avis</h2><p className="text-slate-400 mt-2">Votre note aidera Bromuxe à améliorer Ava Support.</p></> : <>
         <p className="text-slate-400">Comment évaluez-vous l’assistance reçue ?</p>
         <div className="flex justify-center gap-2 my-6">{[1,2,3,4,5].map(value => <button key={value} onClick={() => setRating(value)} aria-label={`${value} étoile${value > 1 ? 's' : ''}`}><Star size={34} className={value <= rating ? 'text-amber-400 fill-amber-400' : 'text-slate-700'} /></button>)}</div>
         <textarea value={comment} onChange={event => setComment(event.target.value)} maxLength={2000} rows={5} placeholder="Commentaire facultatif" className="w-full rounded-2xl bg-slate-950 border border-white/10 p-4 text-white outline-none focus:border-rose-500/40" />
