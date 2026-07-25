@@ -65,11 +65,14 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
   APPLE_ID="your-apple-id@dev.com" APPLE_APP_SPECIFIC_PASSWORD="abcd-efgh-ijkl-mnop" GH_TOKEN="your_github_token" npm run release:mac
   ```
 
-### Ava Web 0.4.0 — recharges Ava AI
+### Ava Web 0.4.1 — crédits Ava AI datés et recharge automatique
 
 - L'onglet `Crédits IA` est réservé à Custom Max/Owner et utilise la fonction sécurisée `ava-ai-credits`.
-- Packs initiaux : 50 crédits à 14,99 €, 150 crédits à 39,99 €, 400 crédits à 99,99 €.
+- Aucun compte n'a de crédits illimités, y compris l'owner. Custom Max et l'owner reçoivent 150 crédits tous les 30 jours.
+- Chaque lot inclus ou acheté expire 90 jours après son octroi. Une interruption de Custom Max annule définitivement tous les lots restants.
+- Prix fixe sans remise : 0,25 € par crédit. Presets : 50 crédits à 12,50 €, 150 à 37,50 €, 400 à 100 €. Quantité personnalisée : 30 à 10 000 crédits.
 - L'interface expose seulement `Carte / PayPal` et `Crypto`; elle ne nomme jamais l'agrégateur de paiement interne.
 - Chaque recharge crée une commande serveur. L'octroi est unique et intervient uniquement après vérification directe du statut, du montant, de la devise et de l'identifiant chez le fournisseur.
-- Les crédits achetés n'expirent pas. Le solde inclus Custom Max est de 150 crédits par période de 30 jours sans report.
+- La recharge automatique utilise uniquement une carte ou PayPal enregistrés via un flux fournisseur hébergé. L'utilisateur choisit le seuil, le solde cible et un plafond facultatif sur 30 jours, puis peut la désactiver à tout moment. La crypto reste manuelle.
+- Le backend refuse un pack si le coût IA mesuré et les frais estimés dépassent 20 % du prix.
 - Les liens Desktop ouvrent `https://call-ava.com/app?tab=ai-credits`.
