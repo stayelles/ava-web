@@ -76,3 +76,11 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 - La recharge automatique utilise uniquement une carte ou PayPal enregistrés via un flux fournisseur hébergé. L'utilisateur choisit le seuil, le solde cible et un plafond facultatif sur 30 jours, puis peut la désactiver à tout moment. La crypto reste manuelle.
 - Le backend refuse un pack si le coût IA mesuré et les frais estimés dépassent 20 % du prix.
 - Les liens Desktop ouvrent `https://call-ava.com/app?tab=ai-credits`.
+
+### Admin Ava Volatility — zones double sens et signaux IA principale
+
+- Le contrôle global stocke `dual_entry_zone_rules` via `trading-admin-control`. Chaque zone cible un marché Boom/Crash exact, possède deux bornes inclusives obligatoires, une activation et une planification facultative.
+- L'interface explique précisément qu'une entrée Ava confirmée dans cette zone provoque ensuite une position opposée sur le même marché; elle ne promet pas une exécution si le plan, le capital, une barrière ou une capacité la bloque.
+- `trading-admin-signal` crée les signaux instantanés avec marché, direction, capital net minimum et expiration configurable de 10 à 60 secondes. Un clic produit une clé d'idempotence unique.
+- L'interface doit demander une confirmation explicite avant l'envoi et afficher uniquement `Signal précis de l'IA principale` dans les informations destinées aux utilisateurs.
+- Les aides `?` des barrières doivent conserver des exemples exacts : bornes inclusives, zone fermée, seuil ouvert vers l'infini, planification et marge de réactivation.

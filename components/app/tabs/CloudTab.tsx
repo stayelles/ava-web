@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   AlertCircle,
+  ArrowLeftRight,
   Bell,
   Cloud,
   Coins,
@@ -16,6 +17,7 @@ import {
   RefreshCcw,
   RotateCw,
   Search,
+  Send,
   Settings2,
   ShieldCheck,
   Terminal,
@@ -186,6 +188,7 @@ type TradingGlobalControl = {
   volatility_sell_min_profit_override_enabled?: boolean | null
   volatility_sell_min_profit_usd?: number | null
   price_guard_rules?: TradingPriceGuardRule[] | null
+  dual_entry_zone_rules?: TradingDualEntryZoneRule[] | null
   public_reason?: string | null
   updated_at?: string | null
 }
@@ -199,6 +202,16 @@ type TradingPriceGuardRule = {
   block_buy: boolean
   block_sell: boolean
   release_buffer_points: number
+  starts_at?: string | null
+  ends_at?: string | null
+}
+
+type TradingDualEntryZoneRule = {
+  id: string
+  enabled: boolean
+  market_key: string
+  min_price: number | null
+  max_price: number | null
   starts_at?: string | null
   ends_at?: string | null
 }
@@ -433,9 +446,9 @@ const GLOBAL_CONTROL_HELP = {
   market:
     'Marché exact auquel cette barrière s’applique.\nUne règle Crash 1000 n’affecte ni Boom 1000 ni les autres indices.',
   minPrice:
-    'Borne basse inclusive de la zone.\nSi le maximum est vide, la barrière agit à partir de ce prix et au-dessus.\nExemple : minimum 7800 bloque à 7800, 7801, etc.',
+    'Borne basse inclusive de la zone.\nAvec minimum 5500 et maximum 5900, la barrière agit seulement de 5500 à 5900 inclus : 5499 est autorisé, 5500 est bloqué.\nSi le maximum reste vide, elle agit à 5500 et au-dessus sans limite haute.',
   maxPrice:
-    'Borne haute inclusive de la zone.\nSi le minimum est vide, la barrière agit jusqu’à ce prix et en dessous.\nExemple : maximum 5000 bloque à 5000, 4999, etc.',
+    'Borne haute inclusive de la zone.\nAvec minimum 5500 et maximum 5900, la barrière agit seulement de 5500 à 5900 inclus : 5900 est bloqué, 5901 est autorisé.\nSi le minimum reste vide, elle agit à 5900 et en dessous sans limite basse.',
   releaseBuffer:
     'Distance supplémentaire à franchir avant de réautoriser la direction après être sorti de la zone.\nElle évite que le blocage s’active et se désactive sans cesse près de la limite.\nExemple : maximum 5000 + marge 20 réautorise seulement au-dessus de 5020.',
   blockDirection:
@@ -446,6 +459,26 @@ const GLOBAL_CONTROL_HELP = {
     'Seuil d’equity nette à partir duquel les autorisations exceptionnelles ci-contre peuvent contourner certains blocages globaux.\nÀ utiliser avec prudence : les barrières de prix et les limites de sécurité restent prioritaires.',
   bypassDirection:
     'Autorisation exceptionnelle de cette direction lorsque l’equity nette atteint le seuil de bypass.\nElle ne supprime pas les protections locales ni les barrières de prix actives.',
+  dualZones:
+    'Dans une zone synchronisée, toute nouvelle entrée Ava déjà autorisée demande sa position opposée après confirmation de la première.\nExemple : Boom 1000 entre 5500 et 5900. Si Ava ouvre BUY à 5700, elle demande aussi SELL. Les deux restent soumises au plan, aux blocages, aux barrières et aux capacités.',
+  dualEnabled:
+    'Active ou désactive cette zone sans la supprimer.\nDésactivée, elle reste enregistrée mais Ava ne crée aucune paire BUY + SELL.',
+  dualMarket:
+    'Marché exact de la zone synchronisée.\nExemple : Boom 1000 ne s’applique pas à Boom 500 ni à Crash 1000.',
+  dualMin:
+    'Début inclusif obligatoire de la zone.\nExemple : 5500 signifie que la synchronisation commence à 5500, pas à 5499.',
+  dualMax:
+    'Fin inclusive obligatoire de la zone.\nExemple : 5900 signifie que la synchronisation fonctionne encore à 5900, mais plus à 5901.',
+  instantSignal:
+    'Envoie un signal de marché court à tous les moteurs connectés et éligibles.\nUn moteur l’exécute une seule fois seulement si le marché exact est connecté et si toutes ses protections l’autorisent. Le signal est automatiquement abandonné à son expiration.',
+  instantMarket:
+    'Marché exact du signal.\nExemple : Boom 1000 cible uniquement les moteurs dont le Bridge Boom 1000 est connecté.',
+  instantDirection:
+    'Direction de la nouvelle position demandée : BUY pour achat ou SELL pour vente.\nLe lot reste celui de la configuration autorisée de chaque utilisateur.',
+  instantEquity:
+    'Equity nette minimale après prise en compte du profit ou de la perte flottante.\nExemple : minimum 5000 USD exclut un compte avec balance 5500 USD mais equity actuelle 4800 USD.',
+  instantTtl:
+    'Durée de validité du signal.\nExemple : 40 secondes. Si le moteur ne peut pas confirmer l’exécution avant la fin, il marque le signal expiré et ne l’exécute plus.',
 } satisfies Record<string, string>
 
 function formatCloudPrice(value: number | null | undefined) {
@@ -490,6 +523,21 @@ function newPriceGuardRule(): TradingPriceGuardRule {
     block_buy: false,
     block_sell: true,
     release_buffer_points: 0,
+    starts_at: null,
+    ends_at: null,
+  }
+}
+
+function newDualEntryZoneRule(): TradingDualEntryZoneRule {
+  const id = typeof globalThis.crypto?.randomUUID === 'function'
+    ? globalThis.crypto.randomUUID()
+    : `dual-zone-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  return {
+    id,
+    enabled: true,
+    market_key: 'BOOM1000',
+    min_price: null,
+    max_price: null,
     starts_at: null,
     ends_at: null,
   }
@@ -667,6 +715,24 @@ function validatePriceGuardRules(rules: TradingPriceGuardRule[]) {
   return errors
 }
 
+function validateDualEntryZoneRules(rules: TradingDualEntryZoneRule[]) {
+  const errors: Record<string, string> = {}
+  rules.forEach((rule, index) => {
+    const messages: string[] = []
+    if (rule.min_price === null || rule.max_price === null) {
+      messages.push('Renseigne obligatoirement le prix minimum et le prix maximum.')
+    }
+    if (rule.min_price !== null && rule.max_price !== null && rule.min_price > rule.max_price) {
+      messages.push('Le prix minimum ne peut pas dépasser le prix maximum.')
+    }
+    if (rule.starts_at && rule.ends_at && Date.parse(rule.starts_at) >= Date.parse(rule.ends_at)) {
+      messages.push('La date de fin doit être postérieure à la date de début.')
+    }
+    if (messages.length) errors[rule.id] = `Zone ${index + 1} : ${messages.join(' ')}`
+  })
+  return errors
+}
+
 function isAvaWebSessionExpired(payload: Record<string, unknown>, message: string): boolean {
   const code = String(payload.code ?? payload.error_code ?? '').trim().toUpperCase()
   if (['AVA_SESSION_EXPIRED', 'WEB_SESSION_EXPIRED', 'SESSION_EXPIRED'].includes(code)) return true
@@ -688,6 +754,14 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const [adminLoaded, setAdminLoaded] = useState(false)
   const [adminControlMessage, setAdminControlMessage] = useState('')
   const [priceGuardErrors, setPriceGuardErrors] = useState<Record<string, string>>({})
+  const [dualEntryZoneErrors, setDualEntryZoneErrors] = useState<Record<string, string>>({})
+  const [instantSignal, setInstantSignal] = useState({
+    marketKey: 'BOOM1000',
+    direction: 'BUY' as 'BUY' | 'SELL',
+    minNetEquityUsd: 5000,
+    ttlSeconds: 40,
+  })
+  const [instantSignalMessage, setInstantSignalMessage] = useState('')
   const [supportQuery, setSupportQuery] = useState('')
   const [supportUsers, setSupportUsers] = useState<SupportUser[]>([])
   const [supportSelected, setSupportSelected] = useState<SupportUser | null>(null)
@@ -816,6 +890,28 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     })
     const json = await res.json().catch(() => ({}))
     const message = String(json.error ?? 'Controle admin indisponible.')
+    if (isAvaWebSessionExpired(json, message)) {
+      onSessionExpired?.()
+      throw new Error('Session Ava Web expirée. Reconnectez-vous.')
+    }
+    if (!res.ok || json.ok === false) throw new Error(message)
+    return json
+  }, [adminAccessToken, onSessionExpired, user.id, user.web_session_token])
+
+  const callAdminSignal = useCallback(async (payload: Record<string, unknown>) => {
+    const token = adminAccessToken || (typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) ?? '' : '')
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/trading-admin-signal`, {
+      method: 'POST',
+      headers: SUPABASE_HEADERS,
+      body: JSON.stringify({
+        user_id: user.id,
+        web_session_token: user.web_session_token,
+        admin_access_token: token || undefined,
+        ...payload,
+      }),
+    })
+    const json = await res.json().catch(() => ({}))
+    const message = String(json.error ?? 'Signal Ava indisponible.')
     if (isAvaWebSessionExpired(json, message)) {
       onSessionExpired?.()
       throw new Error('Session Ava Web expirée. Reconnectez-vous.')
@@ -1104,6 +1200,78 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
       price_guard_rules: (Array.isArray(current?.price_guard_rules) ? current.price_guard_rules : []).filter(rule => rule.id !== id),
     }))
   }, [])
+  const addDualEntryZoneRule = useCallback(() => {
+    setAdminControlMessage('')
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      dual_entry_zone_rules: [
+        ...(Array.isArray(current?.dual_entry_zone_rules) ? current.dual_entry_zone_rules : []),
+        newDualEntryZoneRule(),
+      ],
+    }))
+  }, [])
+  const updateDualEntryZoneRule = useCallback((id: string, patch: Partial<TradingDualEntryZoneRule>) => {
+    setAdminControlMessage('')
+    setDualEntryZoneErrors(current => {
+      if (!current[id]) return current
+      const next = { ...current }
+      delete next[id]
+      return next
+    })
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      dual_entry_zone_rules: (
+        Array.isArray(current?.dual_entry_zone_rules) ? current.dual_entry_zone_rules : []
+      ).map(rule => rule.id === id ? { ...rule, ...patch } : rule),
+    }))
+  }, [])
+  const removeDualEntryZoneRule = useCallback((id: string) => {
+    setAdminControlMessage('')
+    setDualEntryZoneErrors(current => {
+      if (!current[id]) return current
+      const next = { ...current }
+      delete next[id]
+      return next
+    })
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      dual_entry_zone_rules: (
+        Array.isArray(current?.dual_entry_zone_rules) ? current.dual_entry_zone_rules : []
+      ).filter(rule => rule.id !== id),
+    }))
+  }, [])
+  const dispatchInstantSignal = useCallback(async () => {
+    const confirmation = window.confirm(
+      `Envoyer maintenant un signal ${instantSignal.direction} ${instantSignal.marketKey} aux moteurs éligibles pendant ${instantSignal.ttlSeconds} secondes ?`,
+    )
+    if (!confirmation) return
+    try {
+      setBusy('instant_signal')
+      setError(null)
+      setInstantSignalMessage('')
+      const idempotencyKey = typeof globalThis.crypto?.randomUUID === 'function'
+        ? `main-ai:${globalThis.crypto.randomUUID()}`
+        : `main-ai:${Date.now()}:${Math.random().toString(36).slice(2, 12)}`
+      const result = await callAdminSignal({
+        action: 'dispatch',
+        market_key: instantSignal.marketKey,
+        direction: instantSignal.direction,
+        min_net_equity_usd: instantSignal.minNetEquityUsd,
+        ttl_seconds: instantSignal.ttlSeconds,
+        idempotency_key: idempotencyKey,
+      })
+      const expiresAt = String((result.signal as { expires_at?: string } | undefined)?.expires_at ?? '')
+      setInstantSignalMessage(
+        `Signal précis de l’IA principale envoyé. Validité : ${expiresAt ? formatDate(expiresAt) : `${instantSignal.ttlSeconds} secondes`}.`,
+      )
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Signal impossible.'
+      setError(message)
+      setInstantSignalMessage(`Envoi impossible : ${message}`)
+    } finally {
+      setBusy(null)
+    }
+  }, [callAdminSignal, instantSignal])
   const runSupportSearch = useCallback(async () => {
     try {
       setBusy('support_search')
@@ -2194,9 +2362,12 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   onClick={async () => {
                   const rules = Array.isArray(adminControl?.price_guard_rules) ? adminControl.price_guard_rules : []
                   const validationErrors = validatePriceGuardRules(rules)
-                  if (Object.keys(validationErrors).length > 0) {
+                  const dualRules = Array.isArray(adminControl?.dual_entry_zone_rules) ? adminControl.dual_entry_zone_rules : []
+                  const dualValidationErrors = validateDualEntryZoneRules(dualRules)
+                  if (Object.keys(validationErrors).length > 0 || Object.keys(dualValidationErrors).length > 0) {
                     setPriceGuardErrors(validationErrors)
-                    setAdminControlMessage('Enregistrement suspendu : complète la barrière signalée ci-dessous. Elle reste affichée et aucune autre valeur n’est perdue.')
+                    setDualEntryZoneErrors(dualValidationErrors)
+                    setAdminControlMessage('Enregistrement suspendu : complète la règle signalée ci-dessous. Elle reste affichée et aucune autre valeur n’est perdue.')
                     return
                   }
                   try {
@@ -2226,19 +2397,26 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       volatility_sell_min_profit_override_enabled: adminControl?.volatility_sell_min_profit_override_enabled === true,
                       volatility_sell_min_profit_usd: Number(adminControl?.volatility_sell_min_profit_usd ?? 0.5),
                       price_guard_rules: rules,
+                      dual_entry_zone_rules: dualRules,
                     })
                     const savedControl = result.control as TradingGlobalControl | null | undefined
                     const savedRules = Array.isArray(savedControl?.price_guard_rules) ? savedControl.price_guard_rules : null
+                    const savedDualRules = Array.isArray(savedControl?.dual_entry_zone_rules) ? savedControl.dual_entry_zone_rules : null
                     const savedRuleIds = new Set(savedRules?.map(rule => rule.id) ?? [])
+                    const savedDualRuleIds = new Set(savedDualRules?.map(rule => rule.id) ?? [])
                     const barriersConfirmed = savedRules !== null
                       && savedRules.length === rules.length
                       && rules.every(rule => savedRuleIds.has(rule.id))
-                    if (!savedControl || !barriersConfirmed) {
-                      throw new Error('Le serveur n’a pas confirmé toutes les barrières. La saisie reste affichée et aucune confirmation verte n’est donnée.')
+                    const dualZonesConfirmed = savedDualRules !== null
+                      && savedDualRules.length === dualRules.length
+                      && dualRules.every(rule => savedDualRuleIds.has(rule.id))
+                    if (!savedControl || !barriersConfirmed || !dualZonesConfirmed) {
+                      throw new Error('Le serveur n’a pas confirmé toutes les barrières et zones synchronisées. La saisie reste affichée.')
                     }
                     setAdminControl(savedControl)
                     setPriceGuardErrors({})
-                    setAdminControlMessage('Configuration enregistrée. Les barrières sont conservées et seront propagées aux moteurs Ava Desktop actifs.')
+                    setDualEntryZoneErrors({})
+                    setAdminControlMessage('Configuration enregistrée. Les barrières et zones synchronisées seront propagées aux moteurs Ava Desktop actifs.')
                   } catch (err) {
                     const message = err instanceof Error ? err.message : 'Controle admin impossible.'
                     setError(message)
@@ -2259,7 +2437,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <div
                 role="status"
                 className={`mt-4 rounded-xl border px-4 py-3 text-xs font-bold leading-5 ${
-                  Object.keys(priceGuardErrors).length > 0 || adminControlMessage.startsWith('Enregistrement impossible')
+                  Object.keys(priceGuardErrors).length > 0 || Object.keys(dualEntryZoneErrors).length > 0 || adminControlMessage.startsWith('Enregistrement impossible')
                     ? 'border-amber-300/25 bg-amber-300/10 text-amber-100'
                     : 'border-emerald-300/25 bg-emerald-300/10 text-emerald-100'
                 }`}
@@ -2661,6 +2839,252 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <p className="mt-3 text-[10px] leading-4 text-slate-500">
                 Une borne vide représente l’infini. Les bornes sont inclusives. Si plusieurs barrières correspondent, chaque direction bloquée reste bloquée. La propagation vers les moteurs actifs prend au maximum environ 30 secondes, puis le contrôle du prix est local et immédiat.
               </p>
+            </div>
+            <div className="mt-4 rounded-2xl border border-violet-400/20 bg-violet-400/[0.06] p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-violet-300">Zones synchronisées</p>
+                  <p className="mt-1 flex items-center gap-2 text-sm font-black text-white">
+                    Achat + vente dans une zone précise
+                    <HelpHint text={GLOBAL_CONTROL_HELP.dualZones} />
+                  </p>
+                  <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
+                    Quand Ava ouvre une position autorisée dans la zone, Desktop attend sa confirmation puis demande la direction opposée. Aucune règle de plan, barrière ou capacité n’est contournée.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={(adminControl?.dual_entry_zone_rules?.length ?? 0) >= 50}
+                  onClick={addDualEntryZoneRule}
+                  className="inline-flex flex-shrink-0 items-center justify-center gap-2 rounded-xl bg-violet-500 px-3 py-2 text-xs font-black text-white shadow-lg shadow-violet-500/20 transition-colors hover:bg-violet-400 disabled:opacity-40"
+                >
+                  <Plus size={14} />
+                  Ajouter une zone
+                </button>
+              </div>
+              <div className="mt-4 space-y-3">
+                {(adminControl?.dual_entry_zone_rules ?? []).map((rule, index) => {
+                  const ruleError = dualEntryZoneErrors[rule.id]
+                  const zone = rule.min_price !== null && rule.max_price !== null
+                    ? `${rule.min_price} ≤ prix ≤ ${rule.max_price}`
+                    : 'zone à compléter'
+                  return (
+                    <div
+                      key={rule.id}
+                      className={`rounded-2xl border bg-slate-950/55 p-4 ${
+                        ruleError ? 'border-amber-300/40 ring-1 ring-amber-300/10' : 'border-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={rule.enabled !== false}
+                            onChange={event => updateDualEntryZoneRule(rule.id, { enabled: event.target.checked })}
+                            className="h-4 w-4 accent-violet-400"
+                          />
+                          <div>
+                            <p className="flex items-center gap-2 text-xs font-black text-white">
+                              Zone {index + 1} · {zone}
+                              <HelpHint text={GLOBAL_CONTROL_HELP.dualEnabled} />
+                            </p>
+                            <p className="flex items-center gap-1 text-[10px] text-violet-300">
+                              <ArrowLeftRight size={12} />
+                              Toute entrée Ava autorisée demande BUY + SELL
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeDualEntryZoneRule(rule.id)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-500 transition-colors hover:border-rose-500/30 hover:text-rose-300"
+                          title="Supprimer cette zone"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      {ruleError ? (
+                        <p role="alert" className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-xs font-bold leading-5 text-amber-100">
+                          {ruleError}
+                        </p>
+                      ) : null}
+                      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Marché
+                            <HelpHint text={GLOBAL_CONTROL_HELP.dualMarket} />
+                          </span>
+                          <select
+                            value={rule.market_key}
+                            onChange={event => updateDualEntryZoneRule(rule.id, { market_key: event.target.value })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          >
+                            {PRICE_GUARD_MARKET_OPTIONS.map(option => (
+                              <option key={option.key} value={option.key} className="bg-slate-950">{option.label}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Prix minimum inclus
+                            <HelpHint text={GLOBAL_CONTROL_HELP.dualMin} />
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={rule.min_price ?? ''}
+                            onChange={event => updateDualEntryZoneRule(rule.id, { min_price: optionalInputNumber(event.target.value) })}
+                            placeholder="Ex. 5500"
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none placeholder:text-slate-700"
+                          />
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Prix maximum inclus
+                            <HelpHint text={GLOBAL_CONTROL_HELP.dualMax} />
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={rule.max_price ?? ''}
+                            onChange={event => updateDualEntryZoneRule(rule.id, { max_price: optionalInputNumber(event.target.value) })}
+                            placeholder="Ex. 5900"
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none placeholder:text-slate-700"
+                          />
+                        </label>
+                      </div>
+                      <details className="mt-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                        <summary className="cursor-pointer text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                          Planification facultative
+                          <span className="ml-2 inline-flex align-middle">
+                            <HelpHint text={GLOBAL_CONTROL_HELP.schedule} />
+                          </span>
+                        </summary>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <label className="block">
+                            <span className="text-[10px] font-bold text-slate-500">Active à partir de</span>
+                            <input
+                              type="datetime-local"
+                              value={localDateTimeValue(rule.starts_at)}
+                              onChange={event => updateDualEntryZoneRule(rule.id, { starts_at: event.target.value ? new Date(event.target.value).toISOString() : null })}
+                              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-xs text-white outline-none"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="text-[10px] font-bold text-slate-500">Expire à</span>
+                            <input
+                              type="datetime-local"
+                              value={localDateTimeValue(rule.ends_at)}
+                              onChange={event => updateDualEntryZoneRule(rule.id, { ends_at: event.target.value ? new Date(event.target.value).toISOString() : null })}
+                              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-xs text-white outline-none"
+                            />
+                          </label>
+                        </div>
+                      </details>
+                    </div>
+                  )
+                })}
+                {(adminControl?.dual_entry_zone_rules?.length ?? 0) === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-slate-500">
+                    Aucune zone synchronisée. Exemple : Boom 1000 de 5500 à 5900 inclus.
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="mt-4 rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/[0.06] p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/10 text-fuchsia-200">
+                  <Send size={18} />
+                </div>
+                <div>
+                  <p className="flex items-center gap-2 text-sm font-black text-white">
+                    Signal immédiat de l’IA principale
+                    <HelpHint text={GLOBAL_CONTROL_HELP.instantSignal} />
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-400">
+                    Un clic demande une seule position par moteur connecté et éligible. Le lot utilisateur et toutes les protections restent appliqués.
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                  <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                    Marché
+                    <HelpHint text={GLOBAL_CONTROL_HELP.instantMarket} />
+                  </span>
+                  <select
+                    value={instantSignal.marketKey}
+                    onChange={event => setInstantSignal(current => ({ ...current, marketKey: event.target.value }))}
+                    className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                  >
+                    {PRICE_GUARD_MARKET_OPTIONS.map(option => (
+                      <option key={option.key} value={option.key} className="bg-slate-950">{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                  <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                    Direction
+                    <HelpHint text={GLOBAL_CONTROL_HELP.instantDirection} />
+                  </span>
+                  <select
+                    value={instantSignal.direction}
+                    onChange={event => setInstantSignal(current => ({ ...current, direction: event.target.value as 'BUY' | 'SELL' }))}
+                    className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                  >
+                    <option value="BUY" className="bg-slate-950">BUY · Achat</option>
+                    <option value="SELL" className="bg-slate-950">SELL · Vente</option>
+                  </select>
+                </label>
+                <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                  <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                    Equity nette minimum
+                    <HelpHint text={GLOBAL_CONTROL_HELP.instantEquity} />
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="100"
+                    value={instantSignal.minNetEquityUsd}
+                    onChange={event => setInstantSignal(current => ({ ...current, minNetEquityUsd: Math.max(0, toNumber(event.target.value, 0)) }))}
+                    className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                  />
+                </label>
+                <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                  <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                    Expiration
+                    <HelpHint text={GLOBAL_CONTROL_HELP.instantTtl} />
+                  </span>
+                  <select
+                    value={instantSignal.ttlSeconds}
+                    onChange={event => setInstantSignal(current => ({ ...current, ttlSeconds: Number(event.target.value) }))}
+                    className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                  >
+                    <option value={30} className="bg-slate-950">30 secondes</option>
+                    <option value={40} className="bg-slate-950">40 secondes</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  disabled={busy === 'instant_signal'}
+                  onClick={dispatchInstantSignal}
+                  className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl bg-fuchsia-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-fuchsia-500/20 transition-colors hover:bg-fuchsia-400 disabled:opacity-50"
+                >
+                  {busy === 'instant_signal' ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
+                  Envoyer le signal
+                </button>
+              </div>
+              {instantSignalMessage ? (
+                <p className={`mt-3 rounded-xl border px-3 py-2 text-xs font-bold ${
+                  instantSignalMessage.startsWith('Envoi impossible')
+                    ? 'border-amber-300/20 bg-amber-300/10 text-amber-100'
+                    : 'border-emerald-300/20 bg-emerald-300/10 text-emerald-100'
+                }`}>
+                  {instantSignalMessage}
+                </p>
+              ) : null}
             </div>
             <div className="mt-4 rounded-2xl border border-sky-400/15 bg-sky-400/[0.05] p-4">
               <div className="grid gap-3 lg:grid-cols-[minmax(180px,260px)_1fr]">
