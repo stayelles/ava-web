@@ -84,3 +84,9 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 - `trading-admin-signal` crée les signaux instantanés avec marché, direction, capital net minimum et expiration configurable de 10 à 60 secondes. Un clic produit une clé d'idempotence unique.
 - L'interface doit demander une confirmation explicite avant l'envoi et afficher uniquement `Signal précis de l'IA principale` dans les informations destinées aux utilisateurs.
 - Les aides `?` des barrières doivent conserver des exemples exacts : bornes inclusives, zone fermée, seuil ouvert vers l'infini, planification et marge de réactivation.
+
+### Ava Web 0.4.3 — publication Ava Desktop 1.4.1
+
+- Les pages publiques et le workflow Hostinger distribuent Ava Desktop `1.4.1` pour Windows x64, macOS Apple Silicon et macOS Intel.
+- Le workflow récupère les installateurs, blockmaps et manifestes depuis la release publique `stayelles/ava-desktop-releases@v1.4.1`; aucun gros binaire Desktop n'est commité dans Ava Web.
+- AvaBridgeEA reste strictement en version `1.48` et Ava Cloud Agent en version `0.3.4`.
