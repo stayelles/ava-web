@@ -6,6 +6,7 @@ import { BottomTabs } from './BottomTabs'
 import { VoiceTab } from './tabs/VoiceTab'
 import { ChatTab } from './tabs/ChatTab'
 import { AvaAiTab } from './tabs/AvaAiTab'
+import { AiCreditsTab } from './tabs/AiCreditsTab'
 import { CloudTab } from './tabs/CloudTab'
 import { ProfileTab } from './tabs/ProfileTab'
 import { SubscriptionTab } from './tabs/SubscriptionTab'
@@ -46,7 +47,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
       window.setTimeout(() => setActiveTab('subscription'), 0)
       return
     }
-    if (tab && ['voice', 'chat', 'ai', 'cloud', 'profile', 'subscription', 'referral', 'settings'].includes(tab)) {
+    if (tab && ['voice', 'chat', 'ai', 'ai-credits', 'cloud', 'profile', 'subscription', 'referral', 'settings'].includes(tab)) {
       window.setTimeout(() => setActiveTab(tab), 0)
     }
   }, [])
@@ -135,6 +136,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
             />
           )}
           {activeTab === 'ai' && <AvaAiTab user={user} />}
+          {activeTab === 'ai-credits' && <AiCreditsTab user={user} onGoToSubscription={handleGoToSubscription} />}
           {activeTab === 'cloud' && (
             <CloudTab user={user} onGoToSubscription={handleGoToSubscription} onSessionExpired={onLogout} />
           )}

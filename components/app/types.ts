@@ -74,7 +74,7 @@ export interface TranscriptItem {
 
 export type SessionState = 'idle' | 'connecting' | 'connected' | 'error'
 
-export type AppTab = 'voice' | 'chat' | 'ai' | 'cloud' | 'profile' | 'subscription' | 'referral' | 'settings'
+export type AppTab = 'voice' | 'chat' | 'ai' | 'ai-credits' | 'cloud' | 'profile' | 'subscription' | 'referral' | 'settings'
 
 export interface AppSettings {
   language: 'fr' | 'en' | 'tr' | 'de' | 'es'

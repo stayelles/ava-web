@@ -51,3 +51,20 @@ export async function avaAiMediaRequest(user: UserData, payload: Record<string, 
     window.clearTimeout(timer)
   }
 }
+
+export async function avaAiCreditsRequest(user: UserData, payload: Record<string, unknown>, timeoutMs = 30000) {
+  if (!user.ava_session_token) throw new Error('SESSION_EXPIRED')
+  const controller = new AbortController()
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/ava-ai-credits`, {
+      method: 'POST', headers: SUPABASE_HEADERS, signal: controller.signal,
+      body: JSON.stringify({ ...payload, user_id: user.id, ava_session_token: user.ava_session_token }),
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`)
+    return data
+  } finally {
+    window.clearTimeout(timer)
+  }
+}

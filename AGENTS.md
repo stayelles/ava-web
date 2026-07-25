@@ -64,3 +64,12 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
   ```bash
   APPLE_ID="your-apple-id@dev.com" APPLE_APP_SPECIFIC_PASSWORD="abcd-efgh-ijkl-mnop" GH_TOKEN="your_github_token" npm run release:mac
   ```
+
+### Ava Web 0.4.0 — recharges Ava AI
+
+- L'onglet `Crédits IA` est réservé à Custom Max/Owner et utilise la fonction sécurisée `ava-ai-credits`.
+- Packs initiaux : 50 crédits à 14,99 €, 150 crédits à 39,99 €, 400 crédits à 99,99 €.
+- L'interface expose seulement `Carte / PayPal` et `Crypto`; elle ne nomme jamais l'agrégateur de paiement interne.
+- Chaque recharge crée une commande serveur. L'octroi est unique et intervient uniquement après vérification directe du statut, du montant, de la devise et de l'identifiant chez le fournisseur.
+- Les crédits achetés n'expirent pas. Le solde inclus Custom Max est de 150 crédits par période de 30 jours sans report.
+- Les liens Desktop ouvrent `https://call-ava.com/app?tab=ai-credits`.
