@@ -47,7 +47,7 @@ function GoogleAuthContent() {
           <CheckCircle2 className="w-10 h-10 text-white" strokeWidth={2.5} />
         </div>
         
-        <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">Authentification Google</h1>
+        <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">Authentification terminée</h1>
         <p className="text-zinc-400 mb-8 text-sm">
           Connexion établie avec succès ! Redirection vers l'application Ava...
         </p>

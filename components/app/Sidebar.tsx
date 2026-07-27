@@ -19,9 +19,9 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'settings', label: 'Paramètres', icon: Settings },
 ]
 
-const AVA_DESKTOP_MAC_VERSION = '1.4.0'
-const AVA_DESKTOP_WINDOWS_VERSION = '1.4.0'
-const AVA_BRIDGE_EA_VERSION = '1.48'
+const AVA_DESKTOP_MAC_VERSION = '1.5.10'
+const AVA_DESKTOP_WINDOWS_VERSION = '1.5.10'
+const AVA_BRIDGE_EA_VERSION = '1.58'
 const DOWNLOAD_BASE_URL = 'https://call-ava.com/downloads'
 const DESKTOP_DOWNLOADS = [
   {
@@ -45,10 +45,10 @@ const DESKTOP_DOWNLOADS = [
 ]
 const BRIDGE_DOWNLOADS = [
   {
-    title: 'AvaBridgeEA 1.48',
+    title: 'AvaBridgeEA 1.58',
     badge: 'Recommandé',
     subtitle: 'Ava Volatility Boom/Crash et Ava Trading moderne',
-    href: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.48.ex5`,
+    href: `${DOWNLOAD_BASE_URL}/AvaBridgeEA-1.58.ex5`,
   },
   {
     title: 'AvaBridgeEA 1.34',

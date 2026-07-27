@@ -34,8 +34,8 @@ import {
   PADDLE_PRICE_CUSTOM_MAX,
 } from "@/components/app/constants";
 
-const AVA_DESKTOP_MAC_VERSION = "1.4.1";
-const AVA_DESKTOP_WINDOWS_VERSION = "1.4.1";
+const AVA_DESKTOP_MAC_VERSION = "1.5.10";
+const AVA_DESKTOP_WINDOWS_VERSION = "1.5.10";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = {
   macArm: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_MAC_VERSION}-arm64.dmg`,
@@ -334,7 +334,7 @@ function Hero() {
           <motion.a href="https://play.google.com/store/apps/details?id=com.kemyamo.ava"
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
             className="inline-flex items-center gap-2 px-7 py-3.5 rounded-2xl bg-white/[0.06] hover:bg-white/[0.10] border border-white/10 text-white font-bold text-sm transition-all">
-            <SiGoogleplay size={15} /> Google Play
+            <SiGoogleplay size={15} /> Application Android
           </motion.a>
           <motion.a href={DOWNLOADS.macArm}
             whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
@@ -1110,7 +1110,7 @@ function FinalCTA() {
             <motion.a href="https://play.google.com/store/apps/details?id=com.kemyamo.ava"
               whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
               className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-white/[0.07] hover:bg-white/[0.12] border border-white/12 text-white font-bold text-base transition-all">
-              <SiGoogleplay size={18} /> Google Play
+              <SiGoogleplay size={18} /> Application Android
             </motion.a>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-3">

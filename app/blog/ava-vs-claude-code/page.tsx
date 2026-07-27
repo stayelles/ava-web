@@ -23,7 +23,7 @@ const COMPARE_ROWS = [
   { feature: 'No technical setup needed', ava: true, other: false, avaGood: true },
   { feature: 'Smart push reminders', ava: true, other: false, avaGood: true },
   { feature: 'Mac remote control', ava: true, other: 'Code only', avaGood: true },
-  { feature: 'Real-time web search', ava: '✓ Google', other: '✗ Limited', avaGood: true },
+  { feature: 'Real-time web search', ava: '✓ Integrated', other: '✗ Limited', avaGood: true },
   { feature: 'Conversation memory', ava: true, other: 'Session only', avaGood: true },
   { feature: 'MCP integrations', ava: '✓ Notion, GitHub…', other: '✓ Extensive', avaGood: true },
   { feature: 'Primary audience', ava: 'Everyone', other: 'Developers only', avaGood: true },
@@ -74,7 +74,7 @@ export default function AvaVsClaudeCodePage() {
         <Li>Available on iOS, Android, Mac, Windows, and web browser</Li>
         <Li>Control your Mac or PC from your phone with voice commands</Li>
         <Li>Set smart push reminders that actually fire at the right time</Li>
-        <Li>Search Google in real-time and get instant, synthesized answers</Li>
+        <Li>Search the web in real time and get instant, synthesized answers</Li>
         <Li>Remember past conversations — Ava knows your context and history</Li>
         <Li>Connect to Notion, GitHub, Brave Search, and dozens more via MCP</Li>
         <Li>Start completely free — no credit card needed</Li>

@@ -121,7 +121,7 @@ export function SettingsTab({
                 )}
               </div>
               <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>
-                Google Search pour des informations en temps réel
+                Recherche en ligne pour des informations en temps réel
               </p>
             </div>
             <button

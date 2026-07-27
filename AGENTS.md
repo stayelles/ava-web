@@ -39,6 +39,16 @@ When changing desktop download links, keep filenames versioned so older installe
 
 If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before publishing: update Desktop required bridge version, web `AVA_BRIDGE_EA_VERSION`, download filenames, release assets, and docs together. Never ship a changed `.ex5` under an old bridge version.
 
+- AvaBridgeEA 1.53 respecte l’expiration Stop Cycle configurée de 30 à 3600 secondes. Une valeur de 1800 secondes doit rester 1800 dans le renderer Desktop, le worker Python, le signal JSON et l’EA MT5.
+- AvaBridgeEA 1.54 persiste le cycle avant le premier ordre, place les paquets par paires BUY/SELL et récupère les expositions Stop Cycle orphelines après une interruption ou une mise à jour.
+- À l’objectif du panier Stop Cycle, AvaBridge ne clôture automatiquement que les tickets individuellement positifs. Tout ticket à profit nul ou négatif reste ouvert, suivi et retenté plus tard.
+- AvaBridgeEA 1.55 ajoute les familles LIMIT et STOP-LIMIT. Ava Web autorise séparément BUY/SELL pour chaque nouvelle famille dans chaque règle et zone; les nouvelles autorisations sont désactivées par défaut.
+- AvaBridgeEA 1.56 ajoute `max_concurrent_cycles` dans chaque règle Stop Cycle. Ava Web doit accepter uniquement un entier de 1 à 10 et utiliser 1 pour les anciennes règles qui ne possèdent pas encore ce champ.
+- La politique Stop Cycle v4 ajoute `feature_enabled`, actif par défaut. L’interrupteur owner reste visible dans Ava Web même lorsqu’il est coupé; `false` masque le composant côté utilisateur et interdit toute nouvelle action STOP, LIMIT ou STOP-LIMIT, y compris conversationnelle, sans fermer les positions déclenchées.
+- Ava Web 0.5.9 renforce la chaleur conversationnelle avec des micro-réactions naturelles et contextuelles, jamais répétitives ni déplacées sur les sujets graves ou financiers.
+- AvaBridgeEA 1.58 rend BUY et SELL indépendants dans chaque famille STOP, LIMIT et STOP-LIMIT. Une famille reste valide si un seul côté est autorisé; Ava Web ne doit plus présenter ni imposer un paquet BUY+SELL obligatoire.
+- Desktop ne place jamais STOP, LIMIT et STOP-LIMIT simultanément au même niveau. Les familles autorisées tournent cycle après cycle, avec un seul cycle actif par marché.
+
 ## Ava Cloud
 
 - Public product name is `Ava Cloud`.
@@ -81,7 +91,8 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 
 - Le contrôle global stocke `dual_entry_zone_rules` via `trading-admin-control`. Chaque zone cible un marché Boom/Crash exact, possède deux bornes inclusives obligatoires, une activation et une planification facultative.
 - L'interface explique précisément qu'une entrée Ava confirmée dans cette zone provoque ensuite une position opposée sur le même marché; elle ne promet pas une exécution si le plan, le capital, une barrière ou une capacité la bloque.
-- `trading-admin-signal` crée les signaux instantanés avec marché, direction, capital net minimum et expiration configurable de 10 à 60 secondes. Un clic produit une clé d'idempotence unique.
+- `trading-admin-signal` crée les signaux instantanés avec marché, direction, capital net minimum et expiration configurable de 60 à 120 secondes. Un clic produit une clé d'idempotence unique.
+- Après l'envoi, Ava Web consulte les accusés Desktop et affiche si MT5 a confirmé la position ou le motif exact du blocage; un succès de création cloud ne doit jamais être présenté comme une exécution broker.
 - L'interface doit demander une confirmation explicite avant l'envoi et afficher uniquement `Signal précis de l'IA principale` dans les informations destinées aux utilisateurs.
 - Les aides `?` des barrières doivent conserver des exemples exacts : bornes inclusives, zone fermée, seuil ouvert vers l'infini, planification et marge de réactivation.
 

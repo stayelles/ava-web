@@ -1,6 +1,6 @@
 {
   "name": "ava-web",
-  "version": "0.4.3",
+  "version": "0.5.9",
   "private": true,
   "scripts": {
     "dev": "next dev",

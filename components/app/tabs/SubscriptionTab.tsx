@@ -228,7 +228,7 @@ const CUSTOM_PLAN_COMPARISON = [
 const PRO_FEATURES = [
   { icon: Mic, text: 'Minutes vocales par mois', val: '200 min' },
   { icon: MessageSquare, text: 'Messages texte par jour', val: '250 messages' },
-  { icon: Globe, text: 'Recherche web Google en temps réel', val: '50 / jour' },
+  { icon: Globe, text: 'Recherche web en temps réel', val: '50 / jour' },
   { icon: ImageIcon, text: 'Analyse d\'images (jusqu\'à 6 par appel)', val: 'Inclus' },
   { icon: Monitor, text: 'Contrôle à distance Mac/PC', val: '20 actions / jour' },
   { icon: Brain, text: 'Vision écran en temps réel', val: 'Inclus' },
@@ -1441,7 +1441,7 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                       <h3 className="text-sm font-bold text-white">Clé IA personnelle</h3>
                       {user.gemini_key_hint ? (
                         <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                          Votre clé API ({user.gemini_key_hint}) est configurée et active. Toutes vos conversations sont traitées via vos propres quotas Google.
+                          Votre clé API ({user.gemini_key_hint}) est configurée et active. Toutes vos conversations utilisent vos propres quotas IA.
                         </p>
                       ) : (
                         <p className="text-xs text-slate-400 mt-1 leading-relaxed">

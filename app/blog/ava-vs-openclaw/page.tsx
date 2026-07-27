@@ -22,7 +22,7 @@ const COMPARE_ROWS = [
   { feature: 'Mac remote control from phone', ava: true, other: false, avaGood: true },
   { feature: 'Chrome browser automation', ava: '✓ Via MCP', other: '✓ Native CDP', avaGood: true },
   { feature: 'Smart push reminders', ava: true, other: false, avaGood: true },
-  { feature: 'Real-time web search', ava: '✓ Google', other: 'Manual only', avaGood: true },
+  { feature: 'Real-time web search', ava: '✓ Integrated', other: 'Manual only', avaGood: true },
   { feature: 'Conversation memory', ava: true, other: false, avaGood: true },
   { feature: 'AI auto-improvement agent', ava: '✓ Up to 15 steps', other: 'Script-based', avaGood: true },
   { feature: 'Multi-device sync', ava: true, other: false, avaGood: true },
@@ -97,7 +97,7 @@ export default function AvaVsOpenClawPage() {
       <Ul>
         <Li><Highlight>Real-time voice conversations</Highlight> — ultra-low latency with Ava AI</Li>
         <Li><Highlight>Smart push reminders</Highlight> — set reminders in natural language, receive them on your phone at exactly the right time</Li>
-        <Li><Highlight>Web search</Highlight> — Google search integrated directly in your conversations</Li>
+        <Li><Highlight>Web search</Highlight> — live search integrated directly in your conversations</Li>
         <Li><Highlight>Conversation memory</Highlight> — Ava remembers your preferences, ongoing projects, and past conversations</Li>
         <Li><Highlight>MCP integrations</Highlight> — connect Notion, GitHub, Brave Search, and dozens more services</Li>
         <Li><Highlight>Screen vision</Highlight> — Ava can see and describe what&apos;s on your screen in real-time</Li>

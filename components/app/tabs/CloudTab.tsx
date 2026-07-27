@@ -25,6 +25,7 @@ import {
   Users,
 } from 'lucide-react'
 import { SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
+import type { StopCyclePolicy, StopCycleRule } from '../stopCycleTypes'
 import type { UserData } from '../types'
 
 const ADMIN_ACCESS_TOKEN_KEY = 'ava_admin_access_token'
@@ -189,6 +190,7 @@ type TradingGlobalControl = {
   volatility_sell_min_profit_usd?: number | null
   price_guard_rules?: TradingPriceGuardRule[] | null
   dual_entry_zone_rules?: TradingDualEntryZoneRule[] | null
+  stop_cycle_policy?: StopCyclePolicy | null
   public_reason?: string | null
   updated_at?: string | null
 }
@@ -478,7 +480,31 @@ const GLOBAL_CONTROL_HELP = {
   instantEquity:
     'Equity nette minimale après prise en compte du profit ou de la perte flottante.\nExemple : minimum 5000 USD exclut un compte avec balance 5500 USD mais equity actuelle 4800 USD.',
   instantTtl:
-    'Durée de validité du signal.\nExemple : 40 secondes. Si le moteur ne peut pas confirmer l’exécution avant la fin, il marque le signal expiré et ne l’exécute plus.',
+    'Durée de validité du signal : une ou deux minutes.\nAva attend la réception par Desktop puis la confirmation de la position par MT5. Si une protection bloque l’entrée, le motif exact est affiché au lieu d’annoncer seulement que le signal a été envoyé.',
+  stopCycleFeature:
+    'Interrupteur général, actif par défaut.\nDésactivé, Ava Desktop masque entièrement Ava Stop Cycle et refuse toute nouvelle action STOP, LIMIT ou STOP-LIMIT, y compris par la conversation. Les positions déjà déclenchées ne sont jamais fermées automatiquement; seuls les ordres encore en attente sont annulés.',
+  stopCycle:
+    'Ava propose trois familles indépendantes : STOP pour la cassure, LIMIT pour le rebond et STOP-LIMIT pour la cassure suivie d’un retest.\nUne famille est choisie par nouveau cycle. Pour chaque famille, BUY et SELL sont indépendants : Ava peut placer BUY seul, SELL seul ou les deux. L’administrateur peut autoriser de 1 à 10 cycles simultanés. À l’objectif, seuls les tickets individuellement positifs sont fermés.\nVersion actuelle : owner, compte MT5 hedging démo ou réel et AvaBridge 1.58 obligatoires.',
+  stopCycleMode:
+    'Bloqué : aucun moteur ne peut lancer Stop Cycle.\nAutorisé : un owner éligible peut l’activer dans Ava Desktop.\nForcé : Desktop l’active automatiquement seulement après confirmation owner, sans contourner les sécurités.',
+  stopCycleForced:
+    'Le mode forcé ne contourne jamais un blocage BUY/SELL, une autorisation de type, une zone, une capacité, le plan, le mode hedging, l’autorisation du compte réel ou AvaBridge 1.58.\nExemple : si BUY est autorisé et SELL bloqué pour une famille, Ava lance uniquement le côté BUY.',
+  stopCycleMarket:
+    'Marché exact de la règle Stop Cycle.\nLa première bêta accepte uniquement Boom 1000 ou Crash 1000.',
+  stopCycleMin:
+    'Borne basse inclusive.\nExemple : minimum 5500 autorise la règle à 5500 et au-dessus. Si le maximum est vide, il n’y a pas de limite haute.',
+  stopCycleMax:
+    'Borne haute inclusive.\nExemple : maximum 5900 autorise la règle à 5900 et en dessous. Si le minimum est vide, il n’y a pas de limite basse.',
+  stopCycleEquity:
+    'Equity MT5 minimale après prise en compte du flottant, sans double déduction.\nExemple : balance 5500 et flottant -700 donnent une equity de 4800 ; une règle à 5000 refuse le cycle.',
+  stopCycleMaxOrders:
+    'Plafond administrateur d’ordres par direction active, de 1 à 100.\nLe Desktop peut demander moins, mais jamais davantage que ce plafond. Exemple : Web 100 et Desktop 25 donnent 25 ordres sur chaque direction autorisée ; Web 20 et Desktop 100 restent limités à 20. Une direction bloquée reste à zéro sans empêcher l’autre.',
+  stopCycleMaxConcurrent:
+    'Nombre maximal de cycles indépendants encore ouverts sur ce marché, de 1 à 10.\nUn ancien panier négatif n’empêche plus un nouveau cycle tant que ce plafond n’est pas atteint. Chaque cycle conserve sa propre famille, son objectif et son expiration.',
+  stopCycleBlockSide:
+    'Bloque uniquement cette direction. Si BUY est autorisé et SELL bloqué, Ava crée un cycle BUY seul ; si SELL est autorisé et BUY bloqué, Ava crée un cycle SELL seul. La famille est refusée uniquement lorsque ses deux directions sont bloquées.',
+  stopCycleSchedule:
+    'Plage facultative de validité de cette règle.\nSans dates, la règle reste disponible. Avec début et fin, les deux bornes de temps doivent être cohérentes.',
 } satisfies Record<string, string>
 
 function formatCloudPrice(value: number | null | undefined) {
@@ -538,6 +564,30 @@ function newDualEntryZoneRule(): TradingDualEntryZoneRule {
     market_key: 'BOOM1000',
     min_price: null,
     max_price: null,
+    starts_at: null,
+    ends_at: null,
+  }
+}
+
+function newStopCycleRule(marketKey: StopCycleRule['market_key'] = 'BOOM1000'): StopCycleRule {
+  const id = typeof globalThis.crypto?.randomUUID === 'function'
+    ? globalThis.crypto.randomUUID()
+    : `stop-cycle-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  return {
+    id,
+    enabled: true,
+    market_key: marketKey,
+    block_buy_stop: false,
+    block_sell_stop: false,
+    allow_buy_limit: false,
+    allow_sell_limit: false,
+    allow_buy_stop_limit: false,
+    allow_sell_stop_limit: false,
+    min_price: null,
+    max_price: null,
+    min_net_equity_usd: 0,
+    max_orders_per_side: 2,
+    max_concurrent_cycles: 1,
     starts_at: null,
     ends_at: null,
   }
@@ -733,6 +783,34 @@ function validateDualEntryZoneRules(rules: TradingDualEntryZoneRule[]) {
   return errors
 }
 
+function validateStopCycleRules(rules: StopCycleRule[]) {
+  const errors: Record<string, string> = {}
+  rules.forEach((rule, index) => {
+    const messages: string[] = []
+    if (!['BOOM1000', 'CRASH1000'].includes(rule.market_key)) {
+      messages.push('Le marché doit être Boom 1000 ou Crash 1000.')
+    }
+    if (rule.min_price !== null && rule.max_price !== null && rule.min_price > rule.max_price) {
+      messages.push('Le prix minimum ne peut pas dépasser le prix maximum.')
+    }
+    if (!Number.isInteger(rule.max_orders_per_side) || rule.max_orders_per_side < 1 || rule.max_orders_per_side > 100) {
+      messages.push('Le plafond doit contenir entre 1 et 100 ordres par côté.')
+    }
+    const maxConcurrentCycles = rule.max_concurrent_cycles ?? 1
+    if (!Number.isInteger(maxConcurrentCycles) || maxConcurrentCycles < 1 || maxConcurrentCycles > 10) {
+      messages.push('Le nombre de cycles simultanés doit être compris entre 1 et 10.')
+    }
+    if (!Number.isFinite(rule.min_net_equity_usd) || rule.min_net_equity_usd < 0) {
+      messages.push('L’equity minimale doit être positive ou nulle.')
+    }
+    if (rule.starts_at && rule.ends_at && Date.parse(rule.starts_at) >= Date.parse(rule.ends_at)) {
+      messages.push('La date de fin doit être postérieure à la date de début.')
+    }
+    if (messages.length) errors[rule.id] = `Règle Stop Cycle ${index + 1} : ${messages.join(' ')}`
+  })
+  return errors
+}
+
 function isAvaWebSessionExpired(payload: Record<string, unknown>, message: string): boolean {
   const code = String(payload.code ?? payload.error_code ?? '').trim().toUpperCase()
   if (['AVA_SESSION_EXPIRED', 'WEB_SESSION_EXPIRED', 'SESSION_EXPIRED'].includes(code)) return true
@@ -755,11 +833,12 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const [adminControlMessage, setAdminControlMessage] = useState('')
   const [priceGuardErrors, setPriceGuardErrors] = useState<Record<string, string>>({})
   const [dualEntryZoneErrors, setDualEntryZoneErrors] = useState<Record<string, string>>({})
+  const [stopCycleErrors, setStopCycleErrors] = useState<Record<string, string>>({})
   const [instantSignal, setInstantSignal] = useState({
     marketKey: 'BOOM1000',
     direction: 'BUY' as 'BUY' | 'SELL',
     minNetEquityUsd: 5000,
-    ttlSeconds: 40,
+    ttlSeconds: 120,
   })
   const [instantSignalMessage, setInstantSignalMessage] = useState('')
   const [supportQuery, setSupportQuery] = useState('')
@@ -1138,7 +1217,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const journalLines = agentConnected && Array.isArray(runtime?.journal) ? runtime.journal : []
   const bridgeVersion = String(instance?.bridge_version ?? '').replace(/^v/i, '')
   const bridgeVersionNumber = Number.parseFloat(bridgeVersion)
-  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.48
+  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.58
   const canRunCommands = agentConnected && (state === 'ready' || state === 'online' || state === 'attention')
   const canOpen = browserAccessReady && (state === 'ready' || state === 'online' || state === 'attention')
   const canProvision = state === 'not_created' || state === 'delayed' || state === 'deleted' || state === 'terminated'
@@ -1240,6 +1319,85 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
       ).filter(rule => rule.id !== id),
     }))
   }, [])
+  const updateStopCyclePolicy = useCallback((patch: Partial<StopCyclePolicy>) => {
+    setAdminControlMessage('')
+    setAdminControl(current => {
+      const currentPolicy = current?.stop_cycle_policy
+      return {
+        ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+        stop_cycle_policy: {
+          version: 4,
+          feature_enabled: currentPolicy?.feature_enabled !== false,
+          mode: currentPolicy?.mode ?? 'blocked',
+          owner_only: true,
+          rules: Array.isArray(currentPolicy?.rules) ? currentPolicy.rules : [],
+          ...patch,
+        },
+      }
+    })
+  }, [])
+  const addStopCycleRule = useCallback(() => {
+    setAdminControlMessage('')
+    setAdminControl(current => {
+      const currentPolicy = current?.stop_cycle_policy
+      return {
+        ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+        stop_cycle_policy: {
+          version: 4,
+          feature_enabled: currentPolicy?.feature_enabled !== false,
+          mode: currentPolicy?.mode ?? 'blocked',
+          owner_only: true,
+          rules: [...(Array.isArray(currentPolicy?.rules) ? currentPolicy.rules : []), newStopCycleRule()],
+        },
+      }
+    })
+  }, [])
+  const updateStopCycleRule = useCallback((id: string, patch: Partial<StopCycleRule>) => {
+    setAdminControlMessage('')
+    setStopCycleErrors(current => {
+      if (!current[id]) return current
+      const next = { ...current }
+      delete next[id]
+      return next
+    })
+    setAdminControl(current => {
+      const currentPolicy = current?.stop_cycle_policy
+      return {
+        ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+        stop_cycle_policy: {
+          version: 4,
+          feature_enabled: currentPolicy?.feature_enabled !== false,
+          mode: currentPolicy?.mode ?? 'blocked',
+          owner_only: true,
+          rules: (Array.isArray(currentPolicy?.rules) ? currentPolicy.rules : []).map(rule =>
+            rule.id === id ? { ...rule, ...patch } : rule,
+          ),
+        },
+      }
+    })
+  }, [])
+  const removeStopCycleRule = useCallback((id: string) => {
+    setAdminControlMessage('')
+    setStopCycleErrors(current => {
+      if (!current[id]) return current
+      const next = { ...current }
+      delete next[id]
+      return next
+    })
+    setAdminControl(current => {
+      const currentPolicy = current?.stop_cycle_policy
+      return {
+        ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+        stop_cycle_policy: {
+          version: 4,
+          feature_enabled: currentPolicy?.feature_enabled !== false,
+          mode: currentPolicy?.mode ?? 'blocked',
+          owner_only: true,
+          rules: (Array.isArray(currentPolicy?.rules) ? currentPolicy.rules : []).filter(rule => rule.id !== id),
+        },
+      }
+    })
+  }, [])
   const dispatchInstantSignal = useCallback(async () => {
     const confirmation = window.confirm(
       `Envoyer maintenant un signal ${instantSignal.direction} ${instantSignal.marketKey} aux moteurs éligibles pendant ${instantSignal.ttlSeconds} secondes ?`,
@@ -1261,9 +1419,35 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
         idempotency_key: idempotencyKey,
       })
       const expiresAt = String((result.signal as { expires_at?: string } | undefined)?.expires_at ?? '')
+      const signalId = String((result.signal as { id?: string } | undefined)?.id ?? '')
       setInstantSignalMessage(
-        `Signal précis de l’IA principale envoyé. Validité : ${expiresAt ? formatDate(expiresAt) : `${instantSignal.ttlSeconds} secondes`}.`,
+        `Signal envoyé, en attente de confirmation Desktop/MT5. Validité : ${expiresAt ? formatDate(expiresAt) : `${instantSignal.ttlSeconds} secondes`}.`,
       )
+      if (signalId) {
+        const statusDeadline = Date.now() + Math.min(20_000, Math.max(8_000, instantSignal.ttlSeconds * 1000))
+        while (Date.now() < statusDeadline) {
+          await new Promise(resolve => window.setTimeout(resolve, 2_000))
+          const statusResult = await callAdminSignal({ action: 'status' })
+          const signals = Array.isArray(statusResult.signals) ? statusResult.signals as Array<Record<string, any>> : []
+          const current = signals.find(item => String(item.id ?? '') === signalId)
+          const details = Array.isArray(current?.receipt_details) ? current.receipt_details as Array<Record<string, any>> : []
+          const ownDetails = details.filter(item => String(item.user_id ?? '') === user.id)
+          const terminal = (ownDetails.length ? ownDetails : details)
+            .find(item => ['done', 'blocked', 'error', 'expired'].includes(String(item.status ?? '').toLowerCase()))
+          if (!terminal) continue
+          const terminalStatus = String(terminal.status ?? '').toLowerCase()
+          const terminalResult = terminal.result && typeof terminal.result === 'object'
+            ? terminal.result as Record<string, any>
+            : {}
+          const reason = String(terminalResult.error ?? terminalResult.reason ?? '').trim()
+          setInstantSignalMessage(
+            terminalStatus === 'done'
+              ? `Position ${instantSignal.direction} ${instantSignal.marketKey} confirmée par Desktop et MT5.`
+              : `Signal non exécuté (${terminalStatus})${reason ? ` : ${reason}` : '.'}`,
+          )
+          break
+        }
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Signal impossible.'
       setError(message)
@@ -1271,7 +1455,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     } finally {
       setBusy(null)
     }
-  }, [callAdminSignal, instantSignal])
+  }, [callAdminSignal, instantSignal, user.id])
   const runSupportSearch = useCallback(async () => {
     try {
       setBusy('support_search')
@@ -1608,7 +1792,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] p-4">
                 <p className="text-sm font-black text-amber-100">AvaBridge version ancienne</p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  AvaBridge {instance?.bridge_version} est détecté. La version recommandée est 1.48 ou plus pour les seuils de profit exacts et les paniers positifs Boom + Crash.
+                  AvaBridge {instance?.bridge_version} est détecté. La version recommandée est 1.58. Les versions précédentes conservent leurs stratégies compatibles, mais ne peuvent pas activer les cycles STOP, LIMIT ou STOP-LIMIT à direction indépendante.
                 </p>
               </div>
             )}
@@ -2364,10 +2548,33 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   const validationErrors = validatePriceGuardRules(rules)
                   const dualRules = Array.isArray(adminControl?.dual_entry_zone_rules) ? adminControl.dual_entry_zone_rules : []
                   const dualValidationErrors = validateDualEntryZoneRules(dualRules)
-                  if (Object.keys(validationErrors).length > 0 || Object.keys(dualValidationErrors).length > 0) {
+                  const stopCyclePolicy: StopCyclePolicy = adminControl?.stop_cycle_policy ?? {
+                    version: 4,
+                    feature_enabled: true,
+                    mode: 'blocked',
+                    owner_only: true,
+                    rules: [],
+                  }
+                  const stopRules = Array.isArray(stopCyclePolicy.rules) ? stopCyclePolicy.rules : []
+                  const stopValidationErrors = validateStopCycleRules(stopRules)
+                  if (
+                    Object.keys(validationErrors).length > 0
+                    || Object.keys(dualValidationErrors).length > 0
+                    || Object.keys(stopValidationErrors).length > 0
+                  ) {
                     setPriceGuardErrors(validationErrors)
                     setDualEntryZoneErrors(dualValidationErrors)
+                    setStopCycleErrors(stopValidationErrors)
                     setAdminControlMessage('Enregistrement suspendu : complète la règle signalée ci-dessous. Elle reste affichée et aucune autre valeur n’est perdue.')
+                    return
+                  }
+                  const forcedConfirmed = stopCyclePolicy.feature_enabled === false
+                    || stopCyclePolicy.mode !== 'forced'
+                    || window.confirm(
+                    'Confirmer le mode forcé des cycles conditionnels ? Il restera limité à l’owner, aux comptes MT5 hedging, à AvaBridge 1.58 et à toutes les protections administrateur. Un compte réel exige aussi son autorisation explicite.',
+                  )
+                  if (!forcedConfirmed) {
+                    setAdminControlMessage('Mode forcé non confirmé. Aucune configuration n’a été envoyée.')
                     return
                   }
                   try {
@@ -2398,25 +2605,43 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       volatility_sell_min_profit_usd: Number(adminControl?.volatility_sell_min_profit_usd ?? 0.5),
                       price_guard_rules: rules,
                       dual_entry_zone_rules: dualRules,
+                      stop_cycle_policy: {
+                        ...stopCyclePolicy,
+                        version: 4,
+                        feature_enabled: stopCyclePolicy.feature_enabled !== false,
+                        owner_only: true,
+                        rules: stopRules,
+                      },
+                      stop_cycle_force_confirmed: stopCyclePolicy.feature_enabled !== false && stopCyclePolicy.mode === 'forced',
                     })
                     const savedControl = result.control as TradingGlobalControl | null | undefined
                     const savedRules = Array.isArray(savedControl?.price_guard_rules) ? savedControl.price_guard_rules : null
                     const savedDualRules = Array.isArray(savedControl?.dual_entry_zone_rules) ? savedControl.dual_entry_zone_rules : null
+                    const savedStopPolicy = savedControl?.stop_cycle_policy ?? null
+                    const savedStopRules = Array.isArray(savedStopPolicy?.rules) ? savedStopPolicy.rules : null
                     const savedRuleIds = new Set(savedRules?.map(rule => rule.id) ?? [])
                     const savedDualRuleIds = new Set(savedDualRules?.map(rule => rule.id) ?? [])
+                    const savedStopRuleIds = new Set(savedStopRules?.map(rule => rule.id) ?? [])
                     const barriersConfirmed = savedRules !== null
                       && savedRules.length === rules.length
                       && rules.every(rule => savedRuleIds.has(rule.id))
                     const dualZonesConfirmed = savedDualRules !== null
                       && savedDualRules.length === dualRules.length
                       && dualRules.every(rule => savedDualRuleIds.has(rule.id))
-                    if (!savedControl || !barriersConfirmed || !dualZonesConfirmed) {
-                      throw new Error('Le serveur n’a pas confirmé toutes les barrières et zones synchronisées. La saisie reste affichée.')
+                    const stopCycleConfirmed = savedStopPolicy !== null
+                      && savedStopPolicy.feature_enabled === (stopCyclePolicy.feature_enabled !== false)
+                      && savedStopPolicy.mode === stopCyclePolicy.mode
+                      && savedStopRules !== null
+                      && savedStopRules.length === stopRules.length
+                      && stopRules.every(rule => savedStopRuleIds.has(rule.id))
+                    if (!savedControl || !barriersConfirmed || !dualZonesConfirmed || !stopCycleConfirmed) {
+                      throw new Error('Le serveur n’a pas confirmé toutes les barrières, zones synchronisées et règles Stop Cycle. La saisie reste affichée.')
                     }
                     setAdminControl(savedControl)
                     setPriceGuardErrors({})
                     setDualEntryZoneErrors({})
-                    setAdminControlMessage('Configuration enregistrée. Les barrières et zones synchronisées seront propagées aux moteurs Ava Desktop actifs.')
+                    setStopCycleErrors({})
+                    setAdminControlMessage('Configuration enregistrée. Les barrières, zones synchronisées et règles Stop Cycle seront propagées aux moteurs Ava Desktop actifs.')
                   } catch (err) {
                     const message = err instanceof Error ? err.message : 'Controle admin impossible.'
                     setError(message)
@@ -2437,7 +2662,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <div
                 role="status"
                 className={`mt-4 rounded-xl border px-4 py-3 text-xs font-bold leading-5 ${
-                  Object.keys(priceGuardErrors).length > 0 || Object.keys(dualEntryZoneErrors).length > 0 || adminControlMessage.startsWith('Enregistrement impossible')
+                  Object.keys(priceGuardErrors).length > 0 || Object.keys(dualEntryZoneErrors).length > 0 || Object.keys(stopCycleErrors).length > 0 || adminControlMessage.startsWith('Enregistrement impossible')
                     ? 'border-amber-300/25 bg-amber-300/10 text-amber-100'
                     : 'border-emerald-300/25 bg-emerald-300/10 text-emerald-100'
                 }`}
@@ -2993,7 +3218,351 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 ) : null}
               </div>
             </div>
-            <div className="mt-4 rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/[0.06] p-4">
+            <div id="ava-admin-stop-cycle" className="mt-4 rounded-2xl border border-cyan-300/20 bg-cyan-300/[0.06] p-4">
+              <label className="mb-4 flex cursor-pointer flex-col gap-3 rounded-2xl border border-rose-500/25 bg-rose-500/[0.08] p-4 sm:flex-row sm:items-center sm:justify-between">
+                <span>
+                  <span className="flex items-center gap-2 text-sm font-black text-white">
+                    Accès global Ava Stop Cycle
+                    <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleFeature} />
+                  </span>
+                  <span className="mt-1 block max-w-3xl text-xs leading-5 text-slate-400">
+                    Désactivé, le composant disparaît pour tous les utilisateurs et Ava conversationnelle ne peut plus envoyer de STOP, LIMIT ou STOP-LIMIT. Les positions déjà ouvertes restent intactes; seuls les ordres conditionnels encore en attente sont annulés.
+                  </span>
+                </span>
+                <span className="inline-flex flex-shrink-0 items-center gap-3">
+                  <span className={`text-xs font-black uppercase tracking-[0.12em] ${
+                    adminControl?.stop_cycle_policy?.feature_enabled !== false ? 'text-emerald-300' : 'text-rose-300'
+                  }`}>
+                    {adminControl?.stop_cycle_policy?.feature_enabled !== false ? 'Visible et actif' : 'Masqué et bloqué'}
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={adminControl?.stop_cycle_policy?.feature_enabled !== false}
+                    onChange={event => updateStopCyclePolicy({ feature_enabled: event.target.checked })}
+                    className="h-5 w-5 accent-rose-500"
+                  />
+                </span>
+              </label>
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Ava Stop Cycle</p>
+                    <span className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-100">
+                      Nouveau · 72 h
+                    </span>
+                  </div>
+                  <p className="mt-1 flex items-center gap-2 text-sm font-black text-white">
+                    Cycles STOP, LIMIT et STOP-LIMIT
+                    <HelpHint text={GLOBAL_CONTROL_HELP.stopCycle} />
+                  </p>
+                  <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
+                    Chaque famille est autorisée séparément par règle et zone de prix. Le Desktop ne lance jamais plusieurs familles au même niveau : il les fait tourner cycle après cycle. Un compte réel exige l’autorisation explicite et une clôture automatique ne réalise jamais un ticket nul ou négatif.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={(adminControl?.stop_cycle_policy?.rules?.length ?? 0) >= 20}
+                  onClick={addStopCycleRule}
+                  className="inline-flex flex-shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-3 py-2 text-xs font-black text-slate-950 shadow-lg shadow-cyan-300/10 transition-colors hover:bg-cyan-200 disabled:opacity-40"
+                >
+                  <Plus size={14} />
+                  Ajouter une règle
+                </button>
+              </div>
+
+              <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,20rem)_1fr]">
+                <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                  <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                    Mode global
+                    <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleMode} />
+                  </span>
+                  <select
+                    value={adminControl?.stop_cycle_policy?.mode ?? 'blocked'}
+                    onChange={event => updateStopCyclePolicy({ mode: event.target.value as StopCyclePolicy['mode'] })}
+                    className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                  >
+                    <option value="blocked" className="bg-slate-950">Bloqué</option>
+                    <option value="allowed" className="bg-slate-950">Autorisé pour owner éligible</option>
+                    <option value="forced" className="bg-slate-950">Forcé après confirmation owner</option>
+                  </select>
+                </label>
+                <div className="rounded-xl border border-amber-300/20 bg-amber-300/[0.07] px-4 py-3 text-xs leading-5 text-amber-100">
+                  <span className="flex items-center gap-2 font-black">
+                    <ShieldCheck size={15} />
+                    Aucune règle ne contourne la sécurité
+                    <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleForced} />
+                  </span>
+                  <p className="mt-1 text-amber-100/75">
+                    Chaque côté est indépendant : une direction autorisée peut fonctionner seule. Seules les directions actives doivent tenir dans leurs capacités globales et directionnelles.
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {(adminControl?.stop_cycle_policy?.rules ?? []).map((rule, index) => {
+                  const ruleError = stopCycleErrors[rule.id]
+                  const zone = rule.min_price !== null && rule.max_price !== null
+                    ? `${rule.min_price} ≤ prix ≤ ${rule.max_price}`
+                    : rule.min_price !== null
+                      ? `prix ≥ ${rule.min_price}`
+                      : rule.max_price !== null
+                        ? `prix ≤ ${rule.max_price}`
+                        : 'tous les prix'
+                  return (
+                    <div
+                      key={rule.id}
+                      className={`rounded-2xl border bg-slate-950/55 p-4 ${
+                        ruleError ? 'border-amber-300/40 ring-1 ring-amber-300/10' : 'border-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={rule.enabled !== false}
+                            onChange={event => updateStopCycleRule(rule.id, { enabled: event.target.checked })}
+                            className="h-4 w-4 accent-cyan-300"
+                          />
+                          <div>
+                            <p className="text-xs font-black text-white">Règle {index + 1} · {zone}</p>
+                            <p className="mt-0.5 text-[10px] text-cyan-200">
+                              Maximum {rule.max_orders_per_side} ordre(s) par côté · {rule.max_concurrent_cycles ?? 1} cycle(s) simultané(s) · equity ≥ {rule.min_net_equity_usd} USD
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeStopCycleRule(rule.id)}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-500 transition-colors hover:border-rose-500/30 hover:text-rose-300"
+                          title="Supprimer cette règle Stop Cycle"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+
+                      {ruleError ? (
+                        <p role="alert" className="mt-3 rounded-xl border border-amber-300/20 bg-amber-300/10 px-3 py-2 text-xs font-bold leading-5 text-amber-100">
+                          {ruleError}
+                        </p>
+                      ) : null}
+
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Marché
+                            <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleMarket} />
+                          </span>
+                          <select
+                            value={rule.market_key}
+                            onChange={event => updateStopCycleRule(rule.id, { market_key: event.target.value as StopCycleRule['market_key'] })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          >
+                            <option value="BOOM1000" className="bg-slate-950">Boom 1000</option>
+                            <option value="CRASH1000" className="bg-slate-950">Crash 1000</option>
+                          </select>
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Prix minimum inclus
+                            <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleMin} />
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={rule.min_price ?? ''}
+                            onChange={event => updateStopCycleRule(rule.id, { min_price: optionalInputNumber(event.target.value) })}
+                            placeholder="Sans minimum"
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none placeholder:text-slate-700"
+                          />
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Prix maximum inclus
+                            <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleMax} />
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={rule.max_price ?? ''}
+                            onChange={event => updateStopCycleRule(rule.id, { max_price: optionalInputNumber(event.target.value) })}
+                            placeholder="Sans maximum"
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none placeholder:text-slate-700"
+                          />
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Equity nette minimum
+                            <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleEquity} />
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="100"
+                            value={rule.min_net_equity_usd}
+                            onChange={event => updateStopCycleRule(rule.id, { min_net_equity_usd: Math.max(0, toNumber(event.target.value, 0)) })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          />
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Max ordres / côté
+                            <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleMaxOrders} />
+                          </span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="100"
+                            step="1"
+                            value={rule.max_orders_per_side}
+                            onChange={event => updateStopCycleRule(rule.id, {
+                              max_orders_per_side: Math.max(1, Math.min(100, Math.floor(toNumber(event.target.value, 1)))),
+                            })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          />
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Cycles simultanés
+                            <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleMaxConcurrent} />
+                          </span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="10"
+                            step="1"
+                            value={rule.max_concurrent_cycles ?? 1}
+                            onChange={event => updateStopCycleRule(rule.id, {
+                              max_concurrent_cycles: Math.max(1, Math.min(10, Math.floor(toNumber(event.target.value, 1)))),
+                            })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          />
+                        </label>
+                      </div>
+
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                        <label className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black ${rule.block_buy_stop ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-white/10 bg-black/25 text-slate-400'}`}>
+                          <input
+                            type="checkbox"
+                            checked={rule.block_buy_stop}
+                            onChange={event => updateStopCycleRule(rule.id, { block_buy_stop: event.target.checked })}
+                            className="h-4 w-4 accent-rose-400"
+                          />
+                          Bloquer BUY STOP
+                          <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleBlockSide} />
+                        </label>
+                        <label className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black ${rule.block_sell_stop ? 'border-rose-400/25 bg-rose-400/10 text-rose-100' : 'border-white/10 bg-black/25 text-slate-400'}`}>
+                          <input
+                            type="checkbox"
+                            checked={rule.block_sell_stop}
+                            onChange={event => updateStopCycleRule(rule.id, { block_sell_stop: event.target.checked })}
+                            className="h-4 w-4 accent-rose-400"
+                          />
+                          Bloquer SELL STOP
+                          <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleBlockSide} />
+                        </label>
+                        <label className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black ${rule.allow_buy_limit ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100' : 'border-white/10 bg-black/25 text-slate-400'}`}>
+                          <input
+                            type="checkbox"
+                            checked={rule.allow_buy_limit === true}
+                            onChange={event => updateStopCycleRule(rule.id, { allow_buy_limit: event.target.checked })}
+                            className="h-4 w-4 accent-emerald-400"
+                          />
+                          Autoriser BUY LIMIT
+                          <HelpHint text="Ordre d’achat sous le marché, conçu pour entrer sur repli puis profiter d’un rebond." />
+                        </label>
+                        <label className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black ${rule.allow_sell_limit ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-100' : 'border-white/10 bg-black/25 text-slate-400'}`}>
+                          <input
+                            type="checkbox"
+                            checked={rule.allow_sell_limit === true}
+                            onChange={event => updateStopCycleRule(rule.id, { allow_sell_limit: event.target.checked })}
+                            className="h-4 w-4 accent-emerald-400"
+                          />
+                          Autoriser SELL LIMIT
+                          <HelpHint text="Ordre de vente au-dessus du marché, conçu pour entrer sur sommet puis profiter d’un repli." />
+                        </label>
+                        <label className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black ${rule.allow_buy_stop_limit ? 'border-cyan-400/25 bg-cyan-400/10 text-cyan-100' : 'border-white/10 bg-black/25 text-slate-400'}`}>
+                          <input
+                            type="checkbox"
+                            checked={rule.allow_buy_stop_limit === true}
+                            onChange={event => updateStopCycleRule(rule.id, { allow_buy_stop_limit: event.target.checked })}
+                            className="h-4 w-4 accent-cyan-400"
+                          />
+                          Autoriser BUY STOP-LIMIT
+                          <HelpHint text="Après une cassure haussière, prépare un BUY LIMIT de retest au lieu d’acheter immédiatement le sommet." />
+                        </label>
+                        <label className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-black ${rule.allow_sell_stop_limit ? 'border-cyan-400/25 bg-cyan-400/10 text-cyan-100' : 'border-white/10 bg-black/25 text-slate-400'}`}>
+                          <input
+                            type="checkbox"
+                            checked={rule.allow_sell_stop_limit === true}
+                            onChange={event => updateStopCycleRule(rule.id, { allow_sell_stop_limit: event.target.checked })}
+                            className="h-4 w-4 accent-cyan-400"
+                          />
+                          Autoriser SELL STOP-LIMIT
+                          <HelpHint text="Après une cassure baissière, prépare un SELL LIMIT de retest au lieu de vendre immédiatement le creux." />
+                        </label>
+                      </div>
+
+                      <details className="mt-3 rounded-xl border border-white/10 bg-black/20 px-3 py-2">
+                        <summary className="cursor-pointer text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                          Planification facultative
+                          <span className="ml-2 inline-flex align-middle">
+                            <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleSchedule} />
+                          </span>
+                        </summary>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <label className="block">
+                            <span className="text-[10px] font-bold text-slate-500">Active à partir de</span>
+                            <input
+                              type="datetime-local"
+                              value={localDateTimeValue(rule.starts_at)}
+                              onChange={event => updateStopCycleRule(rule.id, { starts_at: event.target.value ? new Date(event.target.value).toISOString() : null })}
+                              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-xs text-white outline-none"
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="text-[10px] font-bold text-slate-500">Expire à</span>
+                            <input
+                              type="datetime-local"
+                              value={localDateTimeValue(rule.ends_at)}
+                              onChange={event => updateStopCycleRule(rule.id, { ends_at: event.target.value ? new Date(event.target.value).toISOString() : null })}
+                              className="mt-1 w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-xs text-white outline-none"
+                            />
+                          </label>
+                        </div>
+                      </details>
+                    </div>
+                  )
+                })}
+
+                {(adminControl?.stop_cycle_policy?.rules?.length ?? 0) === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-slate-500">
+                    Aucune règle Stop Cycle. Le mode bloqué reste la valeur sûre par défaut.
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <a
+                  href="#ava-admin-instant-signal"
+                  className="inline-flex items-center gap-2 rounded-xl border border-fuchsia-300/20 bg-fuchsia-300/[0.07] px-3 py-2 text-xs font-black text-fuchsia-100 hover:bg-fuchsia-300/10"
+                >
+                  <Send size={14} />
+                  Signal immédiat
+                  <span className="rounded-full bg-fuchsia-300/15 px-2 py-0.5 text-[9px] uppercase">Nouveau · 72 h</span>
+                </a>
+                <a
+                  href="?tab=ava-ai#ava-market-library"
+                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-300/[0.07] px-3 py-2 text-xs font-black text-emerald-100 hover:bg-emerald-300/10"
+                >
+                  <ExternalLink size={14} />
+                  Bibliothèque marché
+                  <span className="rounded-full bg-emerald-300/15 px-2 py-0.5 text-[9px] uppercase">Nouveau · 72 h</span>
+                </a>
+              </div>
+            </div>
+            <div id="ava-admin-instant-signal" className="mt-4 scroll-mt-6 rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/[0.06] p-4">
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/10 text-fuchsia-200">
                   <Send size={18} />
@@ -3062,8 +3631,8 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     onChange={event => setInstantSignal(current => ({ ...current, ttlSeconds: Number(event.target.value) }))}
                     className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
                   >
-                    <option value={30} className="bg-slate-950">30 secondes</option>
-                    <option value={40} className="bg-slate-950">40 secondes</option>
+                    <option value={60} className="bg-slate-950">1 minute</option>
+                    <option value={120} className="bg-slate-950">2 minutes</option>
                   </select>
                 </label>
                 <button

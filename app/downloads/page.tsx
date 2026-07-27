@@ -2,8 +2,8 @@ import Link from "next/link";
 import { Apple, ArrowLeft, Download, ShieldCheck, Smartphone } from "lucide-react";
 import { SiGoogleplay } from "react-icons/si";
 
-const AVA_DESKTOP_MAC_VERSION = "1.4.1";
-const AVA_DESKTOP_WINDOWS_VERSION = "1.4.1";
+const AVA_DESKTOP_MAC_VERSION = "1.5.10";
+const AVA_DESKTOP_WINDOWS_VERSION = "1.5.10";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = [
   {
@@ -18,7 +18,7 @@ const DOWNLOADS = [
     subtitle: "Application mobile Android",
     href: "https://play.google.com/store/apps/details?id=com.kemyamo.ava",
     icon: SiGoogleplay,
-    cta: "Ouvrir Google Play",
+    cta: "Ouvrir l'application Android",
   },
   {
     title: "Ava Desktop Mac",
