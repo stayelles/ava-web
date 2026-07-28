@@ -31,6 +31,26 @@ import type { UserData } from '../types'
 const ADMIN_ACCESS_TOKEN_KEY = 'ava_admin_access_token'
 const ADMIN_TRUSTED_DEVICE_KEY = 'ava_admin_trusted_device_token'
 
+const fetchWithTransientRetry = async (
+  url: string,
+  init: RequestInit,
+  attempts = 3,
+): Promise<Response> => {
+  let lastError: unknown = null
+  for (let attempt = 0; attempt < Math.max(1, attempts); attempt += 1) {
+    try {
+      const response = await fetch(url, init)
+      const transient = response.status === 408 || response.status === 425 || response.status === 429 || response.status >= 500
+      if (!transient || attempt === attempts - 1) return response
+    } catch (error) {
+      lastError = error
+      if (attempt === attempts - 1) throw error
+    }
+    await new Promise(resolve => window.setTimeout(resolve, 300 * (2 ** attempt)))
+  }
+  throw lastError instanceof Error ? lastError : new Error('Service Ava temporairement indisponible.')
+}
+
 type CloudState = 'inactive' | 'not_created' | 'provisioning' | 'configuring' | 'ready' | 'online' | 'attention' | 'suspended' | 'delayed' | 'deleted' | 'terminated'
 
 type CloudEntitlement = {
@@ -962,7 +982,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
 
   const callAdminControl = useCallback(async (payload: Record<string, unknown>) => {
     const token = adminAccessToken || (typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) ?? '' : '')
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/trading-admin-control`, {
+    const res = await fetchWithTransientRetry(`${SUPABASE_URL}/functions/v1/trading-admin-control`, {
       method: 'POST',
       headers: SUPABASE_HEADERS,
       body: JSON.stringify({ user_id: user.id, web_session_token: user.web_session_token, admin_access_token: token || undefined, ...payload }),
@@ -979,7 +999,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
 
   const callAdminSignal = useCallback(async (payload: Record<string, unknown>) => {
     const token = adminAccessToken || (typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) ?? '' : '')
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/trading-admin-signal`, {
+    const res = await fetchWithTransientRetry(`${SUPABASE_URL}/functions/v1/trading-admin-signal`, {
       method: 'POST',
       headers: SUPABASE_HEADERS,
       body: JSON.stringify({

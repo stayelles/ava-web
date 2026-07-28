@@ -48,6 +48,8 @@ If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before pub
 - Ava Web 0.5.9 renforce la chaleur conversationnelle avec des micro-réactions naturelles et contextuelles, jamais répétitives ni déplacées sur les sujets graves ou financiers.
 - AvaBridgeEA 1.58 rend BUY et SELL indépendants dans chaque famille STOP, LIMIT et STOP-LIMIT. Une famille reste valide si un seul côté est autorisé; Ava Web ne doit plus présenter ni imposer un paquet BUY+SELL obligatoire.
 - Desktop ne place jamais STOP, LIMIT et STOP-LIMIT simultanément au même niveau. Les familles autorisées tournent cycle après cycle, avec un seul cycle actif par marché.
+- Ava Web 0.5.10 retente les indisponibilités réseau transitoires lors de la lecture/écriture des contrôles administrateur et de l’envoi d’un signal IA principale. Les signaux conservent leur clé d’idempotence pendant les tentatives.
+- AvaBridgeEA 1.59 compte séparément les paquets conditionnels pending et les paniers déjà déclenchés. `max_concurrent_cycles` limite uniquement les paquets en attente afin que les remplacements continuent, tandis que les positions déclenchées restent suivies et ne sont jamais fermées en négatif.
 
 ## Ava Cloud
 
