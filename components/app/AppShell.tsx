@@ -12,6 +12,7 @@ import { ProfileTab } from './tabs/ProfileTab'
 import { SubscriptionTab } from './tabs/SubscriptionTab'
 import { ReferralTab } from './tabs/ReferralTab'
 import { SettingsTab } from './tabs/SettingsTab'
+import { SupportDock } from './support/SupportDock'
 import type { AppTab, AppSettings, UserData, AvaPermissions } from './types'
 import { isCustomPlan, isPro } from './types'
 
@@ -169,6 +170,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
 
       {/* Mobile bottom tabs */}
       <BottomTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <SupportDock user={user} />
     </div>
   )
 }

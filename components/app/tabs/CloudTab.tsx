@@ -199,6 +199,7 @@ type TradingGlobalControl = {
   max_boom_sell_open_positions?: number | null
   max_crash_buy_open_positions?: number | null
   max_crash_sell_open_positions?: number | null
+  capital_position_limit_rules?: TradingCapitalPositionLimitRule[] | null
   bypass_min_net_equity_usd?: number | null
   bypass_boom_buy_entries?: boolean | null
   bypass_boom_sell_entries?: boolean | null
@@ -213,6 +214,14 @@ type TradingGlobalControl = {
   stop_cycle_policy?: StopCyclePolicy | null
   public_reason?: string | null
   updated_at?: string | null
+}
+
+type TradingCapitalPositionLimitRule = {
+  id: string
+  enabled: boolean
+  max_equity_usd: number
+  max_total_open_positions: number
+  max_stop_cycle_open_positions: number
 }
 
 type TradingPriceGuardRule = {
@@ -461,6 +470,14 @@ const GLOBAL_CONTROL_HELP = {
     'Bloque cette direction uniquement sur ce marché, pour les nouvelles entrées et les nouveaux renforts.\nLes positions déjà ouvertes restent intactes.',
   maxOpen:
     'Plafond administrateur de positions ouvertes pour ce marché et cette direction.\n0 conserve la limite configurée par l’utilisateur. Une valeur positive ne peut que réduire cette limite.',
+  capitalLimits:
+    'Applique automatiquement des plafonds selon l’equity actuelle du compte.\nLe plafond total compte toutes les positions : directes, Burst, Rebond, manuelles suivies et Stop Cycle. Le plafond Stop Cycle ne compte que les positions issues des cycles.\nCes règles bloquent uniquement de nouvelles entrées et ne ferment jamais une position existante.',
+  capitalThreshold:
+    'La règle s’applique lorsque l’equity actuelle est strictement inférieure à cette valeur.\nExemple : 1000 applique la règle de 0 à 999,99 USD.',
+  maxTotalPositions:
+    'Nombre maximal de positions ouvertes au total, toutes origines et tous marchés confondus.\n0 désactive uniquement ce plafond.',
+  maxStopCyclePositions:
+    'Nombre maximal de positions Stop Cycle ouvertes au total, Boom et Crash confondus.\n0 désactive uniquement ce plafond.',
   barriers:
     'Une barrière bloque BUY, SELL ou les deux uniquement lorsque le prix du marché se trouve dans la zone définie.\nElle n’agit jamais sur les positions déjà ouvertes.',
   enabled:
@@ -504,11 +521,11 @@ const GLOBAL_CONTROL_HELP = {
   stopCycleFeature:
     'Interrupteur général, actif par défaut.\nDésactivé, Ava Desktop masque entièrement Ava Stop Cycle et refuse toute nouvelle action STOP, LIMIT ou STOP-LIMIT, y compris par la conversation. Les positions déjà déclenchées ne sont jamais fermées automatiquement; seuls les ordres encore en attente sont annulés.',
   stopCycle:
-    'Ava propose trois familles indépendantes : STOP pour la cassure, LIMIT pour le rebond et STOP-LIMIT pour la cassure suivie d’un retest.\nUne famille est choisie par nouveau cycle. Pour chaque famille, BUY et SELL sont indépendants : Ava peut placer BUY seul, SELL seul ou les deux. L’administrateur peut autoriser de 1 à 10 cycles simultanés. À l’objectif, seuls les tickets individuellement positifs sont fermés.\nVersion actuelle : owner, compte MT5 hedging démo ou réel et AvaBridge 1.58 obligatoires.',
+    'Ava propose trois familles indépendantes : STOP pour la cassure, LIMIT pour le rebond et STOP-LIMIT pour la cassure suivie d’un retest.\nUne famille est choisie par nouveau cycle. Pour chaque famille, BUY et SELL sont indépendants : Ava peut placer BUY seul, SELL seul ou les deux. L’administrateur peut autoriser de 1 à 10 cycles simultanés. À l’objectif, seuls les tickets individuellement positifs sont fermés.\nVersion actuelle : owner, compte MT5 hedging démo ou réel et AvaBridge 1.60 obligatoires.',
   stopCycleMode:
     'Bloqué : aucun moteur ne peut lancer Stop Cycle.\nAutorisé : un owner éligible peut l’activer dans Ava Desktop.\nForcé : Desktop l’active automatiquement seulement après confirmation owner, sans contourner les sécurités.',
   stopCycleForced:
-    'Le mode forcé ne contourne jamais un blocage BUY/SELL, une autorisation de type, une zone, une capacité, le plan, le mode hedging, l’autorisation du compte réel ou AvaBridge 1.58.\nExemple : si BUY est autorisé et SELL bloqué pour une famille, Ava lance uniquement le côté BUY.',
+    'Le mode forcé ne contourne jamais un blocage BUY/SELL, une autorisation de type, une zone, une capacité, le plan, le mode hedging, l’autorisation du compte réel ou AvaBridge 1.60.\nExemple : si BUY est autorisé et SELL bloqué pour une famille, Ava lance uniquement le côté BUY.',
   stopCycleMarket:
     'Marché exact de la règle Stop Cycle.\nLa première bêta accepte uniquement Boom 1000 ou Crash 1000.',
   stopCycleMin:
@@ -571,6 +588,19 @@ function newPriceGuardRule(): TradingPriceGuardRule {
     release_buffer_points: 0,
     starts_at: null,
     ends_at: null,
+  }
+}
+
+function newCapitalPositionLimitRule(): TradingCapitalPositionLimitRule {
+  const id = typeof globalThis.crypto?.randomUUID === 'function'
+    ? globalThis.crypto.randomUUID()
+    : `capital-limit-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  return {
+    id,
+    enabled: true,
+    max_equity_usd: 1000,
+    max_total_open_positions: 14,
+    max_stop_cycle_open_positions: 20,
   }
 }
 
@@ -866,6 +896,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const [supportSelected, setSupportSelected] = useState<SupportUser | null>(null)
   const [supportCommands, setSupportCommands] = useState<SupportCommand[]>([])
   const [supportShell, setSupportShell] = useState('Get-Process -Name Ava,terminal64 -ErrorAction SilentlyContinue | Select-Object ProcessName,Id,StartTime | ConvertTo-Json')
+  const [supportRdpPassword, setSupportRdpPassword] = useState('')
   const [adminCriteria, setAdminCriteria] = useState<AdminConsoleCriteria>({ agentConnected: true })
   const [adminTargets, setAdminTargets] = useState<AdminConsoleTarget[]>([])
   const [adminConsoleMessage, setAdminConsoleMessage] = useState('')
@@ -1237,7 +1268,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const journalLines = agentConnected && Array.isArray(runtime?.journal) ? runtime.journal : []
   const bridgeVersion = String(instance?.bridge_version ?? '').replace(/^v/i, '')
   const bridgeVersionNumber = Number.parseFloat(bridgeVersion)
-  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.58
+  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.60
   const canRunCommands = agentConnected && (state === 'ready' || state === 'online' || state === 'attention')
   const canOpen = browserAccessReady && (state === 'ready' || state === 'online' || state === 'attention')
   const canProvision = state === 'not_created' || state === 'delayed' || state === 'deleted' || state === 'terminated'
@@ -1262,6 +1293,37 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     setAdminControl(current => ({
       ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
       ...patch,
+    }))
+  }, [])
+  const addCapitalPositionLimitRule = useCallback(() => {
+    setAdminControlMessage('')
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      capital_position_limit_rules: [
+        ...(Array.isArray(current?.capital_position_limit_rules) ? current.capital_position_limit_rules : []),
+        newCapitalPositionLimitRule(),
+      ],
+    }))
+  }, [])
+  const updateCapitalPositionLimitRule = useCallback((
+    id: string,
+    patch: Partial<TradingCapitalPositionLimitRule>,
+  ) => {
+    setAdminControlMessage('')
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      capital_position_limit_rules: (
+        Array.isArray(current?.capital_position_limit_rules) ? current.capital_position_limit_rules : []
+      ).map(rule => rule.id === id ? { ...rule, ...patch } : rule),
+    }))
+  }, [])
+  const removeCapitalPositionLimitRule = useCallback((id: string) => {
+    setAdminControlMessage('')
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      capital_position_limit_rules: (
+        Array.isArray(current?.capital_position_limit_rules) ? current.capital_position_limit_rules : []
+      ).filter(rule => rule.id !== id),
     }))
   }, [])
   const addPriceGuardRule = useCallback(() => {
@@ -1520,6 +1582,26 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
       setBusy(null)
     }
   }, [callCloudSupport, refreshSupportStatus, supportSelected])
+  const syncSupportRdpCredentials = useCallback(async () => {
+    const instanceId = supportSelected?.instance?.id
+    if (!instanceId || !supportRdpPassword) return
+    try {
+      setBusy('support_rdp_credentials')
+      setError(null)
+      await callCloudSupport({
+        action: 'sync_rdp_credentials',
+        instance_id: instanceId,
+        rdp_username: 'Administrator',
+        rdp_password: supportRdpPassword,
+      })
+      setSupportRdpPassword('')
+      await refreshSupportStatus(supportSelected)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Synchronisation des accès Windows impossible.')
+    } finally {
+      setBusy(null)
+    }
+  }, [callCloudSupport, refreshSupportStatus, supportRdpPassword, supportSelected])
   const adminCriteriaPayload = useCallback(() => ({
     email: adminCriteria.email?.trim() || undefined,
     plans: adminCriteria.plans?.length ? adminCriteria.plans : undefined,
@@ -1812,7 +1894,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] p-4">
                 <p className="text-sm font-black text-amber-100">AvaBridge version ancienne</p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  AvaBridge {instance?.bridge_version} est détecté. La version recommandée est 1.58. Les versions précédentes conservent leurs stratégies compatibles, mais ne peuvent pas activer les cycles STOP, LIMIT ou STOP-LIMIT à direction indépendante.
+                  AvaBridge {instance?.bridge_version} est détecté. La version recommandée est 1.60. Les versions précédentes conservent leurs stratégies compatibles, mais ne peuvent pas activer les cycles STOP, LIMIT ou STOP-LIMIT non bloquants.
                 </p>
               </div>
             )}
@@ -2117,6 +2199,34 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       {label}
                     </button>
                   ))}
+                </div>
+
+                <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">Accès Windows sécurisé</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-400">
+                    Après une rotation chez Kamatera, saisissez ici le même mot de passe. Il est chiffré côté serveur et n’est jamais affiché dans Ava Web.
+                  </p>
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="password"
+                      value={supportRdpPassword}
+                      onChange={event => setSupportRdpPassword(event.target.value)}
+                      minLength={14}
+                      maxLength={32}
+                      autoComplete="new-password"
+                      placeholder="Nouveau mot de passe Windows"
+                      className="min-w-0 flex-1 rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-sm font-bold text-white outline-none placeholder:text-slate-600"
+                    />
+                    <button
+                      type="button"
+                      disabled={!supportSelected?.instance?.id || !!busy || supportRdpPassword.length < 14}
+                      onClick={syncSupportRdpCredentials}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-3 py-2 text-xs font-black text-white hover:bg-rose-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {busy === 'support_rdp_credentials' ? <Loader2 className="animate-spin" size={14} /> : <ShieldCheck size={14} />}
+                      Chiffrer et synchroniser
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-4 rounded-2xl border border-white/10 bg-black/20 p-3">
@@ -2565,6 +2675,9 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   disabled={!adminLoaded || busy === 'admin_control'}
                   onClick={async () => {
                   const rules = Array.isArray(adminControl?.price_guard_rules) ? adminControl.price_guard_rules : []
+                  const capitalRules = Array.isArray(adminControl?.capital_position_limit_rules)
+                    ? adminControl.capital_position_limit_rules
+                    : []
                   const validationErrors = validatePriceGuardRules(rules)
                   const dualRules = Array.isArray(adminControl?.dual_entry_zone_rules) ? adminControl.dual_entry_zone_rules : []
                   const dualValidationErrors = validateDualEntryZoneRules(dualRules)
@@ -2591,7 +2704,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   const forcedConfirmed = stopCyclePolicy.feature_enabled === false
                     || stopCyclePolicy.mode !== 'forced'
                     || window.confirm(
-                    'Confirmer le mode forcé des cycles conditionnels ? Il restera limité à l’owner, aux comptes MT5 hedging, à AvaBridge 1.58 et à toutes les protections administrateur. Un compte réel exige aussi son autorisation explicite.',
+                    'Confirmer le mode forcé des cycles conditionnels ? Il restera limité à l’owner, aux comptes MT5 hedging, à AvaBridge 1.60 et à toutes les protections administrateur. Un compte réel exige aussi son autorisation explicite.',
                   )
                   if (!forcedConfirmed) {
                     setAdminControlMessage('Mode forcé non confirmé. Aucune configuration n’a été envoyée.')
@@ -2614,6 +2727,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       max_boom_sell_open_positions: toPositionLimit(adminControl?.max_boom_sell_open_positions),
                       max_crash_buy_open_positions: toPositionLimit(adminControl?.max_crash_buy_open_positions),
                       max_crash_sell_open_positions: toPositionLimit(adminControl?.max_crash_sell_open_positions),
+                      capital_position_limit_rules: capitalRules,
                       bypass_min_net_equity_usd: Number(adminControl?.bypass_min_net_equity_usd ?? 1000),
                       bypass_boom_buy_entries: adminControl?.bypass_boom_buy_entries === true,
                       bypass_boom_sell_entries: adminControl?.bypass_boom_sell_entries === true,
@@ -2635,16 +2749,23 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       stop_cycle_force_confirmed: stopCyclePolicy.feature_enabled !== false && stopCyclePolicy.mode === 'forced',
                     })
                     const savedControl = result.control as TradingGlobalControl | null | undefined
+                    const savedCapitalRules = Array.isArray(savedControl?.capital_position_limit_rules)
+                      ? savedControl.capital_position_limit_rules
+                      : null
                     const savedRules = Array.isArray(savedControl?.price_guard_rules) ? savedControl.price_guard_rules : null
                     const savedDualRules = Array.isArray(savedControl?.dual_entry_zone_rules) ? savedControl.dual_entry_zone_rules : null
                     const savedStopPolicy = savedControl?.stop_cycle_policy ?? null
                     const savedStopRules = Array.isArray(savedStopPolicy?.rules) ? savedStopPolicy.rules : null
                     const savedRuleIds = new Set(savedRules?.map(rule => rule.id) ?? [])
+                    const savedCapitalRuleIds = new Set(savedCapitalRules?.map(rule => rule.id) ?? [])
                     const savedDualRuleIds = new Set(savedDualRules?.map(rule => rule.id) ?? [])
                     const savedStopRuleIds = new Set(savedStopRules?.map(rule => rule.id) ?? [])
                     const barriersConfirmed = savedRules !== null
                       && savedRules.length === rules.length
                       && rules.every(rule => savedRuleIds.has(rule.id))
+                    const capitalLimitsConfirmed = savedCapitalRules !== null
+                      && savedCapitalRules.length === capitalRules.length
+                      && capitalRules.every(rule => savedCapitalRuleIds.has(rule.id))
                     const dualZonesConfirmed = savedDualRules !== null
                       && savedDualRules.length === dualRules.length
                       && dualRules.every(rule => savedDualRuleIds.has(rule.id))
@@ -2654,14 +2775,14 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       && savedStopRules !== null
                       && savedStopRules.length === stopRules.length
                       && stopRules.every(rule => savedStopRuleIds.has(rule.id))
-                    if (!savedControl || !barriersConfirmed || !dualZonesConfirmed || !stopCycleConfirmed) {
-                      throw new Error('Le serveur n’a pas confirmé toutes les barrières, zones synchronisées et règles Stop Cycle. La saisie reste affichée.')
+                    if (!savedControl || !capitalLimitsConfirmed || !barriersConfirmed || !dualZonesConfirmed || !stopCycleConfirmed) {
+                      throw new Error('Le serveur n’a pas confirmé tous les plafonds, barrières, zones synchronisées et règles Stop Cycle. La saisie reste affichée.')
                     }
                     setAdminControl(savedControl)
                     setPriceGuardErrors({})
                     setDualEntryZoneErrors({})
                     setStopCycleErrors({})
-                    setAdminControlMessage('Configuration enregistrée. Les barrières, zones synchronisées et règles Stop Cycle seront propagées aux moteurs Ava Desktop actifs.')
+                    setAdminControlMessage('Configuration enregistrée. Les plafonds par capital et les autres protections seront propagés aux moteurs Ava Desktop actifs.')
                   } catch (err) {
                     const message = err instanceof Error ? err.message : 'Controle admin impossible.'
                     setError(message)
@@ -2769,6 +2890,118 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
                 />
               </label>
+            </div>
+            <div className="mt-4 rounded-2xl border border-rose-400/20 bg-rose-400/[0.06] p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-rose-300">Plafonds par capital</p>
+                  <p className="mt-1 flex items-center gap-2 text-sm font-black text-white">
+                    Limiter toutes les positions selon l’equity
+                    <HelpHint text={GLOBAL_CONTROL_HELP.capitalLimits} />
+                  </p>
+                  <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
+                    Ava bloque uniquement les nouvelles entrées quand un plafond est atteint. Aucune position déjà ouverte n’est fermée.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addCapitalPositionLimitRule}
+                  disabled={(adminControl?.capital_position_limit_rules?.length ?? 0) >= 20}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-rose-300/25 bg-rose-300/10 px-3 py-2 text-xs font-black text-rose-100 hover:bg-rose-300/15 disabled:opacity-40"
+                >
+                  <Plus size={14} />
+                  Ajouter un palier
+                </button>
+              </div>
+              <div className="mt-4 grid gap-3">
+                {(adminControl?.capital_position_limit_rules ?? []).map((rule, index) => (
+                  <div
+                    key={rule.id}
+                    className="rounded-2xl border border-white/10 bg-slate-950/55 p-3"
+                  >
+                    <div className="flex flex-col gap-3 xl:flex-row xl:items-end">
+                      <label className="flex min-h-[44px] items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm font-bold text-slate-100 xl:w-40">
+                        <input
+                          type="checkbox"
+                          checked={rule.enabled !== false}
+                          onChange={event => updateCapitalPositionLimitRule(rule.id, { enabled: event.target.checked })}
+                          className="h-4 w-4 accent-rose-300"
+                        />
+                        Palier {index + 1}
+                      </label>
+                      <label className="block flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                        <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                          Capital inférieur à
+                          <HelpHint text={GLOBAL_CONTROL_HELP.capitalThreshold} />
+                        </span>
+                        <div className="mt-1 flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="1"
+                            max="100000000"
+                            step="100"
+                            value={Number(rule.max_equity_usd ?? 1000)}
+                            onChange={event => updateCapitalPositionLimitRule(rule.id, {
+                              max_equity_usd: Math.max(1, toNumber(event.target.value, 1000)),
+                            })}
+                            className="w-full bg-transparent text-sm font-black text-white outline-none"
+                          />
+                          <span className="text-xs font-black text-slate-500">USD</span>
+                        </div>
+                      </label>
+                      <label className="block flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                        <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                          Max positions totales
+                          <HelpHint text={GLOBAL_CONTROL_HELP.maxTotalPositions} />
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="1000"
+                          step="1"
+                          value={Number(rule.max_total_open_positions ?? 0)}
+                          onChange={event => updateCapitalPositionLimitRule(rule.id, {
+                            max_total_open_positions: toPositionLimit(event.target.value),
+                          })}
+                          className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                        />
+                        <span className="text-[10px] text-slate-500">0 = aucun plafond total</span>
+                      </label>
+                      <label className="block flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                        <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                          Max Stop Cycle
+                          <HelpHint text={GLOBAL_CONTROL_HELP.maxStopCyclePositions} />
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="1000"
+                          step="1"
+                          value={Number(rule.max_stop_cycle_open_positions ?? 0)}
+                          onChange={event => updateCapitalPositionLimitRule(rule.id, {
+                            max_stop_cycle_open_positions: toPositionLimit(event.target.value),
+                          })}
+                          className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                        />
+                        <span className="text-[10px] text-slate-500">0 = aucun plafond cycle</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => removeCapitalPositionLimitRule(rule.id)}
+                        aria-label={`Supprimer le palier ${index + 1}`}
+                        className="inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-rose-300/20 bg-rose-300/[0.07] text-rose-200 hover:bg-rose-300/15"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {(adminControl?.capital_position_limit_rules?.length ?? 0) === 0 ? (
+                  <div className="rounded-xl border border-dashed border-white/10 px-4 py-5 text-center text-xs text-slate-500">
+                    Aucun plafond par capital. Ajoute un palier, par exemple moins de 1 000 USD : 14 positions totales.
+                  </div>
+                ) : null}
+              </div>
             </div>
             <div className="mt-4 grid gap-3 lg:grid-cols-2">
               <div className="rounded-2xl border border-emerald-400/15 bg-emerald-400/[0.05] p-4">
