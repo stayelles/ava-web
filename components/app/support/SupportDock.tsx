@@ -12,6 +12,7 @@ import type { UserData } from '../types'
 import { avaSupportRequest } from '../services/avaAi'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../constants'
 import { playSupportMessageSound, TypingDots } from './supportFeedback'
+import { SupportMessage } from './SupportMessage'
 
 type PendingFile = {
   id: string
@@ -58,6 +59,7 @@ export function SupportDock({ user }: { user: UserData }) {
   const [ratingComment, setRatingComment] = useState('')
   const [ratingDone, setRatingDone] = useState(false)
   const [peerTyping, setPeerTyping] = useState(false)
+  const [aiReplying, setAiReplying] = useState(false)
   const endRef = useRef<HTMLDivElement | null>(null)
   const fileRef = useRef<HTMLInputElement | null>(null)
   const peerTypingRef = useRef(false)
@@ -91,7 +93,10 @@ export function SupportDock({ user }: { user: UserData }) {
   }, [user])
 
   useEffect(() => {
-    const directOpen = new URLSearchParams(window.location.search).get('support') === '1'
+    const params = new URLSearchParams(window.location.search)
+    const directOpen = params.get('support') === '1'
+    const directConversation = params.get('support_conversation')
+    if (directConversation) setActiveId(directConversation)
     setOpen(directOpen || localStorage.getItem('ava_support_dock_open') === '1')
     void refresh()
     const openSupport = (event: Event) => {
@@ -176,6 +181,15 @@ export function SupportDock({ user }: { user: UserData }) {
   }, [active?.id, active?.ava_support_messages])
 
   useEffect(() => {
+    if (!open || !active?.id) return
+    void avaSupportRequest(user, {
+      action: 'mark-read',
+      conversation_id: active.id,
+      as_agent: false,
+    }).catch(() => null)
+  }, [active?.id, active?.ava_support_messages?.length, open, user])
+
+  useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [active?.ava_support_messages?.length, open])
 
@@ -219,9 +233,9 @@ export function SupportDock({ user }: { user: UserData }) {
     if (fileRef.current) fileRef.current.value = ''
   }
 
-  async function uploadFiles(conversationId: string) {
+  async function uploadFiles(conversationId: string, pendingFiles = files) {
     const uploaded = []
-    for (const item of files) {
+    for (const item of pendingFiles) {
       const intent = await avaSupportRequest(user, {
         action: 'attachment-intent',
         conversation_id: conversationId,
@@ -273,17 +287,26 @@ export function SupportDock({ user }: { user: UserData }) {
       })
       const conversationId = created.conversation.id
       const attachments = await uploadFiles(conversationId)
-      await avaSupportRequest(user, {
+      const sent = await avaSupportRequest(user, {
         action: 'message',
         conversation_id: conversationId,
         message: message.trim() || 'Je souhaite obtenir de l’aide avec ces fichiers.',
         attachments,
         as_customer: true,
       })
-      await avaSupportRequest(user, { action: 'ai-reply', conversation_id: conversationId }, 60_000)
       files.forEach(item => item.preview && URL.revokeObjectURL(item.preview))
       setMessage(''); setFiles([]); setActiveId(conversationId); setHistoryOpen(false)
-      await refresh()
+      setConversations(current => [{
+        ...created.conversation,
+        updated_at: sent.message.created_at,
+        ava_support_messages: [sent.message],
+        ava_support_ratings: [],
+      }, ...current.filter(item => item.id !== conversationId)])
+      setAiReplying(true)
+      void avaSupportRequest(user, { action: 'ai-reply', conversation_id: conversationId }, 60_000)
+        .then(refresh)
+        .catch(() => setError('Ava n’a pas pu répondre immédiatement. Votre message reste bien enregistré.'))
+        .finally(() => setAiReplying(false))
     } catch (exception) {
       setError(exception instanceof Error && exception.message === 'FIRST_NAME_REQUIRED'
         ? 'Ajoutez votre prénom pour personnaliser la conversation.'
@@ -293,23 +316,67 @@ export function SupportDock({ user }: { user: UserData }) {
 
   async function sendMessage() {
     if (!active || active.status === 'closed' || (!message.trim() && !files.length) || loading) return
+    const content = message.trim() || 'Voici les fichiers demandés.'
+    const optimisticId = `pending-${crypto.randomUUID()}`
+    const optimisticAttachments = files.map(item => ({
+      upload_id: item.id,
+      file_name: item.file.name,
+      mime_type: item.file.type,
+      size_bytes: item.file.size,
+      category: item.category,
+      preview_url: item.preview,
+    }))
+    const optimisticMessage = {
+      id: optimisticId,
+      sender_type: 'user',
+      sender_user_id: user.id,
+      content,
+      attachments: optimisticAttachments,
+      created_at: new Date().toISOString(),
+      pending: true,
+    }
+    const queuedFiles = files
+    setConversations(current => current.map(item => item.id === active.id
+      ? { ...item, ava_support_messages: [...(item.ava_support_messages ?? []), optimisticMessage] }
+      : item))
+    setMessage(''); setFiles([])
     setLoading(true); setError('')
     try {
-      const attachments = await uploadFiles(active.id)
-      await avaSupportRequest(user, {
+      const attachments = await uploadFiles(active.id, queuedFiles)
+      const sent = await avaSupportRequest(user, {
         action: 'message',
         conversation_id: active.id,
-        message: message.trim() || 'Voici les fichiers demandés.',
+        message: content,
         attachments,
         as_customer: true,
       })
+      setConversations(current => current.map(item => item.id === active.id
+        ? {
+            ...item,
+            updated_at: sent.message.created_at,
+            ava_support_messages: (item.ava_support_messages ?? []).map((entry: any) =>
+              entry.id === optimisticId
+                ? { ...sent.message, attachments: optimisticAttachments, pending: false }
+                : entry),
+          }
+        : item))
       if (active.status === 'ai') {
-        await avaSupportRequest(user, { action: 'ai-reply', conversation_id: active.id }, 60_000)
+        setAiReplying(true)
+        void avaSupportRequest(user, { action: 'ai-reply', conversation_id: active.id }, 60_000)
+          .then(refresh)
+          .catch(() => setError('Ava n’a pas pu répondre immédiatement. Votre message reste bien enregistré.'))
+          .finally(() => setAiReplying(false))
       }
-      files.forEach(item => item.preview && URL.revokeObjectURL(item.preview))
-      setMessage(''); setFiles([])
-      await refresh()
+      window.setTimeout(() => {
+        queuedFiles.forEach(item => item.preview && URL.revokeObjectURL(item.preview))
+        void refresh()
+      }, 1_500)
     } catch (exception) {
+      setConversations(current => current.map(item => item.id === active.id
+        ? { ...item, ava_support_messages: (item.ava_support_messages ?? []).filter((entry: any) => entry.id !== optimisticId) }
+        : item))
+      setMessage(content)
+      setFiles(queuedFiles)
       setError(exception instanceof Error && exception.message === 'CONVERSATION_CLOSED'
         ? 'Cette conversation est terminée. Ouvrez une nouvelle demande.'
         : 'Le message n’a pas pu être envoyé.')
@@ -492,21 +559,18 @@ export function SupportDock({ user }: { user: UserData }) {
                 )}
                 <div className="flex-1 space-y-3">
                   {(active.ava_support_messages ?? [])
+                    .slice()
                     .sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)))
                     .map((item: any) => (
-                      <div key={item.id} className={`max-w-[86%] rounded-2xl px-4 py-3 text-sm ${item.sender_type === 'user' ? 'ml-auto bg-rose-500 text-white' : 'mr-auto border border-white/10 bg-white/[0.05] text-slate-200'}`}>
-                        {item.sender_type === 'ai' && (
-                          <div className="mb-2 flex items-center gap-2">
-                            <img src="/logo.png" alt="" className="h-6 w-6 rounded-lg object-cover" />
-                            <p className="text-[9px] font-black uppercase tracking-widest text-rose-300">Ava · assistance IA</p>
-                          </div>
-                        )}
-                        {item.sender_type === 'agent' && <p className="mb-1 text-[9px] font-black uppercase tracking-widest text-rose-300">{active.agent_profile?.first_name || 'Conseiller Ava'}</p>}
-                        {(item.attachments ?? []).map((attachment: any, index: number) =>
-                          <AttachmentPreview key={attachment.upload_id ?? index} attachment={attachment} />)}
-                        <p className="whitespace-pre-wrap">{item.content}</p>
-                      </div>
+                      <SupportMessage
+                        key={item.id}
+                        message={item}
+                        perspective="customer"
+                        customerName={active.customer_first_name || firstName || 'Vous'}
+                        agentName={active.agent_profile?.first_name || 'Conseiller Ava'}
+                      />
                     ))}
+                  {aiReplying && active.status === 'ai' && <TypingDots label="Ava prépare sa réponse…" />}
                   {peerTyping && <TypingDots label={`${active.agent_profile?.first_name || 'Votre conseiller'} écrit…`} />}
                   <div ref={endRef} />
                 </div>
@@ -624,15 +688,4 @@ function Composer({
       </div>
     </div>
   )
-}
-
-function AttachmentPreview({ attachment }: { attachment: any }) {
-  if (!attachment.preview_url) return null
-  if (String(attachment.mime_type).startsWith('image/')) {
-    return <img src={attachment.preview_url} alt={attachment.file_name || 'Image envoyée'} className="mb-2 max-h-52 rounded-xl object-contain" />
-  }
-  if (String(attachment.mime_type).startsWith('video/')) {
-    return <video src={attachment.preview_url} controls preload="metadata" className="mb-2 max-h-56 w-full rounded-xl bg-black" />
-  }
-  return <a href={attachment.preview_url} target="_blank" rel="noreferrer" className="mb-2 flex items-center gap-2 rounded-xl border border-white/10 bg-slate-950/40 p-3 text-xs font-bold text-rose-100"><FileText size={18} /> <span className="truncate">{attachment.file_name || 'Document joint'}</span></a>
 }

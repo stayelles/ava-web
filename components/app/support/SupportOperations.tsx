@@ -3,14 +3,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @next/next/no-img-element */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import * as tus from 'tus-js-client'
 import {
   Activity, CheckCircle2, Clock3, Copy, ExternalLink, FileText, Headphones,
-  ImagePlus, Loader2, MessageCircleQuestion, Mic, MicOff, RefreshCw, Send,
-  ShieldCheck, Star, Trash2, UserPlus, UserRoundCheck, UsersRound, X,
+  Eye, ImagePlus, Loader2, MessageCircleQuestion, Mic, MicOff, RefreshCw, Send,
+  ShieldCheck, Star, Trash2, UserPlus, UserRoundCheck, UsersRound, Video, X,
+  Paperclip,
 } from 'lucide-react'
 import type { UserData } from '../types'
 import { avaSupportRequest } from '../services/avaAi'
 import { playSupportMessageSound, TypingDots } from './supportFeedback'
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../constants'
+import { SupportMessage } from './SupportMessage'
+
+type PendingFile = {
+  id: string
+  file: File
+  category: 'image' | 'video' | 'document'
+  preview?: string
+  progress: number
+}
+
+const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
+const VIDEO_TYPES = new Set(['video/mp4', 'video/webm', 'video/quicktime'])
+const DOCUMENT_TYPES = new Set([
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'text/plain',
+])
+const DIRECT_STORAGE_URL = SUPABASE_URL.replace('.supabase.co', '.storage.supabase.co')
 
 function formatDuration(seconds: number | null | undefined) {
   if (!Number.isFinite(seconds)) return '—'
@@ -31,23 +52,6 @@ function AgentAvatar({ profile, size = 'h-10 w-10' }: { profile?: any; size?: st
     return <img src={profile.avatar_url} alt={`Photo de ${profile.first_name}`} className={`${size} rounded-2xl object-cover border border-white/10`} />
   }
   return <div className={`${size} rounded-2xl bg-rose-500/15 border border-rose-400/25 grid place-items-center text-rose-200 font-black`}>{String(profile?.first_name ?? 'A').slice(0, 1).toUpperCase()}</div>
-}
-
-function SupportAttachment({ attachment }: { attachment: any }) {
-  if (!attachment?.preview_url) return null
-  const mimeType = String(attachment.mime_type ?? '')
-  if (mimeType.startsWith('image/')) {
-    return <img src={attachment.preview_url} alt={attachment.file_name || 'Image envoyée'} className="mt-2 max-h-52 rounded-xl object-contain" />
-  }
-  if (mimeType.startsWith('video/')) {
-    return <video src={attachment.preview_url} controls preload="metadata" className="mt-2 max-h-56 w-full rounded-xl bg-black" />
-  }
-  return (
-    <a href={attachment.preview_url} target="_blank" rel="noreferrer" className="mt-2 flex items-center gap-2 rounded-xl border border-white/10 bg-slate-950/30 p-3 text-[11px] font-bold text-rose-100">
-      <FileText size={17} />
-      <span className="truncate">{attachment.file_name || 'Document joint'}</span>
-    </a>
-  )
 }
 
 function AgentOnboarding({ user, agent, onDone }: { user: UserData; agent: any; onDone: (agent: any) => void }) {
@@ -129,14 +133,19 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
   const [performance, setPerformance] = useState<any>(null)
   const [peerTyping, setPeerTyping] = useState(false)
   const [busy, setBusy] = useState(false)
+  const [rewriting, setRewriting] = useState(false)
+  const [sending, setSending] = useState(false)
   const [notice, setNotice] = useState('')
   const [recording, setRecording] = useState(false)
+  const [files, setFiles] = useState<PendingFile[]>([])
+  const fileRef = useRef<HTMLInputElement | null>(null)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const chunksRef = useRef<Blob[]>([])
   const peerTypingRef = useRef(false)
   const lastIncomingRef = useRef('')
   const incomingConversationRef = useRef('')
+  const knownQueueIdsRef = useRef<Set<string> | null>(null)
 
   const active = useMemo(() => conversations.find(item => item.id === activeId) ?? null, [activeId, conversations])
   const assigned = useMemo(() => conversations.filter(item => item.status === 'assigned'), [conversations])
@@ -241,10 +250,32 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
   }, [active?.id, active?.ava_support_messages])
 
   useEffect(() => {
+    const nextIds = new Set<string>(queue.map((item: any) => String(item.id)))
+    const knownIds = knownQueueIdsRef.current
+    if (online && knownIds && [...nextIds].some(id => !knownIds.has(id))) {
+      playSupportMessageSound()
+    }
+    knownQueueIdsRef.current = nextIds
+  }, [online, queue])
+
+  useEffect(() => {
     setCustomerContext(null)
     setProfessionalDraft(null)
     setDraft('')
+    setFiles(current => {
+      current.forEach(item => item.preview && URL.revokeObjectURL(item.preview))
+      return []
+    })
   }, [activeId])
+
+  useEffect(() => {
+    if (!online || !active?.id) return
+    void avaSupportRequest(user, {
+      action: 'mark-read',
+      conversation_id: active.id,
+      as_agent: true,
+    }).catch(() => null)
+  }, [active?.id, active?.ava_support_messages?.length, online, user])
 
   async function toggleOnline() {
     const next = !online
@@ -287,9 +318,93 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
     } finally { setBusy(false) }
   }
 
+  async function pickFiles(selectedFiles: FileList | null) {
+    const selected = Array.from(selectedFiles ?? [])
+    const currentImages = files.filter(item => item.category === 'image').length
+    const currentVideos = files.filter(item => item.category === 'video').length
+    const currentDocuments = files.filter(item => item.category === 'document').length
+    let addedImages = 0
+    let addedVideos = 0
+    let addedDocuments = 0
+    const rejected: string[] = []
+    const next = selected.flatMap(file => {
+      let category: PendingFile['category'] | null = null
+      if (IMAGE_TYPES.has(file.type)) category = 'image'
+      if (VIDEO_TYPES.has(file.type)) category = 'video'
+      if (DOCUMENT_TYPES.has(file.type)) category = 'document'
+      if (!category) { rejected.push(`${file.name} : format refusé`); return [] }
+      if (category === 'image' && (file.size > 15 * 1024 * 1024 || currentImages + addedImages >= 10)) {
+        rejected.push(`${file.name} : maximum 10 images de 15 Mo`); return []
+      }
+      if (category === 'video' && (file.size > 300 * 1024 * 1024 || currentVideos + addedVideos >= 1)) {
+        rejected.push(`${file.name} : une seule vidéo de 300 Mo maximum`); return []
+      }
+      if (category === 'document' && (file.size > 25 * 1024 * 1024 || currentDocuments + addedDocuments >= 5)) {
+        rejected.push(`${file.name} : maximum 5 documents de 25 Mo`); return []
+      }
+      if (category === 'image') addedImages += 1
+      if (category === 'video') addedVideos += 1
+      if (category === 'document') addedDocuments += 1
+      return [{
+        id: crypto.randomUUID(),
+        file,
+        category,
+        preview: category === 'image' ? URL.createObjectURL(file) : undefined,
+        progress: 0,
+      }]
+    })
+    setFiles(current => [...current, ...next])
+    setNotice(rejected.join(' · '))
+    if (fileRef.current) fileRef.current.value = ''
+  }
+
+  async function uploadFiles(conversationId: string, pendingFiles: PendingFile[]) {
+    const uploaded = []
+    for (const item of pendingFiles) {
+      const intent = await avaSupportRequest(user, {
+        action: 'attachment-intent',
+        conversation_id: conversationId,
+        file_name: item.file.name,
+        mime_type: item.file.type,
+        size_bytes: item.file.size,
+      })
+      await new Promise<void>((resolve, reject) => {
+        const upload = new tus.Upload(item.file, {
+          endpoint: `${DIRECT_STORAGE_URL}/storage/v1/upload/resumable`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            'x-signature': intent.upload.token,
+          },
+          uploadDataDuringCreation: true,
+          removeFingerprintOnSuccess: true,
+          metadata: {
+            bucketName: 'ava-support-attachments',
+            objectName: intent.upload.path,
+            contentType: item.file.type,
+            cacheControl: '3600',
+          },
+          chunkSize: 6 * 1024 * 1024,
+          onProgress: (bytesUploaded, bytesTotal) => setFiles(current => current.map(entry =>
+            entry.id === item.id ? { ...entry, progress: Math.round(bytesUploaded / bytesTotal * 100) } : entry)),
+          onError: reject,
+          onSuccess: () => resolve(),
+        })
+        upload.start()
+      })
+      const finalized = await avaSupportRequest(user, {
+        action: 'attachment-finalize',
+        upload_id: intent.upload.id,
+      }, 60_000)
+      uploaded.push(finalized.attachment)
+    }
+    return uploaded
+  }
+
   async function rewrite(source: 'text' | 'voice' = 'text', text = draft) {
     if (!active || !text.trim()) return
-    setBusy(true); setNotice('')
+    setRewriting(true); setNotice('')
     try {
       const result = await avaSupportRequest(user, {
         action: 'rewrite', conversation_id: active.id, message: text.trim(), source,
@@ -298,25 +413,69 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
       setProfessionalDraft(result.draft)
     } catch (exception) {
       setNotice(exception instanceof Error ? exception.message : 'Reformulation indisponible.')
-    } finally { setBusy(false) }
+    } finally { setRewriting(false) }
   }
 
   async function sendApproved() {
     if (!active || !professionalDraft?.rewritten_text) return
-    setBusy(true); setNotice('')
+    const content = professionalDraft.rewritten_text
+    const optimisticId = `pending-${crypto.randomUUID()}`
+    const pendingFiles = files
+    const optimisticAttachments = pendingFiles.map(item => ({
+      upload_id: item.id,
+      file_name: item.file.name,
+      mime_type: item.file.type,
+      size_bytes: item.file.size,
+      category: item.category,
+      preview_url: item.preview,
+    }))
+    const optimisticMessage = {
+      id: optimisticId,
+      sender_type: 'agent',
+      sender_user_id: user.id,
+      content,
+      attachments: optimisticAttachments,
+      created_at: new Date().toISOString(),
+      pending: true,
+    }
+    setConversations(current => current.map(item => item.id === active.id
+      ? { ...item, ava_support_messages: [...(item.ava_support_messages ?? []), optimisticMessage] }
+      : item))
+    setDraft(''); setProfessionalDraft(null); setFiles([])
+    setSending(true); setNotice('')
     try {
-      await avaSupportRequest(user, {
+      const attachments = await uploadFiles(active.id, pendingFiles)
+      const result = await avaSupportRequest(user, {
         action: 'message',
         conversation_id: active.id,
-        message: professionalDraft.rewritten_text,
+        message: content,
         draft_id: professionalDraft.id,
         as_agent: true,
+        attachments,
       })
-      setDraft(''); setProfessionalDraft(null)
-      await refresh()
+      setConversations(current => current.map(item => item.id === active.id
+        ? {
+            ...item,
+            updated_at: result.message.created_at,
+            ava_support_messages: (item.ava_support_messages ?? []).map((entry: any) =>
+              entry.id === optimisticId
+                ? { ...result.message, attachments: optimisticAttachments, pending: false }
+                : entry),
+          }
+        : item))
+      window.setTimeout(() => {
+        pendingFiles.forEach(item => item.preview && URL.revokeObjectURL(item.preview))
+        void refresh()
+      }, 1_500)
     } catch (exception) {
+      setConversations(current => current.map(item => item.id === active.id
+        ? { ...item, ava_support_messages: (item.ava_support_messages ?? []).filter((entry: any) => entry.id !== optimisticId) }
+        : item))
+      setDraft(content)
+      setProfessionalDraft({ ...professionalDraft, rewritten_text: content })
+      setFiles(pendingFiles)
       setNotice(exception instanceof Error ? exception.message : 'Envoi impossible.')
-    } finally { setBusy(false) }
+    } finally { setSending(false) }
   }
 
   async function startRecording() {
@@ -460,25 +619,61 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
               && <div className="m-3 rounded-2xl border border-emerald-400/20 bg-emerald-500/[0.06] p-3 text-xs text-emerald-100">Le client a répondu à votre question de fin. Vérifiez sa réponse, poursuivez si nécessaire, sinon fermez le ticket pour déclencher la notation.</div>}
             <div className="flex-1 space-y-2 overflow-auto p-4 max-h-[360px]">
               {(active.ava_support_messages ?? []).slice().sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at))).map((message: any) => (
-                <div key={message.id} className={`max-w-[88%] rounded-2xl p-3 text-xs leading-relaxed ${message.sender_type === 'agent' ? 'ml-auto bg-rose-500 text-white' : 'mr-auto border border-white/10 bg-white/[0.04] text-slate-200'}`}>
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                  {(message.attachments ?? []).map((attachment: any, index: number) => <SupportAttachment key={attachment.upload_id ?? index} attachment={attachment} />)}
-                </div>
+                <SupportMessage
+                  key={message.id}
+                  message={message}
+                  perspective="agent"
+                  customerName={active.customer_first_name || 'Client Ava'}
+                  agentName={agent.first_name || 'Conseiller Ava'}
+                />
               ))}
               {peerTyping && <TypingDots label={`${active.customer_first_name || 'Le client'} écrit…`} />}
             </div>
             <div className="border-t border-white/10 p-3">
+              {files.length > 0 && <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+                {files.map(item => <div key={item.id} className="relative min-w-[150px] max-w-[190px] rounded-xl border border-white/10 bg-white/[0.035] p-2">
+                  <button
+                    type="button"
+                    onClick={() => setFiles(current => {
+                      const removed = current.find(entry => entry.id === item.id)
+                      if (removed?.preview) URL.revokeObjectURL(removed.preview)
+                      return current.filter(entry => entry.id !== item.id)
+                    })}
+                    className="absolute right-1 top-1 z-10 grid h-6 w-6 place-items-center rounded-full bg-slate-950/85 text-slate-300"
+                    aria-label={`Retirer ${item.file.name}`}
+                  ><X size={12} /></button>
+                  {item.preview
+                    ? <img src={item.preview} alt="" className="h-16 w-full rounded-lg object-cover" />
+                    : <div className="grid h-16 place-items-center rounded-lg bg-slate-950 text-slate-500">{item.category === 'video' ? <Video size={20} /> : <FileText size={20} />}</div>}
+                  <p className="mt-1 truncate text-[10px] text-slate-300">{item.file.name}</p>
+                  {item.progress > 0 && <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/10"><div className="h-full bg-rose-400" style={{ width: `${item.progress}%` }} /></div>}
+                </div>)}
+              </div>}
               {professionalDraft ? <div className="rounded-2xl border border-rose-400/25 bg-rose-500/[0.06] p-3">
                 <div className="flex items-center justify-between"><p className="text-[10px] uppercase tracking-[.16em] font-black text-rose-300">Version professionnelle prête</p><button onClick={() => setProfessionalDraft(null)} className="text-slate-500"><X size={14} /></button></div>
                 <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-white">{professionalDraft.rewritten_text}</p>
-                <div className="mt-3 flex flex-wrap gap-2"><button onClick={sendApproved} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-3 py-2 text-xs font-black text-white"><Send size={14} /> Valider et envoyer</button><button onClick={() => void rewrite(professionalDraft.source ?? 'text')} disabled={busy} className="rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-300">Reformuler à nouveau</button></div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button onClick={sendApproved} disabled={sending} className="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-3 py-2 text-xs font-black text-white disabled:opacity-45">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Valider et envoyer</button>
+                  <button onClick={() => void rewrite(professionalDraft.source ?? 'text')} disabled={rewriting || sending} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 disabled:opacity-45">{rewriting && <Loader2 size={13} className="animate-spin" />} Reformuler à nouveau</button>
+                  <button type="button" onClick={() => fileRef.current?.click()} disabled={sending} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 disabled:opacity-45"><Paperclip size={14} /> Joindre</button>
+                </div>
               </div> : <div className="flex gap-2">
                 <textarea value={draft} onChange={event => setDraft(event.target.value)} rows={3} placeholder="Écrivez votre brouillon. Ava le reformulera avant tout envoi…" className="min-w-0 flex-1 resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white outline-none focus:border-rose-400/40" />
                 <div className="flex flex-col gap-2">
-                  <button onClick={recording ? stopRecording : startRecording} disabled={busy} title={recording ? 'Arrêter la dictée' : 'Dicter la réponse'} className={`grid h-10 w-10 place-items-center rounded-xl border ${recording ? 'border-rose-400 bg-rose-500 text-white' : 'border-white/10 text-slate-300'}`}>{recording ? <MicOff size={16} /> : <Mic size={16} />}</button>
-                  <button onClick={() => void rewrite('text')} disabled={busy || !draft.trim()} title="Reformuler professionnellement" className="grid h-10 w-10 place-items-center rounded-xl bg-rose-500 text-white disabled:opacity-40">{busy ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}</button>
+                  <button type="button" onClick={() => fileRef.current?.click()} disabled={sending} title="Joindre des images, vidéos ou documents" className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-slate-300 disabled:opacity-40"><Paperclip size={16} /></button>
+                  <button onClick={recording ? stopRecording : startRecording} disabled={busy || rewriting || sending} title={recording ? 'Arrêter la dictée' : 'Dicter la réponse'} className={`grid h-10 w-10 place-items-center rounded-xl border ${recording ? 'border-rose-400 bg-rose-500 text-white' : 'border-white/10 text-slate-300'} disabled:opacity-40`}>{recording ? <MicOff size={16} /> : <Mic size={16} />}</button>
+                  <button onClick={() => void rewrite('text')} disabled={rewriting || sending || !draft.trim()} title="Reformuler professionnellement" className="grid h-10 w-10 place-items-center rounded-xl bg-rose-500 text-white disabled:opacity-40">{rewriting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}</button>
                 </div>
               </div>}
+              <input
+                ref={fileRef}
+                type="file"
+                multiple
+                accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,video/quicktime,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                className="hidden"
+                onChange={event => void pickFiles(event.target.files)}
+              />
+              <p className="mt-2 text-[10px] text-slate-600">10 images · 1 vidéo (300 Mo) · 5 documents. Les liens, dont Google Meet, deviennent cliquables.</p>
             </div>
           </>}
         </div>
@@ -512,6 +707,7 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
 
 export function SupportAdminPanel({ user }: { user: UserData }) {
   const [data, setData] = useState<any>({ agents: [], conversations: [], ratings: [], invites: [] })
+  const [reviewConversation, setReviewConversation] = useState<any>(null)
   const [email, setEmail] = useState('')
   const [role, setRole] = useState<'agent' | 'admin'>('agent')
   const [localSupportLink, setLocalSupportLink] = useState('/app?support=1')
@@ -524,7 +720,30 @@ export function SupportAdminPanel({ user }: { user: UserData }) {
   }, [user])
 
   useEffect(() => { void refresh().catch(() => setNotice('Administration support indisponible.')) }, [refresh])
-  useEffect(() => { setLocalSupportLink(`${window.location.origin}/app?support=1`) }, [])
+  useEffect(() => {
+    setLocalSupportLink(`${window.location.origin}/app?support=1`)
+    const conversationId = new URLSearchParams(window.location.search).get('support_review')
+    if (conversationId) {
+      void openConversation(conversationId)
+    }
+  // Le lien d’audit doit être résolu une seule fois à l’ouverture de la page.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function openConversation(conversationOrId: any) {
+    const conversationId = typeof conversationOrId === 'string' ? conversationOrId : conversationOrId?.id
+    if (!conversationId) return
+    setBusy(true); setNotice('')
+    try {
+      const result = await avaSupportRequest(user, {
+        action: 'admin-conversation',
+        conversation_id: conversationId,
+      })
+      setReviewConversation(result.conversation)
+    } catch (exception) {
+      setNotice(exception instanceof Error ? exception.message : 'Conversation impossible à consulter.')
+    } finally { setBusy(false) }
+  }
 
   async function copyLink(link: string) {
     try {
@@ -580,7 +799,7 @@ export function SupportAdminPanel({ user }: { user: UserData }) {
     : null
 
   return (
-    <section className="mx-auto max-w-6xl rounded-3xl border border-rose-400/20 bg-slate-950/90 p-4 sm:p-5">
+    <section id="ava-support-admin" className="mx-auto max-w-6xl rounded-3xl border border-rose-400/20 bg-slate-950/90 p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><h2 className="font-black text-white">Équipe Ava Support</h2><p className="mt-1 text-xs text-slate-500">Invitations, disponibilité, rapidité et satisfaction client.</p></div>
         <button onClick={() => void refresh()} disabled={busy} className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-slate-300"><RefreshCw size={16} className={busy ? 'animate-spin' : ''} /></button>
@@ -666,12 +885,38 @@ export function SupportAdminPanel({ user }: { user: UserData }) {
               <p className="truncate text-xs font-bold text-white">{conversation.customer_first_name || 'Client Ava'} · {conversation.subject || 'Assistance Ava'}</p>
               <p className="mt-1 text-[10px] text-slate-600">{conversation.status} · {new Date(conversation.created_at).toLocaleString('fr-FR')}</p>
             </div>
+            <button type="button" onClick={() => void openConversation(conversation)} disabled={busy} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 text-slate-300 hover:bg-white/[0.05] hover:text-white disabled:opacity-40" aria-label="Consulter cette conversation"><Eye size={15} /></button>
             <button type="button" onClick={() => void deleteConversation(conversation)} disabled={busy} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-rose-400/15 text-rose-300 hover:bg-rose-500/10 disabled:opacity-40" aria-label="Supprimer cette conversation"><Trash2 size={15} /></button>
           </div>)}
           {!data.conversations.length && <p className="py-8 text-center text-xs text-slate-500">Aucune conversation.</p>}
         </div>
       </div>
       {data.invites.some((item: any) => item.status === 'pending') && <div className="mt-5 rounded-2xl border border-white/10 p-4"><p className="text-xs font-bold text-white">Invitations en attente</p><div className="mt-2 space-y-2">{data.invites.filter((item: any) => item.status === 'pending').map((item: any) => <div key={item.id} className="flex items-center justify-between gap-3 text-[11px]"><span className="truncate text-slate-300">{item.email} · {item.role}</span><span className="text-slate-600">expire {new Date(item.expires_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span></div>)}</div></div>}
+      {reviewConversation && <div className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-950/75 p-0 backdrop-blur-sm sm:items-center sm:p-5" role="dialog" aria-modal="true" aria-label="Audit de la conversation">
+        <div className="flex h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-3xl border border-white/10 bg-slate-950 shadow-2xl sm:h-[82vh] sm:rounded-3xl">
+          <div className="flex items-start justify-between gap-3 border-b border-white/10 p-4">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[.18em] text-rose-300">Audit administrateur</p>
+              <h3 className="mt-1 text-sm font-black text-white">{reviewConversation.customer_first_name || 'Client Ava'} · {reviewConversation.subject || 'Assistance Ava'}</h3>
+              <p className="mt-1 text-[10px] text-slate-500">{reviewConversation.status} · ouverte le {new Date(reviewConversation.created_at).toLocaleString('fr-FR')}</p>
+            </div>
+            <button type="button" onClick={() => setReviewConversation(null)} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 text-slate-300" aria-label="Fermer l’audit"><X size={16} /></button>
+          </div>
+          <div className="flex-1 space-y-2 overflow-y-auto p-4">
+            {(reviewConversation.ava_support_messages ?? []).slice().sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at))).map((message: any) => {
+              const assignedAgent = data.agents.find((item: any) => item.id === reviewConversation.assigned_agent_id)
+              return <SupportMessage
+                key={message.id}
+                message={message}
+                perspective="admin"
+                customerName={reviewConversation.customer_first_name || 'Client Ava'}
+                agentName={assignedAgent?.first_name || 'Conseiller Ava'}
+              />
+            })}
+          </div>
+          <div className="border-t border-white/10 bg-white/[0.02] px-4 py-3 text-[10px] leading-relaxed text-slate-500">Consultation en lecture seule et journalisée. Les pièces jointes restent privées et leurs liens expirent automatiquement.</div>
+        </div>
+      </div>}
     </section>
   )
 }
