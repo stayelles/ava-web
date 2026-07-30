@@ -519,11 +519,11 @@ const GLOBAL_CONTROL_HELP = {
   instantTtl:
     'Durée de validité du signal : une ou deux minutes.\nAva attend la réception par Desktop puis la confirmation de la position par MT5. Si une protection bloque l’entrée, le motif exact est affiché au lieu d’annoncer seulement que le signal a été envoyé.',
   stopCycleFeature:
-    'Interrupteur général, actif par défaut.\nDésactivé, Ava Desktop masque entièrement Ava Stop Cycle et refuse toute nouvelle action STOP, LIMIT ou STOP-LIMIT, y compris par la conversation. Les positions déjà déclenchées ne sont jamais fermées automatiquement; seuls les ordres encore en attente sont annulés.',
+    'Interrupteur général, désactivé par défaut pour les comptes non-owner.\nDésactivé, Ava Desktop masque entièrement Ava Alpha et refuse toute nouvelle action STOP, LIMIT ou STOP-LIMIT. L’owner garde son accès. Les positions déjà déclenchées ne sont jamais liquidées; seuls les ordres encore en attente sont annulés.',
   stopCycle:
-    'Ava propose trois familles indépendantes : STOP pour la cassure, LIMIT pour le rebond et STOP-LIMIT pour la cassure suivie d’un retest.\nUne famille est choisie par nouveau cycle. Pour chaque famille, BUY et SELL sont indépendants : Ava peut placer BUY seul, SELL seul ou les deux. L’administrateur peut autoriser de 1 à 10 cycles simultanés. À l’objectif, seuls les tickets individuellement positifs sont fermés.\nVersion actuelle : owner, compte MT5 hedging démo ou réel et AvaBridge 1.60 obligatoires.',
+    'Ava Alpha propose trois familles indépendantes : STOP pour la cassure, LIMIT pour le rebond et STOP-LIMIT pour la cassure suivie d’un retest.\nUne famille est choisie par nouveau cycle. Pour chaque famille, BUY et SELL sont indépendants. L’administrateur configure les règles globales ou par tranche de capital; Custom Max les consulte en lecture seule. À l’objectif, seuls les tickets individuellement positifs sont fermés.',
   stopCycleMode:
-    'Bloqué : aucun moteur ne peut lancer Stop Cycle.\nAutorisé : un owner éligible peut l’activer dans Ava Desktop.\nForcé : Desktop l’active automatiquement seulement après confirmation owner, sans contourner les sécurités.',
+    'Bloqué : aucun nouveau cycle non-owner.\nAutorisé : l’owner et les comptes Custom Max autorisés peuvent utiliser Ava Alpha.\nForcé : Desktop active Ava Alpha selon la règle effective, sans contourner les sécurités. L’owner reste visible quel que soit l’interrupteur global.',
   stopCycleForced:
     'Le mode forcé ne contourne jamais un blocage BUY/SELL, une autorisation de type, une zone, une capacité, le plan, le mode hedging, l’autorisation du compte réel ou AvaBridge 1.60.\nExemple : si BUY est autorisé et SELL bloqué pour une famille, Ava lance uniquement le côté BUY.',
   stopCycleMarket:
@@ -627,6 +627,7 @@ function newStopCycleRule(marketKey: StopCycleRule['market_key'] = 'BOOM1000'): 
     id,
     enabled: true,
     market_key: marketKey,
+    scope: 'global',
     block_buy_stop: false,
     block_sell_stop: false,
     allow_buy_limit: false,
@@ -636,8 +637,14 @@ function newStopCycleRule(marketKey: StopCycleRule['market_key'] = 'BOOM1000'): 
     min_price: null,
     max_price: null,
     min_net_equity_usd: 0,
+    max_net_equity_usd: null,
     max_orders_per_side: 2,
     max_concurrent_cycles: 1,
+    basket_target_usd: 3,
+    distance_mode: 'broker_minimum',
+    distance_points: 0,
+    expiration_seconds: 300,
+    rearm_seconds: 30,
     starts_at: null,
     ends_at: null,
   }
@@ -853,10 +860,31 @@ function validateStopCycleRules(rules: StopCycleRule[]) {
     if (!Number.isFinite(rule.min_net_equity_usd) || rule.min_net_equity_usd < 0) {
       messages.push('L’equity minimale doit être positive ou nulle.')
     }
+    if (
+      rule.scope === 'equity_range'
+      && (rule.max_net_equity_usd === null || rule.max_net_equity_usd <= rule.min_net_equity_usd)
+    ) {
+      messages.push('Une tranche de capital exige un maximum strictement supérieur au minimum.')
+    }
+    if (!Number.isFinite(rule.basket_target_usd) || rule.basket_target_usd <= 0) {
+      messages.push('Le panier cible doit être strictement positif.')
+    }
+    if (rule.distance_mode === 'custom' && (!Number.isFinite(rule.distance_points) || rule.distance_points <= 0)) {
+      messages.push('La distance personnalisée doit être strictement positive.')
+    }
     if (rule.starts_at && rule.ends_at && Date.parse(rule.starts_at) >= Date.parse(rule.ends_at)) {
       messages.push('La date de fin doit être postérieure à la date de début.')
     }
-    if (messages.length) errors[rule.id] = `Règle Stop Cycle ${index + 1} : ${messages.join(' ')}`
+    if (messages.length) errors[rule.id] = `Règle Ava Alpha ${index + 1} : ${messages.join(' ')}`
+  })
+  rules.filter(rule => rule.enabled !== false && rule.scope === 'equity_range').forEach((rule, index, rangedRules) => {
+    const overlaps = rangedRules.some((other, otherIndex) => (
+      otherIndex !== index
+      && other.market_key === rule.market_key
+      && rule.min_net_equity_usd < Number(other.max_net_equity_usd ?? Number.POSITIVE_INFINITY)
+      && other.min_net_equity_usd < Number(rule.max_net_equity_usd ?? Number.POSITIVE_INFINITY)
+    ))
+    if (overlaps) errors[rule.id] = `Règle Ava Alpha : cette tranche de capital chevauche une autre tranche ${rule.market_key}.`
   })
   return errors
 }
@@ -1408,10 +1436,12 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
       return {
         ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
         stop_cycle_policy: {
-          version: 4,
-          feature_enabled: currentPolicy?.feature_enabled !== false,
+          version: 5,
+          feature_enabled: currentPolicy?.feature_enabled === true,
           mode: currentPolicy?.mode ?? 'blocked',
-          owner_only: true,
+          owner_override: true,
+          eligible_plans: ['custom_max'],
+          user_controls: 'read_only',
           rules: Array.isArray(currentPolicy?.rules) ? currentPolicy.rules : [],
           ...patch,
         },
@@ -1425,10 +1455,12 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
       return {
         ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
         stop_cycle_policy: {
-          version: 4,
-          feature_enabled: currentPolicy?.feature_enabled !== false,
+          version: 5,
+          feature_enabled: currentPolicy?.feature_enabled === true,
           mode: currentPolicy?.mode ?? 'blocked',
-          owner_only: true,
+          owner_override: true,
+          eligible_plans: ['custom_max'],
+          user_controls: 'read_only',
           rules: [...(Array.isArray(currentPolicy?.rules) ? currentPolicy.rules : []), newStopCycleRule()],
         },
       }
@@ -1447,10 +1479,12 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
       return {
         ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
         stop_cycle_policy: {
-          version: 4,
-          feature_enabled: currentPolicy?.feature_enabled !== false,
+          version: 5,
+          feature_enabled: currentPolicy?.feature_enabled === true,
           mode: currentPolicy?.mode ?? 'blocked',
-          owner_only: true,
+          owner_override: true,
+          eligible_plans: ['custom_max'],
+          user_controls: 'read_only',
           rules: (Array.isArray(currentPolicy?.rules) ? currentPolicy.rules : []).map(rule =>
             rule.id === id ? { ...rule, ...patch } : rule,
           ),
@@ -1471,10 +1505,12 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
       return {
         ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
         stop_cycle_policy: {
-          version: 4,
-          feature_enabled: currentPolicy?.feature_enabled !== false,
+          version: 5,
+          feature_enabled: currentPolicy?.feature_enabled === true,
           mode: currentPolicy?.mode ?? 'blocked',
-          owner_only: true,
+          owner_override: true,
+          eligible_plans: ['custom_max'],
+          user_controls: 'read_only',
           rules: (Array.isArray(currentPolicy?.rules) ? currentPolicy.rules : []).filter(rule => rule.id !== id),
         },
       }
@@ -2682,10 +2718,12 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   const dualRules = Array.isArray(adminControl?.dual_entry_zone_rules) ? adminControl.dual_entry_zone_rules : []
                   const dualValidationErrors = validateDualEntryZoneRules(dualRules)
                   const stopCyclePolicy: StopCyclePolicy = adminControl?.stop_cycle_policy ?? {
-                    version: 4,
-                    feature_enabled: true,
+                    version: 5,
+                    feature_enabled: false,
                     mode: 'blocked',
-                    owner_only: true,
+                    owner_override: true,
+                    eligible_plans: ['custom_max'],
+                    user_controls: 'read_only',
                     rules: [],
                   }
                   const stopRules = Array.isArray(stopCyclePolicy.rules) ? stopCyclePolicy.rules : []
@@ -2701,7 +2739,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     setAdminControlMessage('Enregistrement suspendu : complète la règle signalée ci-dessous. Elle reste affichée et aucune autre valeur n’est perdue.')
                     return
                   }
-                  const forcedConfirmed = stopCyclePolicy.feature_enabled === false
+                  const forcedConfirmed = stopCyclePolicy.feature_enabled !== true
                     || stopCyclePolicy.mode !== 'forced'
                     || window.confirm(
                     'Confirmer le mode forcé des cycles conditionnels ? Il restera limité à l’owner, aux comptes MT5 hedging, à AvaBridge 1.60 et à toutes les protections administrateur. Un compte réel exige aussi son autorisation explicite.',
@@ -2741,12 +2779,14 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       dual_entry_zone_rules: dualRules,
                       stop_cycle_policy: {
                         ...stopCyclePolicy,
-                        version: 4,
-                        feature_enabled: stopCyclePolicy.feature_enabled !== false,
-                        owner_only: true,
+                        version: 5,
+                        feature_enabled: stopCyclePolicy.feature_enabled === true,
+                        owner_override: true,
+                        eligible_plans: ['custom_max'],
+                        user_controls: 'read_only',
                         rules: stopRules,
                       },
-                      stop_cycle_force_confirmed: stopCyclePolicy.feature_enabled !== false && stopCyclePolicy.mode === 'forced',
+                      stop_cycle_force_confirmed: stopCyclePolicy.feature_enabled === true && stopCyclePolicy.mode === 'forced',
                     })
                     const savedControl = result.control as TradingGlobalControl | null | undefined
                     const savedCapitalRules = Array.isArray(savedControl?.capital_position_limit_rules)
@@ -2770,13 +2810,13 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       && savedDualRules.length === dualRules.length
                       && dualRules.every(rule => savedDualRuleIds.has(rule.id))
                     const stopCycleConfirmed = savedStopPolicy !== null
-                      && savedStopPolicy.feature_enabled === (stopCyclePolicy.feature_enabled !== false)
+                      && savedStopPolicy.feature_enabled === (stopCyclePolicy.feature_enabled === true)
                       && savedStopPolicy.mode === stopCyclePolicy.mode
                       && savedStopRules !== null
                       && savedStopRules.length === stopRules.length
                       && stopRules.every(rule => savedStopRuleIds.has(rule.id))
                     if (!savedControl || !capitalLimitsConfirmed || !barriersConfirmed || !dualZonesConfirmed || !stopCycleConfirmed) {
-                      throw new Error('Le serveur n’a pas confirmé tous les plafonds, barrières, zones synchronisées et règles Stop Cycle. La saisie reste affichée.')
+                      throw new Error('Le serveur n’a pas confirmé tous les plafonds, barrières, zones synchronisées et règles Ava Alpha. La saisie reste affichée.')
                     }
                     setAdminControl(savedControl)
                     setPriceGuardErrors({})
@@ -3475,22 +3515,22 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <label className="mb-4 flex cursor-pointer flex-col gap-3 rounded-2xl border border-rose-500/25 bg-rose-500/[0.08] p-4 sm:flex-row sm:items-center sm:justify-between">
                 <span>
                   <span className="flex items-center gap-2 text-sm font-black text-white">
-                    Accès global Ava Stop Cycle
+                    Accès global Ava Alpha
                     <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleFeature} />
                   </span>
                   <span className="mt-1 block max-w-3xl text-xs leading-5 text-slate-400">
-                    Désactivé, le composant disparaît pour tous les utilisateurs et Ava conversationnelle ne peut plus envoyer de STOP, LIMIT ou STOP-LIMIT. Les positions déjà ouvertes restent intactes; seuls les ordres conditionnels encore en attente sont annulés.
+                    Désactivé, Ava Alpha disparaît pour les comptes non-owner et aucun nouveau cycle ne peut être créé. Les positions déjà ouvertes restent suivies; seuls les ordres conditionnels non déclenchés sont annulés. L’owner conserve son accès.
                   </span>
                 </span>
                 <span className="inline-flex flex-shrink-0 items-center gap-3">
                   <span className={`text-xs font-black uppercase tracking-[0.12em] ${
-                    adminControl?.stop_cycle_policy?.feature_enabled !== false ? 'text-emerald-300' : 'text-rose-300'
+                    adminControl?.stop_cycle_policy?.feature_enabled === true ? 'text-emerald-300' : 'text-rose-300'
                   }`}>
-                    {adminControl?.stop_cycle_policy?.feature_enabled !== false ? 'Visible et actif' : 'Masqué et bloqué'}
+                    {adminControl?.stop_cycle_policy?.feature_enabled === true ? 'Custom Max autorisé' : 'Non-owner masqué'}
                   </span>
                   <input
                     type="checkbox"
-                    checked={adminControl?.stop_cycle_policy?.feature_enabled !== false}
+                    checked={adminControl?.stop_cycle_policy?.feature_enabled === true}
                     onChange={event => updateStopCyclePolicy({ feature_enabled: event.target.checked })}
                     className="h-5 w-5 accent-rose-500"
                   />
@@ -3499,22 +3539,22 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Ava Stop Cycle</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Ava Alpha</p>
                     <span className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-100">
-                      Nouveau · 72 h
+                      Custom Max · lecture seule
                     </span>
                   </div>
                   <p className="mt-1 flex items-center gap-2 text-sm font-black text-white">
-                    Cycles STOP, LIMIT et STOP-LIMIT
+                    Cycles STOP, LIMIT et STOP-LIMIT par capital
                     <HelpHint text={GLOBAL_CONTROL_HELP.stopCycle} />
                   </p>
                   <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
-                    Chaque famille est autorisée séparément par règle et zone de prix. Le Desktop ne lance jamais plusieurs familles au même niveau : il les fait tourner cycle après cycle. Un compte réel exige l’autorisation explicite et une clôture automatique ne réalise jamais un ticket nul ou négatif.
+                    Une tranche de capital prime sur la règle globale du même marché. Les utilisateurs Custom Max voient uniquement leur règle effective et l’état de leurs cycles. Un compte réel exige toujours son autorisation explicite.
                   </p>
                 </div>
                 <button
                   type="button"
-                  disabled={(adminControl?.stop_cycle_policy?.rules?.length ?? 0) >= 20}
+                  disabled={(adminControl?.stop_cycle_policy?.rules?.length ?? 0) >= 50}
                   onClick={addStopCycleRule}
                   className="inline-flex flex-shrink-0 items-center justify-center gap-2 rounded-xl bg-cyan-300 px-3 py-2 text-xs font-black text-slate-950 shadow-lg shadow-cyan-300/10 transition-colors hover:bg-cyan-200 disabled:opacity-40"
                 >
@@ -3535,8 +3575,8 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
                   >
                     <option value="blocked" className="bg-slate-950">Bloqué</option>
-                    <option value="allowed" className="bg-slate-950">Autorisé pour owner éligible</option>
-                    <option value="forced" className="bg-slate-950">Forcé après confirmation owner</option>
+                    <option value="allowed" className="bg-slate-950">Autorisé selon les règles</option>
+                    <option value="forced" className="bg-slate-950">Forcé selon la règle effective</option>
                   </select>
                 </label>
                 <div className="rounded-xl border border-amber-300/20 bg-amber-300/[0.07] px-4 py-3 text-xs leading-5 text-amber-100">
@@ -3579,7 +3619,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                           <div>
                             <p className="text-xs font-black text-white">Règle {index + 1} · {zone}</p>
                             <p className="mt-0.5 text-[10px] text-cyan-200">
-                              Maximum {rule.max_orders_per_side} ordre(s) par côté · {rule.max_concurrent_cycles ?? 1} cycle(s) simultané(s) · equity ≥ {rule.min_net_equity_usd} USD
+                              {rule.scope === 'equity_range' ? 'Tranche de capital' : 'Règle globale'} · {rule.max_orders_per_side} ordre(s) par côté · {rule.max_concurrent_cycles ?? 1} cycle(s) · panier {rule.basket_target_usd} USD
                             </p>
                           </div>
                         </div>
@@ -3587,7 +3627,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                           type="button"
                           onClick={() => removeStopCycleRule(rule.id)}
                           className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-slate-500 transition-colors hover:border-rose-500/30 hover:text-rose-300"
-                          title="Supprimer cette règle Stop Cycle"
+                          title="Supprimer cette règle Ava Alpha"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -3599,7 +3639,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                         </p>
                       ) : null}
 
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
                           <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
                             Marché
@@ -3615,6 +3655,22 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                           </select>
                         </label>
                         <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Application
+                          </span>
+                          <select
+                            value={rule.scope ?? 'global'}
+                            onChange={event => updateStopCycleRule(rule.id, {
+                              scope: event.target.value as StopCycleRule['scope'],
+                              max_net_equity_usd: event.target.value === 'global' ? null : rule.max_net_equity_usd,
+                            })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          >
+                            <option value="global" className="bg-slate-950">Règle globale de repli</option>
+                            <option value="equity_range" className="bg-slate-950">Tranche de capital</option>
+                          </select>
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
                           <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
                             Prix minimum inclus
                             <HelpHint text={GLOBAL_CONTROL_HELP.stopCycleMin} />
@@ -3627,6 +3683,21 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                             onChange={event => updateStopCycleRule(rule.id, { min_price: optionalInputNumber(event.target.value) })}
                             placeholder="Sans minimum"
                             className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none placeholder:text-slate-700"
+                          />
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Equity nette maximum
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="100"
+                            disabled={rule.scope !== 'equity_range'}
+                            value={rule.max_net_equity_usd ?? ''}
+                            onChange={event => updateStopCycleRule(rule.id, { max_net_equity_usd: optionalInputNumber(event.target.value) })}
+                            placeholder={rule.scope === 'equity_range' ? 'Obligatoire' : 'Sans maximum'}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none placeholder:text-slate-700 disabled:opacity-40"
                           />
                         </label>
                         <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
@@ -3688,6 +3759,84 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                             value={rule.max_concurrent_cycles ?? 1}
                             onChange={event => updateStopCycleRule(rule.id, {
                               max_concurrent_cycles: Math.max(1, Math.min(10, Math.floor(toNumber(event.target.value, 1)))),
+                            })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          />
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Panier cible USD
+                          </span>
+                          <input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={rule.basket_target_usd ?? 3}
+                            onChange={event => updateStopCycleRule(rule.id, {
+                              basket_target_usd: Math.max(0.01, toNumber(event.target.value, 3)),
+                            })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          />
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Distance
+                          </span>
+                          <select
+                            value={rule.distance_mode ?? 'broker_minimum'}
+                            onChange={event => updateStopCycleRule(rule.id, {
+                              distance_mode: event.target.value as StopCycleRule['distance_mode'],
+                            })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          >
+                            <option value="broker_minimum" className="bg-slate-950">Minimum broker</option>
+                            <option value="custom" className="bg-slate-950">Personnalisée</option>
+                          </select>
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Distance personnalisée
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            disabled={rule.distance_mode !== 'custom'}
+                            value={rule.distance_points ?? 0}
+                            onChange={event => updateStopCycleRule(rule.id, {
+                              distance_points: Math.max(0, toNumber(event.target.value, 0)),
+                            })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none disabled:opacity-40"
+                          />
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Expiration (secondes)
+                          </span>
+                          <input
+                            type="number"
+                            min="30"
+                            max="86400"
+                            step="30"
+                            value={rule.expiration_seconds ?? 300}
+                            onChange={event => updateStopCycleRule(rule.id, {
+                              expiration_seconds: Math.max(30, Math.min(86400, Math.floor(toNumber(event.target.value, 300)))),
+                            })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          />
+                        </label>
+                        <label className="block rounded-xl border border-white/10 bg-black/25 px-3 py-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
+                            Recentrage (secondes)
+                          </span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="86400"
+                            step="5"
+                            value={rule.rearm_seconds ?? 30}
+                            onChange={event => updateStopCycleRule(rule.id, {
+                              rearm_seconds: Math.max(0, Math.min(86400, Math.floor(toNumber(event.target.value, 30)))),
                             })}
                             className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
                           />
@@ -3791,7 +3940,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
 
                 {(adminControl?.stop_cycle_policy?.rules?.length ?? 0) === 0 ? (
                   <div className="rounded-2xl border border-dashed border-white/10 px-4 py-6 text-center text-xs text-slate-500">
-                    Aucune règle Stop Cycle. Le mode bloqué reste la valeur sûre par défaut.
+                    Aucune règle Ava Alpha. Le mode bloqué reste la valeur sûre par défaut.
                   </div>
                 ) : null}
               </div>

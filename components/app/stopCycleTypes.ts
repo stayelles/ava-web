@@ -4,6 +4,7 @@ export type StopCycleRule = {
   id: string
   enabled: boolean
   market_key: 'BOOM1000' | 'CRASH1000'
+  scope: 'global' | 'equity_range'
   block_buy_stop: boolean
   block_sell_stop: boolean
   allow_buy_limit: boolean
@@ -13,17 +14,25 @@ export type StopCycleRule = {
   min_price: number | null
   max_price: number | null
   min_net_equity_usd: number
+  max_net_equity_usd: number | null
   max_orders_per_side: number
   max_concurrent_cycles: number
+  basket_target_usd: number
+  distance_mode: 'broker_minimum' | 'custom'
+  distance_points: number
+  expiration_seconds: number
+  rearm_seconds: number
   starts_at?: string | null
   ends_at?: string | null
 }
 
 export type StopCyclePolicy = {
-  version: 1 | 2 | 3 | 4
+  version: 1 | 2 | 3 | 4 | 5
   feature_enabled: boolean
   mode: StopCycleMode
-  owner_only: true
+  owner_override: true
+  eligible_plans: ['custom_max']
+  user_controls: 'read_only'
   rules: StopCycleRule[]
 }
 
