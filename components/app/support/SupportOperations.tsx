@@ -8,7 +8,7 @@ import {
   Activity, CheckCircle2, Clock3, Copy, ExternalLink, FileText, Headphones,
   Eye, ImagePlus, Loader2, MessageCircleQuestion, Mic, MicOff, RefreshCw, Send,
   ShieldCheck, Star, Trash2, UserPlus, UserRoundCheck, UsersRound, Video, X,
-  Paperclip,
+  Paperclip, WandSparkles,
 } from 'lucide-react'
 import type { UserData } from '../types'
 import { avaSupportRequest } from '../services/avaAi'
@@ -410,15 +410,22 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
         action: 'rewrite', conversation_id: active.id, message: text.trim(), source,
       }, 45_000)
       setDraft(text.trim())
-      setProfessionalDraft(result.draft)
+      setProfessionalDraft({
+        ...result.draft,
+        ai_rewritten_text: result.draft.rewritten_text,
+      })
     } catch (exception) {
       setNotice(exception instanceof Error ? exception.message : 'Reformulation indisponible.')
     } finally { setRewriting(false) }
   }
 
-  async function sendApproved() {
-    if (!active || !professionalDraft?.rewritten_text) return
-    const content = professionalDraft.rewritten_text
+  async function sendAgentMessage(
+    content: string,
+    deliveryMode: 'direct' | 'rewritten' | 'edited',
+    approvedDraft: any = null,
+  ) {
+    if (!active || !content.trim()) return
+    const messageContent = content.trim()
     const optimisticId = `pending-${crypto.randomUUID()}`
     const pendingFiles = files
     const optimisticAttachments = pendingFiles.map(item => ({
@@ -433,7 +440,7 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
       id: optimisticId,
       sender_type: 'agent',
       sender_user_id: user.id,
-      content,
+      content: messageContent,
       attachments: optimisticAttachments,
       created_at: new Date().toISOString(),
       pending: true,
@@ -448,8 +455,9 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
       const result = await avaSupportRequest(user, {
         action: 'message',
         conversation_id: active.id,
-        message: content,
-        draft_id: professionalDraft.id,
+        message: messageContent,
+        delivery_mode: deliveryMode,
+        draft_id: approvedDraft?.id,
         as_agent: true,
         attachments,
       })
@@ -471,11 +479,25 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
       setConversations(current => current.map(item => item.id === active.id
         ? { ...item, ava_support_messages: (item.ava_support_messages ?? []).filter((entry: any) => entry.id !== optimisticId) }
         : item))
-      setDraft(content)
-      setProfessionalDraft({ ...professionalDraft, rewritten_text: content })
+      setDraft(deliveryMode !== 'direct' ? String(approvedDraft?.original_text ?? messageContent) : messageContent)
+      setProfessionalDraft(deliveryMode !== 'direct'
+        ? { ...approvedDraft, rewritten_text: messageContent }
+        : null)
       setFiles(pendingFiles)
       setNotice(exception instanceof Error ? exception.message : 'Envoi impossible.')
     } finally { setSending(false) }
+  }
+
+  async function sendApproved() {
+    if (!professionalDraft?.rewritten_text) return
+    const deliveryMode = professionalDraft.rewritten_text === professionalDraft.ai_rewritten_text
+      ? 'rewritten'
+      : 'edited'
+    await sendAgentMessage(professionalDraft.rewritten_text, deliveryMode, professionalDraft)
+  }
+
+  async function sendDirect() {
+    await sendAgentMessage(draft, 'direct')
   }
 
   async function startRecording() {
@@ -650,19 +672,39 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
                 </div>)}
               </div>}
               {professionalDraft ? <div className="rounded-2xl border border-rose-400/25 bg-rose-500/[0.06] p-3">
-                <div className="flex items-center justify-between"><p className="text-[10px] uppercase tracking-[.16em] font-black text-rose-300">Version professionnelle prête</p><button onClick={() => setProfessionalDraft(null)} className="text-slate-500"><X size={14} /></button></div>
-                <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-white">{professionalDraft.rewritten_text}</p>
+                <div className="flex items-center justify-between"><p className="text-[10px] uppercase tracking-[.16em] font-black text-rose-300">Correction Ava prête</p><button onClick={() => setProfessionalDraft(null)} className="text-slate-500"><X size={14} /></button></div>
+                <textarea
+                  value={professionalDraft.rewritten_text}
+                  onChange={event => setProfessionalDraft((current: any) => ({
+                    ...current,
+                    rewritten_text: event.target.value,
+                  }))}
+                  rows={4}
+                  aria-label="Correction Ava modifiable"
+                  className="mt-2 w-full resize-y rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-xs leading-relaxed text-white outline-none focus:border-rose-400/40"
+                />
+                <p className="mt-2 text-[10px] leading-relaxed text-slate-500">Cette proposition reste entièrement modifiable. Ava corrige la langue sans imposer sa formulation.</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button onClick={sendApproved} disabled={sending} className="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-3 py-2 text-xs font-black text-white disabled:opacity-45">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Valider et envoyer</button>
-                  <button onClick={() => void rewrite(professionalDraft.source ?? 'text')} disabled={rewriting || sending} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 disabled:opacity-45">{rewriting && <Loader2 size={13} className="animate-spin" />} Reformuler à nouveau</button>
+                  <button onClick={sendApproved} disabled={sending || !professionalDraft.rewritten_text.trim()} className="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-3 py-2 text-xs font-black text-white disabled:opacity-45">{sending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Envoyer ce texte</button>
+                  <button onClick={() => void sendAgentMessage(draft, 'direct')} disabled={sending || !draft.trim()} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-200 disabled:opacity-45"><Send size={13} /> Envoyer mon texte</button>
+                  <button onClick={() => void rewrite(professionalDraft.source ?? 'text')} disabled={rewriting || sending} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 disabled:opacity-45">{rewriting ? <Loader2 size={13} className="animate-spin" /> : <WandSparkles size={13} />} Corriger à nouveau</button>
                   <button type="button" onClick={() => fileRef.current?.click()} disabled={sending} className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-slate-300 disabled:opacity-45"><Paperclip size={14} /> Joindre</button>
                 </div>
-              </div> : <div className="flex gap-2">
-                <textarea value={draft} onChange={event => setDraft(event.target.value)} rows={3} placeholder="Écrivez votre brouillon. Ava le reformulera avant tout envoi…" className="min-w-0 flex-1 resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white outline-none focus:border-rose-400/40" />
-                <div className="flex flex-col gap-2">
-                  <button type="button" onClick={() => fileRef.current?.click()} disabled={sending} title="Joindre des images, vidéos ou documents" className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-slate-300 disabled:opacity-40"><Paperclip size={16} /></button>
-                  <button onClick={recording ? stopRecording : startRecording} disabled={busy || rewriting || sending} title={recording ? 'Arrêter la dictée' : 'Dicter la réponse'} className={`grid h-10 w-10 place-items-center rounded-xl border ${recording ? 'border-rose-400 bg-rose-500 text-white' : 'border-white/10 text-slate-300'} disabled:opacity-40`}>{recording ? <MicOff size={16} /> : <Mic size={16} />}</button>
-                  <button onClick={() => void rewrite('text')} disabled={rewriting || sending || !draft.trim()} title="Reformuler professionnellement" className="grid h-10 w-10 place-items-center rounded-xl bg-rose-500 text-white disabled:opacity-40">{rewriting ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}</button>
+              </div> : <div className="space-y-2">
+                <div className="flex gap-2">
+                  <textarea value={draft} onChange={event => setDraft(event.target.value)} rows={3} placeholder="Écrivez votre réponse…" className="min-w-0 flex-1 resize-none rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-xs text-white outline-none focus:border-rose-400/40" />
+                  <div className="flex flex-col gap-2">
+                    <button type="button" onClick={() => fileRef.current?.click()} disabled={sending} title="Joindre des images, vidéos ou documents" className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-slate-300 disabled:opacity-40"><Paperclip size={16} /></button>
+                    <button onClick={recording ? stopRecording : startRecording} disabled={busy || rewriting || sending} title={recording ? 'Arrêter la dictée' : 'Dicter la réponse'} className={`grid h-10 w-10 place-items-center rounded-xl border ${recording ? 'border-rose-400 bg-rose-500 text-white' : 'border-white/10 text-slate-300'} disabled:opacity-40`}>{recording ? <MicOff size={16} /> : <Mic size={16} />}</button>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button onClick={() => void rewrite('text')} disabled={rewriting || sending || !draft.trim()} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-rose-400/25 bg-rose-500/[0.06] px-3 py-2.5 text-xs font-black text-rose-200 disabled:opacity-40">
+                    {rewriting ? <Loader2 size={15} className="animate-spin" /> : <WandSparkles size={15} />} Corriger avec Ava
+                  </button>
+                  <button onClick={() => void sendDirect()} disabled={rewriting || sending || !draft.trim()} className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-rose-500 px-3 py-2.5 text-xs font-black text-white disabled:opacity-40">
+                    {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} Envoyer directement
+                  </button>
                 </div>
               </div>}
               <input
@@ -673,7 +715,7 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
                 className="hidden"
                 onChange={event => void pickFiles(event.target.files)}
               />
-              <p className="mt-2 text-[10px] text-slate-600">10 images · 1 vidéo (300 Mo) · 5 documents. Les liens, dont Google Meet, deviennent cliquables.</p>
+              <p className="mt-2 text-[10px] text-slate-600">Vous choisissez l’envoi direct ou une correction légère par Ava. 10 images · 1 vidéo (300 Mo) · 5 documents.</p>
             </div>
           </>}
         </div>
@@ -828,7 +870,7 @@ export function SupportAdminPanel({ user }: { user: UserData }) {
           <ol className="mt-3 space-y-2 text-[11px] leading-relaxed text-slate-400">
             <li><span className="font-black text-rose-300">1.</span> Ouvrez le panneau client et envoyez votre demande.</li>
             <li><span className="font-black text-rose-300">2.</span> Dans votre console ci-dessous, passez « Disponible » puis prenez la prochaine demande.</li>
-            <li><span className="font-black text-rose-300">3.</span> Rédigez, laissez Ava reformuler, puis validez l’envoi.</li>
+            <li><span className="font-black text-rose-300">3.</span> Envoyez directement ou demandez une correction Ava, toujours modifiable.</li>
           </ol>
           <button type="button" onClick={() => window.dispatchEvent(new CustomEvent('ava-open-support'))} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-rose-500 px-4 py-2.5 text-xs font-black text-white">
             <ExternalLink size={15} /> Ouvrir le panneau client
