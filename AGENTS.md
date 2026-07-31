@@ -56,6 +56,7 @@ If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before pub
 - Ava Web 0.5.18 ajoute dans le contrôle global des paliers d’equity avec un plafond toutes positions confondues et un plafond Stop Cycle distinct. Le panneau support utilise le logo Ava comme profil de l’IA et « Nouvelle demande » réinitialise explicitement le brouillon et les pièces jointes avant de démarrer un nouveau ticket.
 - Ava Web 0.5.21 rend Ava Support plus lisible et réactif : les messages client, Ava IA et conseiller possèdent des styles distincts et une heure visible; l’envoi client/conseiller est optimiste; la reformulation utilise le modèle léger; les conseillers peuvent envoyer et télécharger les pièces jointes autorisées. Les liens sont cliquables. Une réponse conseiller non lue déclenche un email de reprise au client, tandis qu’un numéro WhatsApp/contact privé détecté côté serveur alerte les administrateurs avec le contexte et un lien audité vers la conversation.
 - Ava Web 0.5.22 publie Ava Desktop 1.5.19 pour Windows, Mac Intel et Apple Silicon, avec les métadonnées de mise à jour propres à chaque architecture.
+- Ava Web 0.5.24 corrige les pièces jointes Ava Support : les images, vidéos et documents utilisent l’endpoint TUS signé `/storage/v1/upload/resumable/sign`; le jeton `x-signature` reste éphémère, le bucket privé et le fichier est toujours vérifié par l’Edge Function avant d’être joint au message. Les erreurs d’upload, de taille, de session et de ticket fermé sont distinguées côté client.
 
 ## Ava Cloud
 

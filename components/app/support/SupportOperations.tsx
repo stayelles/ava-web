@@ -370,11 +370,10 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
       })
       await new Promise<void>((resolve, reject) => {
         const upload = new tus.Upload(item.file, {
-          endpoint: `${DIRECT_STORAGE_URL}/storage/v1/upload/resumable`,
+          endpoint: `${DIRECT_STORAGE_URL}/storage/v1/upload/resumable/sign`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           headers: {
             apikey: SUPABASE_ANON_KEY,
-            authorization: `Bearer ${SUPABASE_ANON_KEY}`,
             'x-signature': intent.upload.token,
           },
           uploadDataDuringCreation: true,

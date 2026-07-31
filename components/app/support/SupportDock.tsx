@@ -33,6 +33,21 @@ const DOCUMENT_TYPES = new Set([
 const DIRECT_STORAGE_URL = SUPABASE_URL.replace('.supabase.co', '.storage.supabase.co')
 const NEW_CONVERSATION_ID = '__new__'
 
+function supportSendError(error: unknown, fallback: string) {
+  const code = error instanceof Error ? error.message : ''
+  if (code === 'CONVERSATION_CLOSED') return 'Cette conversation est terminée. Ouvrez une nouvelle demande.'
+  if (code === 'UPLOAD_VERIFICATION_FAILED') return 'Le fichier reçu n’a pas pu être vérifié. Sélectionnez-le à nouveau.'
+  if (code.includes('TOO_LARGE')) return 'Le fichier dépasse la taille autorisée.'
+  if (code === 'ATTACHMENT_INVALID' || code === 'ATTACHMENT_LIMIT_EXCEEDED') {
+    return 'Cette pièce jointe ne peut pas être envoyée. Vérifiez son format et sa taille.'
+  }
+  if (code === 'SESSION_EXPIRED') return 'Votre session a expiré. Reconnectez-vous avant de renvoyer le message.'
+  if (code.toLowerCase().includes('upload') || code.toLowerCase().includes('tus')) {
+    return 'La pièce jointe n’a pas pu être envoyée. Vérifiez votre connexion puis réessayez.'
+  }
+  return fallback
+}
+
 function formatWait(seconds: number) {
   if (!Number.isFinite(seconds) || seconds <= 60) return 'moins d’une minute'
   if (seconds < 3600) return `environ ${Math.max(1, Math.round(seconds / 60))} min`
@@ -245,11 +260,10 @@ export function SupportDock({ user }: { user: UserData }) {
       })
       await new Promise<void>((resolve, reject) => {
         const upload = new tus.Upload(item.file, {
-          endpoint: `${DIRECT_STORAGE_URL}/storage/v1/upload/resumable`,
+          endpoint: `${DIRECT_STORAGE_URL}/storage/v1/upload/resumable/sign`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           headers: {
             apikey: SUPABASE_ANON_KEY,
-            authorization: `Bearer ${SUPABASE_ANON_KEY}`,
             'x-signature': intent.upload.token,
           },
           uploadDataDuringCreation: true,
@@ -310,7 +324,7 @@ export function SupportDock({ user }: { user: UserData }) {
     } catch (exception) {
       setError(exception instanceof Error && exception.message === 'FIRST_NAME_REQUIRED'
         ? 'Ajoutez votre prénom pour personnaliser la conversation.'
-        : 'La demande n’a pas pu être envoyée. Réessayez dans un instant.')
+        : supportSendError(exception, 'La demande n’a pas pu être envoyée. Réessayez dans un instant.'))
     } finally { setLoading(false) }
   }
 
@@ -377,9 +391,7 @@ export function SupportDock({ user }: { user: UserData }) {
         : item))
       setMessage(content)
       setFiles(queuedFiles)
-      setError(exception instanceof Error && exception.message === 'CONVERSATION_CLOSED'
-        ? 'Cette conversation est terminée. Ouvrez une nouvelle demande.'
-        : 'Le message n’a pas pu être envoyé.')
+      setError(supportSendError(exception, 'Le message n’a pas pu être envoyé.'))
     } finally { setLoading(false) }
   }
 
