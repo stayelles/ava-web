@@ -57,6 +57,7 @@ If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before pub
 - Ava Web 0.5.21 rend Ava Support plus lisible et réactif : les messages client, Ava IA et conseiller possèdent des styles distincts et une heure visible; l’envoi client/conseiller est optimiste; la reformulation utilise le modèle léger; les conseillers peuvent envoyer et télécharger les pièces jointes autorisées. Les liens sont cliquables. Une réponse conseiller non lue déclenche un email de reprise au client, tandis qu’un numéro WhatsApp/contact privé détecté côté serveur alerte les administrateurs avec le contexte et un lien audité vers la conversation.
 - Ava Web 0.5.22 publie Ava Desktop 1.5.19 pour Windows, Mac Intel et Apple Silicon, avec les métadonnées de mise à jour propres à chaque architecture.
 - Ava Web 0.5.24 corrige les pièces jointes Ava Support : les images, vidéos et documents utilisent l’endpoint TUS signé `/storage/v1/upload/resumable/sign`; le jeton `x-signature` reste éphémère, le bucket privé et le fichier est toujours vérifié par l’Edge Function avant d’être joint au message. Les erreurs d’upload, de taille, de session et de ticket fermé sont distinguées côté client.
+- Ava Web transmet la locale et le fuseau IANA à `ava-ai`; l'Edge Function calcule elle-même l'heure et le jour locaux afin que les échanges texte et vocaux puissent s'adapter naturellement au matin, à l'après-midi, au soir ou à la nuit.
 
 ## Ava Cloud
 
@@ -88,7 +89,7 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 ### Ava Web 0.4.1 — crédits Ava AI datés et recharge automatique
 
 - L'onglet `Crédits IA` est réservé à Custom Max/Owner et utilise la fonction sécurisée `ava-ai-credits`.
-- Aucun compte n'a de crédits illimités, y compris l'owner. Custom Max et l'owner reçoivent 150 crédits tous les 30 jours.
+- Aucun compte n'a de crédits illimités, y compris l'owner. Custom Max et l'owner reçoivent 115 crédits tous les 30 jours.
 - Chaque lot inclus ou acheté expire 90 jours après son octroi. Une interruption de Custom Max annule définitivement tous les lots restants.
 - Prix fixe sans remise : 0,25 € par crédit. Presets : 50 crédits à 12,50 €, 150 à 37,50 €, 400 à 100 €. Quantité personnalisée : 30 à 10 000 crédits.
 - L'interface expose seulement `Carte / PayPal` et `Crypto`; elle ne nomme jamais l'agrégateur de paiement interne.

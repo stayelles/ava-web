@@ -1,66 +1,8 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { GEMINI_MODEL, GEMINI_VOICE, WS_BASE, SYSTEM_INSTRUCTION } from '../constants'
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../constants'
+import { GEMINI_MODEL } from '../constants'
 import type { TranscriptItem, SessionState } from '../types'
-
-// ─── Memory synthesis ────────────────────────────────────────────────────────
-function truncateToWords(text: string, maxWords: number): string {
-  if (maxWords <= 0) return ''
-  const words = text.split(/\s+/)
-  if (words.length <= maxWords) return text
-  return words.slice(0, maxWords).join(' ') + '…'
-}
-
-async function generateAndSaveMemory(
-  userId: string,
-  apiKey: string,
-  transcript: TranscriptItem[],
-  existingMemory?: string,
-  memoryWordLimit = 800,
-): Promise<string | null> {
-  const useful = transcript.filter(t => t.text?.trim())
-  if (useful.length === 0) return null
-
-  const effectiveLimit = memoryWordLimit === -1 ? 800 : Math.max(50, memoryWordLimit)
-  const text = useful.map(t => `${t.role === 'user' ? 'Utilisateur' : 'Ava'}: ${t.text}`).join('\n')
-  const truncated = text.length > 3000 ? text.slice(-3000) : text
-
-  // Truncate existing memory to fit within limit before merging
-  const trimmedExisting = existingMemory
-    ? truncateToWords(existingMemory, Math.floor(effectiveLimit * 0.6))
-    : undefined
-
-  const prompt = `Tu es un assistant qui gère la mémoire d'un assistant IA nommé Ava.\n\n${trimmedExisting ? `MÉMOIRE EXISTANTE sur cet utilisateur :\n${trimmedExisting}\n\n` : ''}NOUVELLE CONVERSATION :\n${truncated}\n\nTÂCHE : Génère un résumé CUMULATIF et DÉTAILLÉ (maximum ${effectiveLimit} mots) de tout ce qu'Ava sait sur cet utilisateur. Fusionne les nouvelles informations avec la mémoire existante. Inclus :\n- Prénom, âge, situation\n- Centres d'intérêt, passions\n- Projets, objectifs (études, travail, voyage)\n- Relations importantes mentionnées\n- Préférences de langue\n- Tout fait personnel important\n- LANGUE DE FIN : Détecte la langue utilisée dans les 5 derniers échanges et note-la OBLIGATOIREMENT sous la forme exacte : "Dernière langue utilisée : [français|anglais|allemand|etc.]"\n\nRéponds UNIQUEMENT avec le résumé, sans introduction ni explication.`
-
-  try {
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
-      { method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }] }) },
-    )
-    const data = await res.json()
-    let summary = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
-    if (!summary) return null
-
-    // Hard cap: enforce word limit regardless of what Gemini returned
-    summary = truncateToWords(summary, effectiveLimit)
-
-    // Upsert into ava_user_memory
-    await fetch(`${SUPABASE_URL}/rest/v1/ava_user_memory`, {
-      method: 'POST',
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-        'Content-Type': 'application/json',
-        Prefer: 'resolution=merge-duplicates',
-      },
-      body: JSON.stringify({ user_id: userId, summary }),
-    })
-    return summary
-  } catch { return null }
-}
 
 function resampleTo16k(input: Float32Array, fromRate: number): Float32Array {
   if (fromRate === 16000) return input
@@ -96,16 +38,21 @@ export interface GeminiLiveOptions {
   userId?: string
   memoryWordLimit?: number
   onSessionEnd?: () => void
-  onTurnComplete?: () => void
+  onTurnComplete?: (authorizationId: string) => void | Promise<void>
   onMemoryUpdated?: (summary: string) => void
-  apiKey?: string
-  apiKeyProvider?: () => Promise<string | null>
+  apiKeyProvider?: () => Promise<{
+    token: string
+    authorizationId: string
+    model: string
+    apiVersion: string
+    liveConfig: Record<string, any>
+  } | null>
 }
 
 export function useGeminiLive({
   language, webSearch, memorySummary, userName, userId,
   memoryWordLimit = 800,
-  onSessionEnd, onTurnComplete, onMemoryUpdated, apiKey, apiKeyProvider,
+  onSessionEnd, onTurnComplete, onMemoryUpdated, apiKeyProvider,
 }: GeminiLiveOptions) {
   const [sessionState, setSessionState] = useState<SessionState>('idle')
   const [transcript, setTranscript] = useState<TranscriptItem[]>([])
@@ -113,6 +60,7 @@ export function useGeminiLive({
   const [isAvaSpeaking, setIsAvaSpeaking] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [volumeLevel, setVolumeLevel] = useState(0)
+  const [errorCode, setErrorCode] = useState('')
 
   const transcriptRef = useRef<TranscriptItem[]>([])
   const wsRef = useRef<WebSocket | null>(null)
@@ -125,6 +73,9 @@ export function useGeminiLive({
   const idCounterRef = useRef(0)
   const isMutedRef = useRef(false)
   const isClosingRef = useRef(false)
+  const authorizationIdRef = useRef('')
+  const turnCompletedRef = useRef(false)
+  const stopSessionRef = useRef<(() => void) | null>(null)
 
   useEffect(() => { isMutedRef.current = isMuted }, [isMuted])
   useEffect(() => { transcriptRef.current = transcript }, [transcript])
@@ -198,8 +149,17 @@ export function useGeminiLive({
 
     if (sc.turnComplete) {
       setIsAvaSpeaking(false)
-      setStatusText("J'écoute...")
-      onTurnComplete?.()
+      if (!turnCompletedRef.current) {
+        turnCompletedRef.current = true
+        isMutedRef.current = true
+        setIsMuted(true)
+        setStatusText('Réponse terminée')
+        void Promise.resolve(onTurnComplete?.(authorizationIdRef.current)).catch(() => {})
+        const remainingAudioMs = audioCtxRef.current
+          ? Math.max(0, (nextPlayTimeRef.current - audioCtxRef.current.currentTime) * 1000)
+          : 0
+        window.setTimeout(() => stopSessionRef.current?.(), Math.min(12000, remainingAudioMs + 350))
+      }
     }
   }, [playPCMChunk, onTurnComplete])
 
@@ -227,6 +187,8 @@ export function useGeminiLive({
     setTimeout(() => { isClosingRef.current = false }, 300)
   }, [onSessionEnd])
 
+  useEffect(() => { stopSessionRef.current = stopSession }, [stopSession])
+
   // Send image(s) to Gemini during an active session
   const sendImage = useCallback((base64: string, mimeType: string) => {
     const ws = wsRef.current
@@ -238,18 +200,35 @@ export function useGeminiLive({
     }))
   }, [])
 
-  const apiKeyRef = useRef(apiKey)
-  useEffect(() => { apiKeyRef.current = apiKey }, [apiKey])
   const apiKeyProviderRef = useRef(apiKeyProvider)
   useEffect(() => { apiKeyProviderRef.current = apiKeyProvider }, [apiKeyProvider])
 
   const startSession = useCallback(async () => {
-    const effectiveKey = apiKeyRef.current ?? await apiKeyProviderRef.current?.()
-    if (!effectiveKey) {
-      setStatusText('Clé API manquante — contactez le support')
+    setErrorCode('')
+    let authorization: Awaited<ReturnType<NonNullable<typeof apiKeyProvider>>> = null
+    try {
+      authorization = await apiKeyProviderRef.current?.() ?? null
+    } catch (error) {
+      const code = error instanceof Error ? error.message : 'AVA_AI_PROVIDER_UNAVAILABLE'
+      setErrorCode(code)
+      setStatusText(
+        code === 'AVA_AI_GLOBAL_BUDGET_REACHED' ? 'Ava AI est temporairement indisponible — aucun achat nécessaire'
+          : code === 'SUBSCRIPTION_REQUIRED' ? 'Un abonnement Ava actif est requis'
+            : code === 'SESSION_EXPIRED' ? 'Session expirée — reconnectez-vous'
+              : code === 'RATE_LIMITED' ? 'Trop de demandes — réessayez dans quelques secondes'
+                : code === 'AI_CREDITS_EXHAUSTED' ? 'Crédits Ava AI épuisés'
+                  : 'Connexion Ava AI indisponible — réessayez',
+      )
       setSessionState('error')
       return
     }
+    if (!authorization?.token || !authorization.authorizationId) {
+      setStatusText('Jeton Ava AI indisponible — réessayez')
+      setSessionState('error')
+      return
+    }
+    authorizationIdRef.current = authorization.authorizationId
+    turnCompletedRef.current = false
 
     setSessionState('connecting')
     setStatusText('Connexion...')
@@ -287,29 +266,27 @@ export function useGeminiLive({
     const actualSampleRate = ctx.sampleRate
 
     // WebSocket — binaryType arraybuffer: browsers default to Blob which we can't handle inline
-    const wsUrl = apiKeyRef.current
-      ? `${WS_BASE}?key=${encodeURIComponent(effectiveKey)}`
-      : `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(effectiveKey)}`
+    const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.${authorization.apiVersion}.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(authorization.token)}`
     const ws = new WebSocket(wsUrl)
     ws.binaryType = 'arraybuffer'
     wsRef.current = ws
 
     ws.onopen = () => {
-      const sysPrompt = SYSTEM_INSTRUCTION(language, webSearch, memorySummary, userName)
+      const liveConfig = authorization.liveConfig ?? {}
       const setupPayload: any = {
         setup: {
-          model: `models/${GEMINI_MODEL}`,
+          model: authorization.model || `models/${GEMINI_MODEL}`,
           generationConfig: {
-            responseModalities: ['AUDIO'],
-            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: GEMINI_VOICE } } },
+            responseModalities: liveConfig.responseModalities ?? ['AUDIO'],
+            speechConfig: liveConfig.speechConfig,
           },
-          systemInstruction: { parts: [{ text: sysPrompt }] },
-          inputAudioTranscription: {},
-          outputAudioTranscription: {},
+          systemInstruction: liveConfig.systemInstruction,
+          inputAudioTranscription: liveConfig.inputAudioTranscription ?? {},
+          outputAudioTranscription: liveConfig.outputAudioTranscription ?? {},
+          realtimeInputConfig: liveConfig.realtimeInputConfig,
+          contextWindowCompression: liveConfig.contextWindowCompression,
+          tools: liveConfig.tools,
         },
-      }
-      if (webSearch) {
-        setupPayload.setup.tools = [{ googleSearch: {} }]
       }
       ws.send(JSON.stringify(setupPayload))
 
@@ -366,21 +343,13 @@ export function useGeminiLive({
         setSessionState('idle')
         setIsAvaSpeaking(false)
         setStatusText('Session terminée — appuyez pour recommencer')
-        // Synthèse mémoire en arrière-plan
-        const snap = [...transcriptRef.current]
-        const key = apiKeyRef.current
-        if (userId && key && snap.length > 0) {
-          generateAndSaveMemory(userId, key, snap, memorySummary, memoryWordLimit).then(summary => {
-            if (summary) onMemoryUpdated?.(summary)
-          })
-        }
         onSessionEnd?.()
       }
     }
   }, [language, webSearch, memorySummary, userName, handleMessage, stopSession, onSessionEnd])
 
   return {
-    sessionState, transcript, statusText, isAvaSpeaking,
+    sessionState, transcript, statusText, errorCode, isAvaSpeaking,
     isMuted, setIsMuted, startSession, stopSession, volumeLevel, sendImage,
   }
 }

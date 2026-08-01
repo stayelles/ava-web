@@ -3,12 +3,20 @@ import type { UserData } from '../types'
 
 export async function avaAiRequest(user: UserData, payload: Record<string, unknown>, timeoutMs = 30000) {
   if (!user.ava_session_token) throw new Error('SESSION_EXPIRED')
+  const localeOptions = Intl.DateTimeFormat().resolvedOptions()
   const controller = new AbortController()
   const timer = window.setTimeout(() => controller.abort(), timeoutMs)
   try {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/ava-ai`, {
       method: 'POST', headers: SUPABASE_HEADERS, signal: controller.signal,
-      body: JSON.stringify({ ...payload, user_id: user.id, ava_session_token: user.ava_session_token, surface: 'web' }),
+      body: JSON.stringify({
+        ...payload,
+        user_id: user.id,
+        ava_session_token: user.ava_session_token,
+        surface: 'web',
+        timezone: localeOptions.timeZone || 'UTC',
+        locale: localeOptions.locale || navigator.language || 'fr-FR',
+      }),
     })
     const data = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(data.error ?? `HTTP ${response.status}`)

@@ -54,7 +54,6 @@ declare global {
 interface Props {
   user: UserData
   onRefresh?: () => void
-  onGoToSettings?: () => void
 }
 
 // ── Plans definition ──
@@ -249,8 +248,6 @@ const CUSTOM_FEATURES = [
   { icon: Monitor, text: 'Ava Desktop inclus', val: 'Inclus' },
   { icon: Bell, text: '∞ Rappels push illimités', val: 'Illimité' },
   { icon: Layers, text: '∞ Intégrations MCP illimitées', val: 'Illimité' },
-  { icon: Key, text: 'Votre propre clé IA compatible Ava', val: 'Requis' },
-  { icon: Lock, text: 'Clé chiffrée de bout en bout avec votre PIN', val: 'Chiffré' },
 ]
 
 const planLabels: Record<string, string> = {
@@ -565,7 +562,7 @@ function VoiceQuotaBar({ user, pro }: { user: UserData; pro: boolean }) {
   )
 }
 
-export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
+export function SubscriptionTab({ user, onRefresh }: Props) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [targetPlan, setTargetPlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [billingLoading, setBillingLoading] = useState(false)
@@ -1416,56 +1413,6 @@ export function SubscriptionTab({ user, onRefresh, onGoToSettings }: Props) {
                 }`}>
                   {billingError || billingMessage}
                 </div>
-              )}
-
-              {/* Custom Key Integration (Show alert if on custom plan) */}
-              {custom && (
-                <motion.div
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05 }}
-                  className="rounded-3xl p-6 border bg-slate-950/20 backdrop-blur-md flex flex-col md:flex-row md:items-center justify-between gap-6"
-                  style={{
-                    borderColor: user.gemini_key_hint ? 'rgba(99, 102, 241, 0.15)' : 'rgba(245, 158, 11, 0.2)',
-                    background: user.gemini_key_hint 
-                      ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.02) 0%, rgba(99, 102, 241, 0.01) 100%)' 
-                      : 'linear-gradient(135deg, rgba(245, 158, 11, 0.02) 0%, rgba(245, 158, 11, 0.01) 100%)'
-                  }}
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 mt-0.5"
-                      style={{ background: user.gemini_key_hint ? 'rgba(99,102,241,0.08)' : 'rgba(245,158,11,0.08)' }}>
-                      <Key size={18} style={{ color: user.gemini_key_hint ? '#818cf8' : '#f59e0b' }} />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white">Clé IA personnelle</h3>
-                      {user.gemini_key_hint ? (
-                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                          Votre clé API ({user.gemini_key_hint}) est configurée et active. Toutes vos conversations utilisent vos propres quotas IA.
-                        </p>
-                      ) : (
-                        <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                          <span className="text-amber-400 font-semibold">Action requise :</span> Aucune clé API configurée. Vous devez entrer votre clé IA personnelle compatible Ava dans vos paramètres pour le chat général.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {onGoToSettings && (
-                    <button
-                      onClick={onGoToSettings}
-                      className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-bold text-xs transition-all hover:scale-[1.02]"
-                      style={{
-                        background: user.gemini_key_hint ? 'rgba(99,102,241,0.1)' : 'rgba(245,158,11,0.1)',
-                        color: user.gemini_key_hint ? '#818cf8' : '#f59e0b',
-                        border: `1px solid ${user.gemini_key_hint ? 'rgba(99,102,241,0.2)' : 'rgba(245,158,11,0.2)'}`
-                      }}
-                    >
-                      {user.gemini_key_hint ? 'Gérer la clé API' : 'Configurer ma clé API'}
-                      <ArrowRight size={12} />
-                    </button>
-                  )}
-                </motion.div>
               )}
 
               {/* Unlocked Features Table */}

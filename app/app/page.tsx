@@ -7,8 +7,7 @@ import { AppShell } from '@/components/app/AppShell'
 export default function AvaWebApp() {
   const {
     user, loginLoading, loginError, login, logout,
-    refreshUser, updatePin, permissions, decrementCredits, trackVoiceTime,
-    customApiKey, saveApiKey, removeApiKey, incrementTextMessages,
+    refreshUser, updatePin, permissions,
     registerRequest, registerVerify, requestPinReset, confirmPinReset,
   } = useUserData()
 
@@ -33,12 +32,6 @@ export default function AvaWebApp() {
       onLogout={logout}
       onUpdatePin={updatePin}
       onRefresh={refreshUser}
-      onDecrementCredits={decrementCredits}
-      onTrackVoiceTime={trackVoiceTime}
-      customApiKey={customApiKey}
-      onSaveApiKey={saveApiKey}
-      onRemoveApiKey={removeApiKey}
-      onIncrementTextMessages={incrementTextMessages}
     />
   )
 }

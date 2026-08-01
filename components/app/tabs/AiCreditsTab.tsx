@@ -255,7 +255,7 @@ export function AiCreditsTab({ user, onGoToSubscription }: { user: UserData; onG
           <Coins className="mx-auto text-rose-400" size={38} />
           <h1 className="mt-4 text-2xl font-black text-white">Crédits Ava AI</h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-400">
-            Le portefeuille Ava AI et les 150 crédits inclus tous les 30 jours sont disponibles avec Custom Max.
+            Le portefeuille Ava AI et les 115 crédits inclus tous les 30 jours sont disponibles avec Custom Max.
             Les crédits restent utilisables 90 jours maximum tant que l’abonnement demeure actif.
           </p>
           <button onClick={onGoToSubscription} className="mt-6 rounded-2xl bg-rose-600 px-5 py-3 text-sm font-black text-white hover:bg-rose-500">
@@ -276,7 +276,7 @@ export function AiCreditsTab({ user, onGoToSubscription }: { user: UserData; onG
             </div>
             <h1 className="mt-2 text-3xl font-black tracking-tight text-white">Crédits Ava AI</h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
-              150 crédits sont ajoutés tous les 30 jours avec Custom Max. Chaque crédit expire 90 jours après son octroi
+              115 crédits sont ajoutés tous les 30 jours avec Custom Max. Chaque crédit expire 90 jours après son octroi
               et tout solde restant est perdu si l’abonnement s’arrête. Aucun volume ne bénéficie d’une remise.
             </p>
           </div>

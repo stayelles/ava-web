@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Send, Trash2, MessageSquare } from 'lucide-react'
 import type { UserData, AvaPermissions } from '../types'
-import { SYSTEM_INSTRUCTION } from '../constants'
 import { avaAiRequest } from '../services/avaAi'
 
 interface ChatMessage {
@@ -13,31 +12,22 @@ interface ChatMessage {
   ts: number
 }
 
-type GeminiContent = { role: 'user' | 'model'; parts: { text: string }[] }
-
 interface Props {
   user: UserData
   permissions: AvaPermissions
   language: string
   webSearch: boolean
-  onIncrementTextMessages: () => Promise<{ blocked: boolean }>
-  customApiKey?: string | null
 }
-
-const GEMINI_TEXT_MODEL = 'gemini-3-flash-preview'
 
 export function ChatTab({
   user,
   permissions,
-  language,
-  webSearch,
-  onIncrementTextMessages,
-  customApiKey,
 }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [quotaBlocked, setQuotaBlocked] = useState(false)
+  const [showCreditBanner, setShowCreditBanner] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const storageKey = `ava_chat_web_${user.id}`
@@ -70,11 +60,6 @@ export function ChatTab({
     const text = input.trim()
     if (!text || loading) return
 
-    const { blocked } = await onIncrementTextMessages()
-    if (blocked) {
-      setQuotaBlocked(true)
-      return
-    }
     setQuotaBlocked(false)
 
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', text, ts: Date.now() }
@@ -84,60 +69,24 @@ export function ChatTab({
     setLoading(true)
     localStorage.setItem(storageKey, JSON.stringify(updated.slice(-60)))
 
-    const systemInstruction = SYSTEM_INSTRUCTION(
-      language,
-      webSearch,
-      user.memorySummary,
-      user.first_name ?? undefined,
-    )
-
     try {
-      if (!customApiKey) {
-        const data = await avaAiRequest(user, {
-          action: 'chat',
-          role: 'support',
-          message: text,
-          history: updated.slice(-20).map(m => ({ role: m.role, text: m.text })),
-        })
-        const avaMsg: ChatMessage = {
-          id: `${Date.now()}-a`, role: 'model', text: data.text ?? '...', ts: Date.now(),
-        }
-        const final = [...updated, avaMsg]
-        setMessages(final)
-        localStorage.setItem(storageKey, JSON.stringify(final.slice(-60)))
-        return
+      const data = await avaAiRequest(user, {
+        action: 'chat',
+        role: 'support',
+        message: text,
+        idempotency_key: `web:text:${userMsg.id}`,
+        history: updated.slice(-20).map(m => ({ role: m.role, text: m.text })),
+      })
+      if (Number(data.available_balance) === 0) setShowCreditBanner(true)
+      const avaMsg: ChatMessage = {
+        id: `${Date.now()}-a`, role: 'model', text: data.message ?? data.text ?? '...', ts: Date.now(),
       }
-
-      const contents: GeminiContent[] = updated.map(m => ({ role: m.role, parts: [{ text: m.text }] }))
-
-      const apiTools: any[] = []
-      if (webSearch) apiTools.push({ googleSearch: {} })
-
-      const body: any = {
-        system_instruction: { parts: [{ text: systemInstruction }] },
-        contents,
-      }
-      if (apiTools.length > 0) body.tools = apiTools
-
-      for (let step = 0; step < 10; step++) {
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_TEXT_MODEL}:generateContent?key=${encodeURIComponent(customApiKey)}`,
-          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
-        )
-        const data = await res.json()
-        if (!res.ok) throw new Error(data.error?.message ?? `HTTP ${res.status}`)
-
-        const parts: any[] = data.candidates?.[0]?.content?.parts ?? []
-
-        // Handle tool calls (googleSearch grounding — no function call needed, just text)
-        const responseText = parts.find((p: any) => p.text)?.text ?? '...'
-        const avaMsg: ChatMessage = { id: `${Date.now()}-a`, role: 'model', text: responseText, ts: Date.now() }
-        const final = [...updated, avaMsg]
-        setMessages(final)
-        localStorage.setItem(storageKey, JSON.stringify(final.slice(-60)))
-        break
-      }
+      const final = [...updated, avaMsg]
+      setMessages(final)
+      localStorage.setItem(storageKey, JSON.stringify(final.slice(-60)))
     } catch (e: any) {
+      if (e?.message === 'AI_CREDITS_EXHAUSTED') setShowCreditBanner(true)
+      if (e?.message === 'TEXT_QUOTA_EXCEEDED') setQuotaBlocked(true)
       const errMsg: ChatMessage = {
         id: `${Date.now()}-e`,
         role: 'model',
@@ -150,7 +99,7 @@ export function ChatTab({
     } finally {
       setLoading(false)
     }
-  }, [input, loading, messages, storageKey, language, webSearch, user, onIncrementTextMessages, customApiKey])
+  }, [input, loading, messages, storageKey, user])
 
   const limit = permissions.dailyTextMessages
   const nowTs = new Date()
@@ -258,6 +207,18 @@ export function ChatTab({
           <p className="text-xs font-semibold" style={{ color: '#f43f5e' }}>
             Limite journalière atteinte ({limit} messages). Revenez demain ou passez en Pro.
           </p>
+        </div>
+      )}
+
+      {showCreditBanner && (
+        <div className="fixed inset-x-0 bottom-20 lg:bottom-5 z-[130] flex justify-center px-4 pointer-events-none">
+          <div className="pointer-events-auto w-full max-w-xl rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-xl p-4 shadow-2xl shadow-rose-500/20">
+            <p className="text-sm font-semibold text-white">Vos crédits Ava AI sont épuisés. Rechargez votre solde pour continuer.</p>
+            <div className="mt-3 flex gap-2">
+              <button onClick={() => { window.location.href = 'https://call-ava.com/app?tab=ai-credits' }} className="rounded-xl bg-rose-500 hover:bg-rose-400 px-4 py-2 text-xs font-bold text-white">Recharger mes crédits</button>
+              <button onClick={() => setShowCreditBanner(false)} className="rounded-xl bg-white/[0.06] border border-white/10 px-4 py-2 text-xs font-bold text-slate-300">Fermer</button>
+            </div>
+          </div>
         </div>
       )}
 

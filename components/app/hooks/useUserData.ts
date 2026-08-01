@@ -3,23 +3,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_HEADERS } from '../constants'
 import type { UserData, AvaPermissions } from '../types'
-import { resolvePermissions, isPro, isCustomPlan, voiceQuotaMinutes } from '../types'
-import { encryptApiKey, decryptApiKey } from '../../../utils/cryptoApiKey'
+import { resolvePermissions, isCustomPlan } from '../types'
 
 function nextMonthReset(): string {
   const now = new Date()
   return new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
-}
-
-const USAGE_FUNCTION_URL = `${SUPABASE_URL}/functions/v1/user-usage`
-
-async function updateUserUsage(action: string, userId: string, payload: Record<string, unknown> = {}) {
-  const res = await fetch(USAGE_FUNCTION_URL, {
-    method: 'POST',
-    headers: SUPABASE_HEADERS,
-    body: JSON.stringify({ action, user_id: userId, ...payload }),
-  })
-  return res.json()
 }
 
 // Check if monthly reset is needed and return corrected user object
@@ -32,7 +20,7 @@ function applyVoiceReset(u: UserData): UserData {
 }
 
 const SESSION_KEY = 'ava_web_session'
-const SELECT_FIELDS = 'id,email,is_admin,credits,free_daily_credits,subscription_source,subscription_expires_at,subscription_plan,subscription_tier,paddle_subscription_id,paddle_renewal_cancelled_at,paddle_scheduled_cancel_at,paypal_subscription_id,paypal_plan_id,geniuspay_subscription_uuid,geniuspay_stripe_subscription_id,geniuspay_customer_id,mollie_customer_id,mollie_subscription_id,mollie_first_payment_id,mollie_last_payment_id,airwallex_customer_id,airwallex_checkout_id,airwallex_subscription_id,airwallex_price_id,airwallex_last_event_type,whop_checkout_id,whop_plan_id,whop_payment_id,whop_membership_id,whop_user_id,whop_last_event_type,nowpayments_payment_id,nowpayments_invoice_id,nowpayments_subscription_id,nowpayments_subscription_plan_id,nowpayments_last_status,nowpayments_last_event_id,billing_country_code,billing_country_name,billing_country_confirmed_at,ava_trading_trial_used,ava_trading_trial_started_at,ava_trading_trial_plan,ava_trading_trial_subscription_id,plan_switch_count,last_plan_change_at,subscription_abuse_flag,referral_code,telegram_id,first_name,last_name,voice_minutes_used,voice_quota_reset_at,custom_plan_expires_at,gemini_api_key_enc,gemini_api_key_iv,gemini_key_hint,text_messages_used,text_quota_reset_at'
+const SELECT_FIELDS = 'id,email,is_admin,credits,free_daily_credits,subscription_source,subscription_expires_at,subscription_plan,subscription_tier,paddle_subscription_id,paddle_renewal_cancelled_at,paddle_scheduled_cancel_at,paypal_subscription_id,paypal_plan_id,geniuspay_subscription_uuid,geniuspay_stripe_subscription_id,geniuspay_customer_id,mollie_customer_id,mollie_subscription_id,mollie_first_payment_id,mollie_last_payment_id,airwallex_customer_id,airwallex_checkout_id,airwallex_subscription_id,airwallex_price_id,airwallex_last_event_type,whop_checkout_id,whop_plan_id,whop_payment_id,whop_membership_id,whop_user_id,whop_last_event_type,nowpayments_payment_id,nowpayments_invoice_id,nowpayments_subscription_id,nowpayments_subscription_plan_id,nowpayments_last_status,nowpayments_last_event_id,billing_country_code,billing_country_name,billing_country_confirmed_at,ava_trading_trial_used,ava_trading_trial_started_at,ava_trading_trial_plan,ava_trading_trial_subscription_id,plan_switch_count,last_plan_change_at,subscription_abuse_flag,referral_code,telegram_id,first_name,last_name,voice_minutes_used,voice_quota_reset_at,custom_plan_expires_at,text_messages_used,text_quota_reset_at'
 
 async function fetchMemory(userId: string): Promise<string> {
   try {
@@ -64,7 +52,6 @@ export function useUserData() {
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginError, setLoginError] = useState('')
   const [permissions, setPermissions] = useState<AvaPermissions>({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false, dailyTextMessages: 10, voiceMonthlyMinutes: 3, dailyWebSearches: 0, memoryWordLimit: 150, agentDailyLimit: 0, mcpDailyLimit: 0, desktopDailyLimit: 0, canUseAvaTrading: false })
-  const [customApiKey, setCustomApiKey] = useState<string | null>(null)
 
   // Load saved session on mount + refresh memory + apply voice reset
   useEffect(() => {
@@ -79,7 +66,6 @@ export function useUserData() {
         if (u.voice_minutes_used !== raw.voice_minutes_used) {
           const { memorySummary: _, ...toStore } = u
           localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
-          updateUserUsage('track_voice', u.id, { duration_seconds: 0 }).catch(() => {})
         }
         fetchUserProfile(u.id).then(fresh => {
           if (!fresh) return
@@ -123,13 +109,6 @@ export function useUserData() {
         setUser(u)
         const { memorySummary: _ms, ...toStore } = u
         localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
-        // Déchiffrer la clé API Gemini si plan Custom actif
-        if (perms.canUseCustomApiKey && u.gemini_api_key_enc && u.gemini_api_key_iv) {
-          try {
-            const decrypted = await decryptApiKey(u.gemini_api_key_enc, u.gemini_api_key_iv, pin, u.id)
-            setCustomApiKey(decrypted)
-          } catch {}
-        }
         // Fetch memory async — inject into user state without blocking login
         fetchMemory(u.id).then(memorySummary => {
           if (memorySummary) setUser(prev => prev ? { ...prev, memorySummary } : prev)
@@ -219,7 +198,6 @@ export function useUserData() {
   const logout = useCallback(() => {
     setUser(null)
     setPermissions({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false, dailyTextMessages: 10, voiceMonthlyMinutes: 3, dailyWebSearches: 0, memoryWordLimit: 150, agentDailyLimit: 0, mcpDailyLimit: 0, desktopDailyLimit: 0, canUseAvaTrading: false })
-    setCustomApiKey(null)
     localStorage.removeItem(SESSION_KEY)
   }, [])
 
@@ -261,133 +239,10 @@ export function useUserData() {
     }
   }, [user])
 
-  // Decrement 1 credit per completed turn (free users only)
-  const decrementCredits = useCallback(async () => {
-    if (!user || isPro(user)) return
-    // Decrement free_daily_credits first, then credits
-    const newFree = Math.max(0, (user.free_daily_credits ?? 0) - 1)
-    const newPaid = (user.free_daily_credits ?? 0) > 0
-      ? (user.credits ?? 0)
-      : Math.max(0, (user.credits ?? 0) - 1)
-
-    const updated: UserData = { ...user, free_daily_credits: newFree, credits: newPaid }
-    setUser(updated)
-    // Don't save memorySummary to localStorage
-    const { memorySummary: _, ...toStore } = updated
-    localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
-
-    updateUserUsage('spend_credits', user.id, { amount: 1 })
-      .then(data => {
-        if (!data?.ok || !data?.success) return
-        setUser(current => current ? {
-          ...current,
-          credits: Number(data.credits ?? current.credits ?? 0),
-          free_daily_credits: Number(data.free_daily_credits ?? current.free_daily_credits ?? 0),
-        } : current)
-      })
-      .catch(() => {})
-  }, [user])
-
-  // Add voice session duration (seconds) to monthly counter
-  const trackVoiceTime = useCallback(async (durationSeconds: number) => {
-    if (!user || durationSeconds < 1) return
-    // Check if a monthly reset is needed before adding
-    const u = applyVoiceReset(user)
-    const minutesToAdd = durationSeconds / 60
-    const newUsed = (u.voice_minutes_used ?? 0) + minutesToAdd
-    const newQuota = voiceQuotaMinutes(u)
-    const updated: UserData = {
-      ...u,
-      voice_minutes_used: Math.min(newUsed, newQuota), // cap at quota
-      voice_quota_reset_at: u.voice_quota_reset_at,
-    }
-    setUser(updated)
-    const { memorySummary: _, ...toStore } = updated
-    localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
-    updateUserUsage('track_voice', user.id, { duration_seconds: durationSeconds })
-      .then(data => {
-        if (!data?.ok) return
-        setUser(current => current ? {
-          ...current,
-          voice_minutes_used: Number(data.voice_minutes_used ?? current.voice_minutes_used ?? 0),
-          voice_quota_reset_at: data.voice_quota_reset_at ?? current.voice_quota_reset_at ?? null,
-        } : current)
-      })
-      .catch(() => {})
-  }, [user])
-
-  const saveApiKey = useCallback(async (apiKey: string, pin: string): Promise<{ ok: boolean; error?: string }> => {
-    if (!user) return { ok: false, error: 'Non connecté' }
-    try {
-      const { enc, iv, hint } = await encryptApiKey(apiKey, pin, user.id)
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${user.id}`, {
-        method: 'PATCH',
-        headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
-        body: JSON.stringify({ gemini_api_key_enc: enc, gemini_api_key_iv: iv, gemini_key_hint: hint }),
-      })
-      if (res.ok || res.status === 204) {
-        // Déchiffrer immédiatement pour activer la session courante
-        try {
-          const decrypted = await decryptApiKey(enc, iv, pin, user.id)
-          setCustomApiKey(decrypted)
-        } catch {}
-        setUser(u => u ? { ...u, gemini_key_hint: hint, gemini_api_key_enc: enc, gemini_api_key_iv: iv } : u)
-        return { ok: true }
-      }
-      return { ok: false, error: 'Erreur serveur' }
-    } catch {
-      return { ok: false, error: 'Erreur de chiffrement' }
-    }
-  }, [user])
-
-  const removeApiKey = useCallback(async (): Promise<{ ok: boolean }> => {
-    if (!user) return { ok: false }
-    try {
-      await fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${user.id}`, {
-        method: 'PATCH',
-        headers: { ...SUPABASE_HEADERS, Prefer: 'return=minimal' },
-        body: JSON.stringify({ gemini_api_key_enc: null, gemini_api_key_iv: null, gemini_key_hint: null }),
-      })
-      setCustomApiKey(null)
-      setUser(u => u ? { ...u, gemini_key_hint: null, gemini_api_key_enc: null, gemini_api_key_iv: null } : u)
-      return { ok: true }
-    } catch {
-      return { ok: false }
-    }
-  }, [user])
-
-  const incrementTextMessages = useCallback(async (): Promise<{ blocked: boolean }> => {
-    if (!user) return { blocked: true }
-    const limit = permissions.dailyTextMessages
-    const now = new Date()
-    const resetAt = user.text_quota_reset_at ? new Date(user.text_quota_reset_at) : null
-    const needsReset = !resetAt || resetAt <= now
-    const currentUsed = needsReset ? 0 : (user.text_messages_used ?? 0)
-    if (limit !== -1 && currentUsed >= limit) return { blocked: true }
-    const newUsed = currentUsed + 1
-    const nextReset = needsReset
-      ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString()
-      : user.text_quota_reset_at!
-    setUser(u => u ? { ...u, text_messages_used: newUsed, text_quota_reset_at: nextReset } : u)
-    updateUserUsage('increment_text', user.id)
-      .then(data => {
-        if (!data?.ok) return
-        setUser(current => current ? {
-          ...current,
-          text_messages_used: Number(data.text_messages_used ?? current.text_messages_used ?? 0),
-          text_quota_reset_at: data.text_quota_reset_at ?? current.text_quota_reset_at ?? null,
-        } : current)
-      })
-      .catch(() => {})
-    return { blocked: false }
-  }, [user, permissions])
-
   return {
     user, setUser, permissions,
     loginLoading, loginError, login, logout,
-    refreshUser, updatePin, decrementCredits, trackVoiceTime,
-    customApiKey, saveApiKey, removeApiKey,
-    incrementTextMessages,
+    refreshUser, updatePin,
     registerRequest, registerVerify, requestPinReset, confirmPinReset,
   }
 }

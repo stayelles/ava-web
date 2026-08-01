@@ -34,6 +34,7 @@ export function AvaAiTab({ user }: { user: UserData }) {
   const [threadId, setThreadId] = useState<string | null>(null)
   const [adminOpen, setAdminOpen] = useState(false)
   const [agentConsoleOpen, setAgentConsoleOpen] = useState(false)
+  const [showCreditBanner, setShowCreditBanner] = useState(false)
   const [supportAgent, setSupportAgent] = useState<any>(null)
   const [inviteCode, setInviteCode] = useState('')
   const [inviteId] = useState(() => typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('support_invite') ?? '')
@@ -112,6 +113,7 @@ export function AvaAiTab({ user }: { user: UserData }) {
       const desktopStatus = role === 'account' ? await readDesktopStatus() : null
       const result = await avaAiRequest(user, {
         action: 'chat', role, message, thread_id: threadId,
+        idempotency_key: `web:ava-ai:${crypto.randomUUID()}`,
         attachments: selectedImages.map(({ mime_type, data }) => ({ mime_type, data })),
         history: messages.slice(-20),
         propose_config: role === 'trading',
@@ -121,6 +123,7 @@ export function AvaAiTab({ user }: { user: UserData }) {
         desktop_status: desktopStatus,
       })
       setThreadId(result.thread_id ?? threadId)
+      if (Number(result.available_balance) === 0) setShowCreditBanner(true)
       setMessages(prev => [...prev, { role: 'assistant', content: result.message ?? 'Je n’ai pas assez de données pour répondre.' }])
       setProposal(result.proposal ?? null)
       setPendingAction(result.action ?? null)
@@ -129,6 +132,7 @@ export function AvaAiTab({ user }: { user: UserData }) {
       }
     } catch (error) {
       const code = error instanceof Error ? error.message : 'AVA_AI_ERROR'
+      if (code === 'AI_CREDITS_EXHAUSTED') setShowCreditBanner(true)
       setMessages(prev => [...prev, { role: 'assistant', content: code === 'CUSTOM_MAX_REQUIRED' ? 'Cette fonction avancée est réservée au plan Custom Max.' : 'Ava AI est momentanément indisponible.' }])
     } finally { setLoading(false) }
   }
@@ -248,6 +252,7 @@ export function AvaAiTab({ user }: { user: UserData }) {
         {images.length > 0 && <div className="max-w-3xl mx-auto mb-2 flex flex-wrap gap-2">{images.map((item, index) => <button key={`${item.name}-${index}`} onClick={() => setImages(current => current.filter((_, position) => position !== index))} className="relative group"><img src={item.preview} alt={item.name} className="h-14 w-14 object-cover rounded-xl border border-white/10" /><span className="absolute inset-0 rounded-xl bg-slate-950/70 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white"><Trash2 size={14} /></span></button>)}</div>}
         <div className="max-w-3xl mx-auto flex gap-2"><input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" multiple className="hidden" onChange={event => void pickImages(event.target.files)} /><button onClick={() => fileRef.current?.click()} className="w-12 rounded-2xl border border-white/10 bg-white/[0.04] text-slate-300 flex items-center justify-center" title="Ajouter des images"><ImagePlus size={18} /></button><textarea value={input} onChange={event => setInput(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); send() } }} rows={2} placeholder={role === 'trading' ? 'Décrivez le diagnostic ou l’optimisation souhaitée…' : 'Écrivez votre question…'} className="flex-1 resize-none rounded-2xl bg-white/[0.04] border border-white/10 px-4 py-3 text-sm text-white outline-none focus:border-rose-500/40" /><button onClick={send} disabled={loading || (!input.trim() && !images.length)} className="w-12 rounded-2xl bg-rose-500 text-white flex items-center justify-center disabled:opacity-40"><Send size={18} /></button></div>
       </footer>}
+      {showCreditBanner && <div className="fixed inset-x-0 bottom-20 lg:bottom-5 z-[130] flex justify-center px-4 pointer-events-none"><div className="pointer-events-auto w-full max-w-xl rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-xl p-4 shadow-2xl shadow-rose-500/20"><p className="text-sm font-semibold text-white">Vos crédits Ava AI sont épuisés. Rechargez votre solde pour continuer.</p><div className="mt-3 flex gap-2"><button onClick={() => { window.location.href = 'https://call-ava.com/app?tab=ai-credits' }} className="rounded-xl bg-rose-500 hover:bg-rose-400 px-4 py-2 text-xs font-bold text-white">Recharger mes crédits</button><button onClick={() => setShowCreditBanner(false)} className="rounded-xl bg-white/[0.06] border border-white/10 px-4 py-2 text-xs font-bold text-slate-300">Fermer</button></div></div></div>}
     </div>
   )
 }

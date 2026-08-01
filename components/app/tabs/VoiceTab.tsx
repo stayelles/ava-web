@@ -20,25 +20,39 @@ interface Props {
   onTurnComplete?: () => void
   onGoToSubscription?: () => void
   onVoiceDone?: (durationSeconds: number) => void
-  customApiKey?: string | null
 }
 
 const MAX_IMAGES = 6
 
 export function VoiceTab({
   user, language, webSearch, permissions,
-  onSessionEnd, onTurnComplete, onGoToSubscription, onVoiceDone,
-  customApiKey,
+  onSessionEnd, onTurnComplete, onGoToSubscription,
 }: Props) {
   const callDurationRef = useRef(0)
+  const [walletBalance, setWalletBalance] = useState<number | null>(null)
+  const [showCreditBanner, setShowCreditBanner] = useState(false)
 
   const handleSessionEnd = useCallback(() => {
-    onVoiceDone?.(callDurationRef.current)
     onSessionEnd?.()
-  }, [onSessionEnd, onVoiceDone])
+  }, [onSessionEnd])
+
+  const completeTurn = useCallback(async (authorizationId: string) => {
+    if (!authorizationId) return
+    const result = await avaAiRequest(user, {
+      action: 'live-turn-complete',
+      authorization_id: authorizationId,
+      idempotency_key: `web:complete:${authorizationId}`,
+    })
+    if (result.available_balance !== null && result.available_balance !== undefined) {
+      const balance = Math.max(0, Number(result.available_balance) || 0)
+      setWalletBalance(balance)
+      if (balance === 0) setShowCreditBanner(true)
+    }
+    onTurnComplete?.()
+  }, [onTurnComplete, user])
 
   const {
-    sessionState, transcript, statusText, isAvaSpeaking,
+    sessionState, transcript, statusText, errorCode, isAvaSpeaking,
     isMuted, setIsMuted, startSession, stopSession, volumeLevel, sendImage,
   } = useGeminiLive({
     language,
@@ -48,12 +62,25 @@ export function VoiceTab({
     userId: user.id,
     memoryWordLimit: permissions.memoryWordLimit,
     onSessionEnd: handleSessionEnd,
-    onTurnComplete,
+    onTurnComplete: completeTurn,
     onMemoryUpdated: () => { /* memory saved — refreshUser re-fetches it via onSessionEnd */ },
-    apiKey: customApiKey ?? undefined,
-    apiKeyProvider: customApiKey ? undefined : async () => {
-      const data = await avaAiRequest(user, { action: 'live-token', purpose: 'support' })
-      return data.token ?? null
+    apiKeyProvider: async () => {
+      const data = await avaAiRequest(user, {
+        action: 'live-turn-authorize',
+        purpose: 'support',
+        idempotency_key: `web:voice:${crypto.randomUUID()}`,
+        tools: [],
+      })
+      if (data.available_balance !== null && data.available_balance !== undefined) {
+        setWalletBalance(Math.max(0, Number(data.available_balance) || 0))
+      }
+      return data?.token && data?.authorization_id ? {
+        token: String(data.token),
+        authorizationId: String(data.authorization_id),
+        model: String(data.model),
+        apiVersion: String(data.api_version ?? 'v1beta'),
+        liveConfig: data.live_config ?? {},
+      } : null
     },
   })
 
@@ -68,14 +95,20 @@ export function VoiceTab({
 
   const credits = totalCredits(user)
   const pro = isPro(user)
+  const usesAiWallet = user.is_admin === true || user.subscription_plan === 'custom_max'
   const isActive = sessionState === 'connected'
   const isConnecting = sessionState === 'connecting'
   const isError = sessionState === 'error'
-  const noCredits = !pro && credits <= 0
+  const noCredits = usesAiWallet ? walletBalance === 0 : !pro && credits <= 0
   const voiceRemaining = voiceMinutesRemaining(user)
   const voiceQuota = voiceQuotaMinutes(user)
   const voiceExhausted = voiceRemaining <= 0
-  const cannotStart = noCredits || voiceExhausted
+  const voiceQuotaBlocks = !usesAiWallet && voiceExhausted
+  const cannotStart = noCredits || voiceQuotaBlocks
+
+  useEffect(() => {
+    if (errorCode === 'AI_CREDITS_EXHAUSTED') setShowCreditBanner(true)
+  }, [errorCode])
 
   const displayVolume = isAvaSpeaking
     ? volumeLevel * 0.5 + Math.random() * 0.12
@@ -127,10 +160,9 @@ export function VoiceTab({
           }}
         >
           <span className="uppercase tracking-wider text-[10px]" style={{ color: '#475569' }}>
-            {pro ? '∞' : 'Énergie'}
+            {usesAiWallet ? 'Ava AI' : pro ? 'Voix' : 'Énergie'}
           </span>
-          {!pro && <span>{credits}</span>}
-          {pro && <Crown size={11} style={{ color: '#f43f5e' }} />}
+          {usesAiWallet ? <span>{walletBalance ?? '—'}</span> : !pro ? <span>{credits}</span> : <Crown size={11} style={{ color: '#f43f5e' }} />}
         </div>
 
         {/* Timer */}
@@ -156,7 +188,7 @@ export function VoiceTab({
 
       {/* Voice quota exhausted warning */}
       <AnimatePresence>
-        {voiceExhausted && !isActive && (
+        {voiceQuotaBlocks && !isActive && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -253,7 +285,7 @@ export function VoiceTab({
               </p>
             </motion.div>
           ) : isError ? (
-            <p className="text-xs font-bold tracking-widest uppercase" style={{ color: '#f87171' }}>Connexion échouée</p>
+            <p className="max-w-md text-center text-xs font-bold" style={{ color: '#f87171' }}>{statusText}</p>
           ) : (
             <motion.p
               key={statusText}
@@ -270,6 +302,22 @@ export function VoiceTab({
           )}
         </div>
       </div>
+
+      {showCreditBanner && (
+        <div className="fixed inset-x-0 bottom-20 lg:bottom-5 z-[130] flex justify-center px-4 pointer-events-none">
+          <div className="pointer-events-auto w-full max-w-xl rounded-2xl bg-white/[0.04] border border-white/10 backdrop-blur-xl p-4 shadow-2xl shadow-rose-500/20">
+            <p className="text-sm font-semibold text-white">Vos crédits Ava AI sont épuisés. Rechargez votre solde pour continuer.</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button onClick={() => { window.location.href = 'https://call-ava.com/app?tab=ai-credits' }} className="rounded-xl bg-rose-500 hover:bg-rose-400 px-4 py-2 text-xs font-bold text-white transition-colors">
+                Recharger mes crédits
+              </button>
+              <button onClick={() => setShowCreditBanner(false)} className="rounded-xl bg-white/[0.06] border border-white/10 px-4 py-2 text-xs font-bold text-slate-300">
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom controls */}
       <div

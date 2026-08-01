@@ -22,12 +22,6 @@ interface Props {
   onLogout: () => void
   onUpdatePin: (currentPin: string, newPin: string) => Promise<{ ok: boolean; error?: string }>
   onRefresh: () => void
-  onDecrementCredits: () => Promise<void>
-  onTrackVoiceTime: (seconds: number) => Promise<void>
-  customApiKey?: string | null
-  onSaveApiKey?: (key: string, pin: string) => Promise<{ ok: boolean; error?: string }>
-  onRemoveApiKey?: () => Promise<{ ok: boolean }>
-  onIncrementTextMessages: () => Promise<{ blocked: boolean }>
 }
 
 const SUPPORTED_LANGUAGES: AppSettings['language'][] = ['fr', 'en', 'tr', 'de', 'es']
@@ -35,7 +29,7 @@ const LANG_STORAGE_KEY = 'ava_language'
 
 const DEFAULT_SETTINGS: AppSettings = { language: 'en', webSearch: false }
 
-export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, onDecrementCredits, onTrackVoiceTime, customApiKey, onSaveApiKey, onRemoveApiKey, onIncrementTextMessages }: Props) {
+export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }: Props) {
   const shouldStartOnSubscription = !isPro(user) && !isCustomPlan(user)
   const [activeTab, setActiveTab] = useState<AppTab>(shouldStartOnSubscription ? 'subscription' : 'voice')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
@@ -78,10 +72,6 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
     setActiveTab('subscription')
   }, [])
 
-  const handleGoToSettings = useCallback(() => {
-    setActiveTab('settings')
-  }, [])
-
   return (
     <div
       className="flex h-screen w-screen overflow-hidden"
@@ -120,10 +110,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               webSearch={settings.webSearch}
               permissions={permissions}
               onSessionEnd={handleSessionEnd}
-              onTurnComplete={onDecrementCredits}
               onGoToSubscription={handleGoToSubscription}
-              onVoiceDone={onTrackVoiceTime}
-              customApiKey={customApiKey}
             />
           )}
           {activeTab === 'chat' && (
@@ -132,8 +119,6 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               permissions={permissions}
               language={settings.language}
               webSearch={settings.webSearch}
-              onIncrementTextMessages={onIncrementTextMessages}
-              customApiKey={customApiKey}
             />
           )}
           {activeTab === 'ai' && <AvaAiTab user={user} />}
@@ -145,7 +130,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
             <ProfileTab user={user} onUpdatePin={onUpdatePin} />
           )}
           {activeTab === 'subscription' && (
-            <SubscriptionTab user={user} onRefresh={onRefresh} onGoToSettings={handleGoToSettings} />
+            <SubscriptionTab user={user} onRefresh={onRefresh} />
           )}
           {activeTab === 'referral' && (
             <ReferralTab user={user} />
@@ -156,11 +141,6 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, 
               onSettingsChange={handleSettingsChange}
               isPro={isPro(user)}
               onGoToSubscription={handleGoToSubscription}
-              canUseCustomApiKey={permissions.canUseCustomApiKey}
-              geminiKeyHint={user.gemini_key_hint}
-              customApiKey={customApiKey}
-              onSaveApiKey={onSaveApiKey}
-              onRemoveApiKey={onRemoveApiKey}
               userEmail={user.email}
               onLogout={onLogout}
             />
