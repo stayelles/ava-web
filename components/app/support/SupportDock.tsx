@@ -208,6 +208,31 @@ export function SupportDock({ user }: { user: UserData }) {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [active?.ava_support_messages?.length, open])
 
+  useEffect(() => {
+    if (!active?.id || active.status !== 'ai') {
+      setAiReplying(false)
+      return
+    }
+    const latest = (active.ava_support_messages ?? [])
+      .slice()
+      .sort((a: any, b: any) => String(a.created_at).localeCompare(String(b.created_at)))
+      .at(-1)
+    if (latest?.sender_type !== 'user') setAiReplying(false)
+  }, [active?.id, active?.status, active?.ava_support_messages])
+
+  useEffect(() => {
+    if (!aiReplying) return
+    const refreshTimer = window.setTimeout(() => void refresh(), 2_000)
+    const safetyTimer = window.setTimeout(() => {
+      setAiReplying(false)
+      void refresh()
+    }, 35_000)
+    return () => {
+      window.clearTimeout(refreshTimer)
+      window.clearTimeout(safetyTimer)
+    }
+  }, [aiReplying, refresh])
+
   async function pickFiles(selectedFiles: FileList | null) {
     const selected = Array.from(selectedFiles ?? [])
     const currentImages = files.filter(item => item.category === 'image').length
@@ -316,11 +341,8 @@ export function SupportDock({ user }: { user: UserData }) {
         ava_support_messages: [sent.message],
         ava_support_ratings: [],
       }, ...current.filter(item => item.id !== conversationId)])
-      setAiReplying(true)
-      void avaSupportRequest(user, { action: 'ai-reply', conversation_id: conversationId }, 60_000)
-        .then(refresh)
-        .catch(() => setError('Ava n’a pas pu répondre immédiatement. Votre message reste bien enregistré.'))
-        .finally(() => setAiReplying(false))
+      setAiReplying(sent.ai_reply_scheduled === true)
+      window.setTimeout(() => void refresh(), 1_500)
     } catch (exception) {
       setError(exception instanceof Error && exception.message === 'FIRST_NAME_REQUIRED'
         ? 'Ajoutez votre prénom pour personnaliser la conversation.'
@@ -375,11 +397,7 @@ export function SupportDock({ user }: { user: UserData }) {
           }
         : item))
       if (active.status === 'ai') {
-        setAiReplying(true)
-        void avaSupportRequest(user, { action: 'ai-reply', conversation_id: active.id }, 60_000)
-          .then(refresh)
-          .catch(() => setError('Ava n’a pas pu répondre immédiatement. Votre message reste bien enregistré.'))
-          .finally(() => setAiReplying(false))
+        setAiReplying(sent.ai_reply_scheduled === true)
       }
       window.setTimeout(() => {
         queuedFiles.forEach(item => item.preview && URL.revokeObjectURL(item.preview))
@@ -472,7 +490,9 @@ export function SupportDock({ user }: { user: UserData }) {
                 {active?.status === 'assigned'
                   ? 'Un conseiller vous accompagne'
                   : active?.status === 'queued'
-                    ? `En attente · réponse ${formatWait(availability.estimated_response_seconds)}`
+                    ? availability.available_count > 0
+                      ? `En attente · réponse ${formatWait(availability.estimated_response_seconds)}`
+                      : 'En attente · reprise dès la connexion d’un conseiller'
                     : active?.status === 'ai'
                       ? 'Ava répond immédiatement · transfert humain si nécessaire'
                     : active?.status === 'closed'
