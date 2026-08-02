@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, 
@@ -578,6 +578,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
   const [referralEntitlements, setReferralEntitlements] = useState<ReferralEntitlement[]>([])
   const [showPlanComparison, setShowPlanComparison] = useState(false)
   const paypalButtonRef = useRef<HTMLDivElement | null>(null)
+  const requestedCheckoutHandledRef = useRef<string | null>(null)
 
   const pro = isPro(user)
   const custom = isCustomPlan(user)
@@ -871,8 +872,16 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
     </div>
   )
 
-  const startCheckout = (plan: typeof ALL_PLANS[number]) => {
+  const startCheckout = useCallback((plan: typeof ALL_PLANS[number]) => {
+    setBillingError('')
+    setBillingMessage('')
+
     const source = String(user.subscription_source ?? '')
+    if (activePlanKey === plan.key) {
+      setBillingMessage(`${plan.label} est déjà votre formule active. Aucun nouvel abonnement n’a été créé.`)
+      return
+    }
+
     if (user.subscription_source === 'airwallex' && user.airwallex_subscription_id && activePlanKey && activePlanKey !== plan.key) {
       if (customPlanRank(plan.key) <= customPlanRank(activePlanKey)) {
         setBillingError('Le passage à une formule inférieure est désactivé pour éviter une erreur de facturation.')
@@ -901,14 +910,35 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
         setBillingMessage('Paddle est un ancien moyen de paiement. Arrêtez d’abord le renouvellement Paddle, puis choisissez une nouvelle formule par carte bancaire.')
         return
       }
-      setBillingError('')
-      setBillingMessage('')
       setPaymentChoicePlan(plan)
       return
     }
 
     setBillingError('Le paiement est indisponible pour cette formule.')
-  }
+  }, [activePlanKey, paddleRenewalStopped, user])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const requestedPlan = params.get('plan')
+    if (!isVisibleCheckoutPlanKey(requestedPlan)) return
+
+    const requestKey = `${user.id}:${requestedPlan}`
+    if (requestedCheckoutHandledRef.current === requestKey) return
+
+    const plan = ALL_PLANS.find(candidate => candidate.key === requestedPlan)
+    if (!plan) return
+
+    requestedCheckoutHandledRef.current = requestKey
+    const timer = window.setTimeout(() => {
+      startCheckout(plan)
+
+      const url = new URL(window.location.href)
+      url.searchParams.delete('plan')
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
+    }, 0)
+
+    return () => window.clearTimeout(timer)
+  }, [startCheckout, user.id])
 
   const startWhopCheckout = async (
     preferredPaymentMethod: WhopPaymentMethod = 'card',
@@ -1733,6 +1763,36 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {!paymentChoicePlan && !paypalPlan && !countryPromptPlan && (billingError || billingMessage) && (
+          <motion.div
+            role={billingError ? 'alert' : 'status'}
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 18, scale: 0.98 }}
+            className={`fixed bottom-6 left-1/2 z-[70] flex w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 items-start gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold shadow-2xl backdrop-blur-xl ${
+              billingError
+                ? 'border-rose-400/30 bg-rose-950/95 text-rose-100 shadow-rose-950/50'
+                : 'border-emerald-400/25 bg-slate-950/95 text-emerald-100 shadow-black/50'
+            }`}
+          >
+            <AlertCircle size={17} className="mt-0.5 shrink-0" />
+            <span className="min-w-0 flex-1 leading-relaxed">{billingError || billingMessage}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setBillingError('')
+                setBillingMessage('')
+              }}
+              className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-white/10 text-current opacity-70 transition-opacity hover:opacity-100"
+              aria-label="Fermer le message"
+            >
+              <X size={14} />
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 
