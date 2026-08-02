@@ -2,8 +2,8 @@ import Link from "next/link";
 import { Apple, ArrowLeft, Download, ShieldCheck, Smartphone } from "lucide-react";
 import { SiGoogleplay } from "react-icons/si";
 
-const AVA_DESKTOP_MAC_VERSION = "1.5.21";
-const AVA_DESKTOP_WINDOWS_VERSION = "1.5.22";
+const AVA_DESKTOP_MAC_VERSION = "1.5.23";
+const AVA_DESKTOP_WINDOWS_VERSION = "1.5.23";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = [
   {

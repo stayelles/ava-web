@@ -31,10 +31,10 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.5.21-arm64.dmg`
-- `Ava-1.5.21-x64.dmg`
-- `AvaSetup-1.5.22.exe`
-- `AvaBridgeEA-1.61.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
+- `Ava-1.5.23-arm64.dmg`
+- `Ava-1.5.23-x64.dmg`
+- `AvaSetup-1.5.23.exe`
+- `AvaBridgeEA-1.62.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
 If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before publishing: update Desktop required bridge version, web `AVA_BRIDGE_EA_VERSION`, download filenames, release assets, and docs together. Never ship a changed `.ex5` under an old bridge version.
@@ -59,6 +59,7 @@ If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before pub
 - Ava Web 0.5.24 corrige les pièces jointes Ava Support : les images, vidéos et documents utilisent l’endpoint TUS signé `/storage/v1/upload/resumable/sign`; le jeton `x-signature` reste éphémère, le bucket privé et le fichier est toujours vérifié par l’Edge Function avant d’être joint au message. Les erreurs d’upload, de taille, de session et de ticket fermé sont distinguées côté client.
 - Ava Web transmet la locale et le fuseau IANA à `ava-ai`; l'Edge Function calcule elle-même l'heure et le jour locaux afin que les échanges texte et vocaux puissent s'adapter naturellement au matin, à l'après-midi, au soir ou à la nuit.
 - Ava Web 0.5.26 publie Ava Desktop Windows 1.5.22 et AvaBridgeEA 1.61. AvaBridge 1.61 est obligatoire pour Ava Volatility afin que l’historique MT5 volumineux ne puisse plus retarder puis faire expirer un signal frais; macOS reste temporairement sur Desktop 1.5.21 jusqu’à son build notarié séparé.
+- Ava Web 0.5.27 publie Ava Desktop 1.5.23 sur Windows, Mac Intel et Apple Silicon avec AvaBridgeEA 1.62. La demande d’historique M1 utilise désormais un canal indépendant du signal de trading afin qu’un rafraîchissement Boom ou Crash ne puisse plus retarder, remplacer ou faire expirer un ordre frais; l’EA exporte cet historique indépendamment du timeframe visible dans MT5.
 
 ## Ava Cloud
 
