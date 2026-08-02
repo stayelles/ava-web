@@ -525,7 +525,7 @@ const GLOBAL_CONTROL_HELP = {
   stopCycleMode:
     'Bloqué : aucun nouveau cycle non-owner.\nAutorisé : l’owner et les comptes Custom Max autorisés peuvent utiliser Ava Alpha.\nForcé : Desktop active Ava Alpha selon la règle effective, sans contourner les sécurités. L’owner reste visible quel que soit l’interrupteur global.',
   stopCycleForced:
-    'Le mode forcé ne contourne jamais un blocage BUY/SELL, une autorisation de type, une zone, une capacité, le plan, le mode hedging, l’autorisation du compte réel ou AvaBridge 1.61.\nExemple : si BUY est autorisé et SELL bloqué pour une famille, Ava lance uniquement le côté BUY.',
+    'Le mode forcé ne contourne jamais un blocage BUY/SELL, une autorisation de type, une zone, une capacité, le plan, le mode hedging, l’autorisation du compte réel ou AvaBridge 1.62.\nExemple : si BUY est autorisé et SELL bloqué pour une famille, Ava lance uniquement le côté BUY.',
   stopCycleMarket:
     'Marché exact de la règle Stop Cycle.\nLa première bêta accepte uniquement Boom 1000 ou Crash 1000.',
   stopCycleMin:
@@ -1296,7 +1296,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const journalLines = agentConnected && Array.isArray(runtime?.journal) ? runtime.journal : []
   const bridgeVersion = String(instance?.bridge_version ?? '').replace(/^v/i, '')
   const bridgeVersionNumber = Number.parseFloat(bridgeVersion)
-  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.61
+  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.62
   const canRunCommands = agentConnected && (state === 'ready' || state === 'online' || state === 'attention')
   const canOpen = browserAccessReady && (state === 'ready' || state === 'online' || state === 'attention')
   const canProvision = state === 'not_created' || state === 'delayed' || state === 'deleted' || state === 'terminated'
@@ -1930,7 +1930,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] p-4">
                 <p className="text-sm font-black text-amber-100">AvaBridge version ancienne</p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  AvaBridge {instance?.bridge_version} est détecté. AvaBridge 1.61 est requis pour traiter les signaux frais avant l’historique MT5. Réinstalle AvaBridge depuis Ava Desktop avant de relancer le moteur.
+                  AvaBridge {instance?.bridge_version} est détecté. AvaBridge 1.62 est requis pour isoler l’historique MT5 des signaux frais. Réinstalle AvaBridge depuis Ava Desktop avant de relancer le moteur.
                 </p>
               </div>
             )}
@@ -2742,7 +2742,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   const forcedConfirmed = stopCyclePolicy.feature_enabled !== true
                     || stopCyclePolicy.mode !== 'forced'
                     || window.confirm(
-                    'Confirmer le mode forcé des cycles conditionnels ? Il restera limité à l’owner, aux comptes MT5 hedging, à AvaBridge 1.61 et à toutes les protections administrateur. Un compte réel exige aussi son autorisation explicite.',
+                    'Confirmer le mode forcé des cycles conditionnels ? Il restera limité à l’owner, aux comptes MT5 hedging, à AvaBridge 1.62 et à toutes les protections administrateur. Un compte réel exige aussi son autorisation explicite.',
                   )
                   if (!forcedConfirmed) {
                     setAdminControlMessage('Mode forcé non confirmé. Aucune configuration n’a été envoyée.')

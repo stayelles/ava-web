@@ -61,6 +61,7 @@ If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before pub
 - Ava Web 0.5.26 publie Ava Desktop Windows 1.5.22 et AvaBridgeEA 1.61. AvaBridge 1.61 est obligatoire pour Ava Volatility afin que l’historique MT5 volumineux ne puisse plus retarder puis faire expirer un signal frais; macOS reste temporairement sur Desktop 1.5.21 jusqu’à son build notarié séparé.
 - Ava Web 0.5.27 publie Ava Desktop 1.5.23 sur Windows, Mac Intel et Apple Silicon avec AvaBridgeEA 1.62. La demande d’historique M1 utilise désormais un canal indépendant du signal de trading afin qu’un rafraîchissement Boom ou Crash ne puisse plus retarder, remplacer ou faire expirer un ordre frais; l’EA exporte cet historique indépendamment du timeframe visible dans MT5.
 - Ava Web 0.5.28 corrige le parcours Custom Pro/Ultra/Max depuis la page publique vers un compte déjà authentifié : le paramètre `plan` ouvre réellement le choix sécurisé du moyen de paiement au lieu de seulement surligner la formule. Les protections contre un double abonnement restent actives et leur motif apparaît désormais dans un message fixe visible, même lorsque l’utilisateur se trouve plus bas dans la page.
+- Ava Web 0.5.29 aligne la fenêtre « Télécharger Ava » du compte authentifié sur les artefacts réellement publiés : Ava Desktop 1.5.23 pour Windows, Mac Intel et Mac Apple Silicon, ainsi qu’AvaBridgeEA 1.62. La page publique et la fenêtre du compte ne doivent plus conserver des constantes de version séparées et périmées lors d’une release Desktop.
 
 ## Ava Cloud
 

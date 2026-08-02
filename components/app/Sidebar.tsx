@@ -6,6 +6,7 @@ import { Apple, Bot, Cloud, Coins, Mic, MessageSquare, User, Crown, Users, Setti
 import { FaWindows } from 'react-icons/fa'
 import Image from 'next/image'
 import type { AppTab } from './types'
+import { AVA_BRIDGE_EA_VERSION, AVA_DESKTOP_VERSION, DESKTOP_DOWNLOAD_URLS, DOWNLOAD_BASE_URL } from '@/lib/downloads'
 
 const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'voice', label: 'Conversation', icon: Mic },
@@ -19,27 +20,23 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'settings', label: 'Paramètres', icon: Settings },
 ]
 
-const AVA_DESKTOP_MAC_VERSION = '1.5.21'
-const AVA_DESKTOP_WINDOWS_VERSION = '1.5.22'
-const AVA_BRIDGE_EA_VERSION = '1.61'
-const DOWNLOAD_BASE_URL = 'https://call-ava.com/downloads'
 const DESKTOP_DOWNLOADS = [
   {
     title: 'Mac Apple Silicon',
-    subtitle: `Ava Desktop v${AVA_DESKTOP_MAC_VERSION}`,
-    href: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_MAC_VERSION}-arm64.dmg`,
+    subtitle: `Ava Desktop v${AVA_DESKTOP_VERSION}`,
+    href: DESKTOP_DOWNLOAD_URLS.macArm,
     icon: Apple,
   },
   {
     title: 'Mac Intel',
-    subtitle: `Ava Desktop v${AVA_DESKTOP_MAC_VERSION}`,
-    href: `${DOWNLOAD_BASE_URL}/Ava-${AVA_DESKTOP_MAC_VERSION}-x64.dmg`,
+    subtitle: `Ava Desktop v${AVA_DESKTOP_VERSION}`,
+    href: DESKTOP_DOWNLOAD_URLS.macIntel,
     icon: Apple,
   },
   {
     title: 'Windows',
-    subtitle: `Installateur v${AVA_DESKTOP_WINDOWS_VERSION}`,
-    href: `${DOWNLOAD_BASE_URL}/AvaSetup-${AVA_DESKTOP_WINDOWS_VERSION}.exe`,
+    subtitle: `Installateur v${AVA_DESKTOP_VERSION}`,
+    href: DESKTOP_DOWNLOAD_URLS.windows,
     icon: FaWindows,
   },
 ]
@@ -165,7 +162,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
             <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
               <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Compatibilité</p>
               <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
-                Ava Desktop Windows {AVA_DESKTOP_WINDOWS_VERSION} / Mac {AVA_DESKTOP_MAC_VERSION} recommande AvaBridgeEA {AVA_BRIDGE_EA_VERSION}. Gold Classic 1.2.5 peut utiliser 1.34.
+                Ava Desktop {AVA_DESKTOP_VERSION} recommande AvaBridgeEA {AVA_BRIDGE_EA_VERSION}. Gold Classic 1.2.5 peut utiliser 1.34.
               </p>
             </div>
           </div>
