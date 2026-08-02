@@ -31,9 +31,9 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.5.23-arm64.dmg`
-- `Ava-1.5.23-x64.dmg`
-- `AvaSetup-1.5.23.exe`
+- `Ava-1.5.24-arm64.dmg`
+- `Ava-1.5.24-x64.dmg`
+- `AvaSetup-1.5.24.exe`
 - `AvaBridgeEA-1.62.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
@@ -63,6 +63,8 @@ If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before pub
 - Ava Web 0.5.28 corrige le parcours Custom Pro/Ultra/Max depuis la page publique vers un compte déjà authentifié : le paramètre `plan` ouvre réellement le choix sécurisé du moyen de paiement au lieu de seulement surligner la formule. Les protections contre un double abonnement restent actives et leur motif apparaît désormais dans un message fixe visible, même lorsque l’utilisateur se trouve plus bas dans la page.
 - Ava Web 0.5.29 aligne la fenêtre « Télécharger Ava » du compte authentifié sur les artefacts réellement publiés : Ava Desktop 1.5.23 pour Windows, Mac Intel et Mac Apple Silicon, ainsi qu’AvaBridgeEA 1.62. La page publique et la fenêtre du compte ne doivent plus conserver des constantes de version séparées et périmées lors d’une release Desktop.
 - Ava Web 0.5.30 fiabilise Ava Support : chaque message client enregistré déclenche désormais la réponse IA depuis l’Edge Function, indépendamment de la page ou de la connexion du navigateur. Une erreur fournisseur, une réponse invalide ou un échec de déclenchement place atomiquement la conversation dans la file humaine, ajoute un message explicite au client et notifie les conseillers. Le Web ne lance plus une seconde requête IA fragile après l’envoi et indique clairement lorsqu’aucun conseiller n’est connecté.
+- Ava Web 0.5.31 publie Ava Desktop 1.5.24 pour Windows, Mac Intel et Apple Silicon. AvaBridgeEA reste 1.62. Ava AI et Ava Support partagent désormais la même règle de communication financière responsable et préparent un résumé exact pour le conseiller lorsqu'un diagnostic automatique ne suffit pas.
+- Le contrôle global Ava Cloud permet à l’owner de publier un `volatility_default_config` serveur. Ce JSON est nettoyé par l’Edge Function, distingue Boom 1000 et Crash 1000 sous `symbolConfigs`, remplace les réglages locaux correspondants au prochain démarrage Desktop et ne peut jamais contourner le plan, les directions bloquées ou les plafonds par capital.
 
 ## Ava Cloud
 

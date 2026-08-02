@@ -209,6 +209,7 @@ type TradingGlobalControl = {
   min_equity_usd?: number | null
   volatility_sell_min_profit_override_enabled?: boolean | null
   volatility_sell_min_profit_usd?: number | null
+  volatility_default_config?: Record<string, unknown> | null
   price_guard_rules?: TradingPriceGuardRule[] | null
   dual_entry_zone_rules?: TradingDualEntryZoneRule[] | null
   stop_cycle_policy?: StopCyclePolicy | null
@@ -909,6 +910,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const [adminControl, setAdminControl] = useState<TradingGlobalControl | null>(null)
   const [adminLoaded, setAdminLoaded] = useState(false)
   const [adminControlMessage, setAdminControlMessage] = useState('')
+  const [adminVolatilityDefaultJson, setAdminVolatilityDefaultJson] = useState('{}')
   const [priceGuardErrors, setPriceGuardErrors] = useState<Record<string, string>>({})
   const [dualEntryZoneErrors, setDualEntryZoneErrors] = useState<Record<string, string>>({})
   const [stopCycleErrors, setStopCycleErrors] = useState<Record<string, string>>({})
@@ -1249,7 +1251,9 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     callAdminControl({ action: 'status' })
       .then((result) => {
         if (!active) return
-        setAdminControl(result.control ?? null)
+        const control = result.control as TradingGlobalControl | null | undefined
+        setAdminControl(control ?? null)
+        setAdminVolatilityDefaultJson(JSON.stringify(control?.volatility_default_config ?? {}, null, 2))
       })
       .catch((err) => {
         if (!active) return
@@ -1323,6 +1327,32 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
       ...patch,
     }))
   }, [])
+  const saveAdminVolatilityDefault = useCallback(async () => {
+    try {
+      setBusy('admin_volatility_default')
+      setError(null)
+      setAdminControlMessage('')
+      const parsed = JSON.parse(adminVolatilityDefaultJson || '{}')
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('La configuration par défaut doit être un objet JSON.')
+      }
+      const result = await callAdminControl({
+        action: 'update-volatility-default',
+        volatility_default_config: parsed,
+      })
+      const savedControl = result.control as TradingGlobalControl | null | undefined
+      if (!savedControl) throw new Error('Le serveur n’a pas confirmé la configuration Volatility.')
+      setAdminControl(savedControl)
+      setAdminVolatilityDefaultJson(JSON.stringify(savedControl.volatility_default_config ?? {}, null, 2))
+      setAdminControlMessage('Configuration Volatility globale enregistrée. Elle sera appliquée à tous les prochains démarrages Desktop, puis bornée par le plan et les protections administrateur.')
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Configuration Volatility impossible.'
+      setError(message)
+      setAdminControlMessage(`Enregistrement impossible : ${message}`)
+    } finally {
+      setBusy(null)
+    }
+  }, [adminVolatilityDefaultJson, callAdminControl])
   const addCapitalPositionLimitRule = useCallback(() => {
     setAdminControlMessage('')
     setAdminControl(current => ({
@@ -2775,6 +2805,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       min_equity_usd: Number(adminControl?.min_equity_usd ?? 10000),
                       volatility_sell_min_profit_override_enabled: adminControl?.volatility_sell_min_profit_override_enabled === true,
                       volatility_sell_min_profit_usd: Number(adminControl?.volatility_sell_min_profit_usd ?? 0.5),
+                      volatility_default_config: adminControl?.volatility_default_config ?? {},
                       price_guard_rules: rules,
                       dual_entry_zone_rules: dualRules,
                       stop_cycle_policy: {
@@ -2930,6 +2961,38 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   className="mt-2 w-full bg-transparent text-sm font-black text-white outline-none"
                 />
               </label>
+            </div>
+            <div className="mt-4 rounded-2xl border border-rose-400/20 bg-rose-400/[0.06] p-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-rose-300">Défaut Volatility global</p>
+                  <p className="mt-1 text-sm font-black text-white">Distribuer la même configuration Burst et cadence</p>
+                  <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
+                    Les valeurs indiquées remplacent les réglages locaux au prochain démarrage du moteur. Les limites du plan, les directions Boom/Crash et les plafonds par capital gardent toujours la priorité. Utilise <span className="font-mono text-slate-300">symbolConfigs.BOOM1000</span> et <span className="font-mono text-slate-300">symbolConfigs.CRASH1000</span> pour régler les deux marchés séparément.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={!adminLoaded || busy === 'admin_volatility_default'}
+                  onClick={saveAdminVolatilityDefault}
+                  className="inline-flex flex-shrink-0 items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-rose-500/20 transition-colors hover:bg-rose-400 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {busy === 'admin_volatility_default' ? <Loader2 className="animate-spin" size={16} /> : <ShieldCheck size={16} />}
+                  Publier le défaut
+                </button>
+              </div>
+              <textarea
+                value={adminVolatilityDefaultJson}
+                onChange={event => setAdminVolatilityDefaultJson(event.target.value)}
+                rows={12}
+                spellCheck={false}
+                aria-label="Configuration Volatility globale au format JSON"
+                placeholder={'{\n  "symbolConfigs": {\n    "BOOM1000": { "boomBurstEnabled": true, "boomReboundMode": "strict" },\n    "CRASH1000": { "boomBurstEnabled": true, "boomReboundMode": "strict" }\n  }\n}'}
+                className="mt-4 w-full resize-y rounded-2xl border border-white/10 bg-slate-950/65 px-4 py-3 font-mono text-xs leading-5 text-slate-100 outline-none transition-colors focus:border-rose-300/40"
+              />
+              <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                Pour Crash, les noms internes <span className="font-mono">boomBurst*</span> et <span className="font-mono">boomSell*</span> décrivent le moteur générique : la direction réelle reste Crash BUY. Pour Boom, elle reste Boom SELL.
+              </p>
             </div>
             <div className="mt-4 rounded-2xl border border-rose-400/20 bg-rose-400/[0.06] p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
