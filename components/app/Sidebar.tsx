@@ -20,8 +20,8 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
 ]
 
 const AVA_DESKTOP_MAC_VERSION = '1.5.21'
-const AVA_DESKTOP_WINDOWS_VERSION = '1.5.21'
-const AVA_BRIDGE_EA_VERSION = '1.60'
+const AVA_DESKTOP_WINDOWS_VERSION = '1.5.22'
+const AVA_BRIDGE_EA_VERSION = '1.61'
 const DOWNLOAD_BASE_URL = 'https://call-ava.com/downloads'
 const DESKTOP_DOWNLOADS = [
   {

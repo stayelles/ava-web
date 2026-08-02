@@ -31,10 +31,10 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.3.5-arm64.dmg`
-- `Ava-1.3.5-x64.dmg`
-- `AvaSetup-1.3.5.exe`
-- `AvaBridgeEA-1.48.ex5` (recommended for Ava Volatility Boom/Crash and modern Ava Trading)
+- `Ava-1.5.21-arm64.dmg`
+- `Ava-1.5.21-x64.dmg`
+- `AvaSetup-1.5.22.exe`
+- `AvaBridgeEA-1.61.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
 If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before publishing: update Desktop required bridge version, web `AVA_BRIDGE_EA_VERSION`, download filenames, release assets, and docs together. Never ship a changed `.ex5` under an old bridge version.
@@ -58,6 +58,7 @@ If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before pub
 - Ava Web 0.5.22 publie Ava Desktop 1.5.19 pour Windows, Mac Intel et Apple Silicon, avec les métadonnées de mise à jour propres à chaque architecture.
 - Ava Web 0.5.24 corrige les pièces jointes Ava Support : les images, vidéos et documents utilisent l’endpoint TUS signé `/storage/v1/upload/resumable/sign`; le jeton `x-signature` reste éphémère, le bucket privé et le fichier est toujours vérifié par l’Edge Function avant d’être joint au message. Les erreurs d’upload, de taille, de session et de ticket fermé sont distinguées côté client.
 - Ava Web transmet la locale et le fuseau IANA à `ava-ai`; l'Edge Function calcule elle-même l'heure et le jour locaux afin que les échanges texte et vocaux puissent s'adapter naturellement au matin, à l'après-midi, au soir ou à la nuit.
+- Ava Web 0.5.26 publie Ava Desktop Windows 1.5.22 et AvaBridgeEA 1.61. AvaBridge 1.61 est obligatoire pour Ava Volatility afin que l’historique MT5 volumineux ne puisse plus retarder puis faire expirer un signal frais; macOS reste temporairement sur Desktop 1.5.21 jusqu’à son build notarié séparé.
 
 ## Ava Cloud
 

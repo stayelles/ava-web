@@ -32,10 +32,10 @@ jobs:
           gh release download v1.5.21 --repo stayelles/ava-desktop-releases --pattern 'Ava-1.5.21-arm64.dmg.blockmap' --dir out/downloads --clobber
           gh release download v1.5.21 --repo stayelles/ava-desktop-releases --pattern 'Ava-1.5.21-x64.dmg' --dir out/downloads --clobber
           gh release download v1.5.21 --repo stayelles/ava-desktop-releases --pattern 'Ava-1.5.21-x64.dmg.blockmap' --dir out/downloads --clobber
-          gh release download v1.5.21 --repo stayelles/ava-desktop-releases --pattern 'AvaSetup-1.5.21.exe' --dir out/downloads --clobber
-          gh release download v1.5.21 --repo stayelles/ava-desktop-releases --pattern 'AvaSetup-1.5.21.exe.blockmap' --dir out/downloads --clobber
+          gh release download v1.5.22 --repo stayelles/ava-desktop-releases --pattern 'AvaSetup-1.5.22.exe' --dir out/downloads --clobber
+          gh release download v1.5.22 --repo stayelles/ava-desktop-releases --pattern 'AvaSetup-1.5.22.exe.blockmap' --dir out/downloads --clobber
           gh release download v1.5.21 --repo stayelles/ava-desktop-releases --pattern 'latest-mac.yml' --dir out/downloads --clobber
-          gh release download v1.5.21 --repo stayelles/ava-desktop-releases --pattern 'latest.yml' --dir out/downloads --clobber
+          gh release download v1.5.22 --repo stayelles/ava-desktop-releases --pattern 'latest.yml' --dir out/downloads --clobber
           mkdir -p out/downloads/mac-arm64 out/downloads/mac-x64
           gh release download v1.5.21 --repo stayelles/ava-desktop-releases --pattern 'latest-mac-arm64.yml' --dir out/downloads/mac-arm64 --clobber
           gh release download v1.5.21 --repo stayelles/ava-desktop-releases --pattern 'latest-mac-x64.yml' --dir out/downloads/mac-x64 --clobber
@@ -45,7 +45,7 @@ jobs:
           cp out/downloads/Ava-1.5.21-arm64.dmg.blockmap out/downloads/mac-arm64/
           cp out/downloads/Ava-1.5.21-x64.dmg out/downloads/mac-x64/
           cp out/downloads/Ava-1.5.21-x64.dmg.blockmap out/downloads/mac-x64/
-          gh release download v1.5.21 --repo stayelles/ava-desktop-releases --pattern 'AvaBridgeEA-1.60.ex5' --dir out/downloads --clobber
+          gh release download v1.5.22 --repo stayelles/ava-desktop-releases --pattern 'AvaBridgeEA-1.61.ex5' --dir out/downloads --clobber
           gh release download v1.5.21 --repo stayelles/ava-desktop-releases --pattern 'AvaCloudAgent-0.3.4.zip' --dir out/downloads --clobber
           gh release download v1.2.5 --repo stayelles/ava-desktop-releases --pattern 'AvaBridgeEA-1.34.ex5' --dir out/downloads --clobber
 

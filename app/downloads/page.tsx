@@ -3,7 +3,7 @@ import { Apple, ArrowLeft, Download, ShieldCheck, Smartphone } from "lucide-reac
 import { SiGoogleplay } from "react-icons/si";
 
 const AVA_DESKTOP_MAC_VERSION = "1.5.21";
-const AVA_DESKTOP_WINDOWS_VERSION = "1.5.21";
+const AVA_DESKTOP_WINDOWS_VERSION = "1.5.22";
 const DOWNLOAD_BASE_URL = "https://call-ava.com/downloads";
 const DOWNLOADS = [
   {
