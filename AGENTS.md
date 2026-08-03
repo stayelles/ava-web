@@ -127,3 +127,9 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 - L’arrêt de l’ancien renouvellement Paddle reste recommandé pour éviter un double prélèvement, mais il n’est plus une précondition au nouveau checkout.
 - Le message de transition précise que l’historique Paddle ne choisit plus le fournisseur actuel. Les protections contre deux abonnements réellement actifs chez les fournisseurs actuels restent appliquées.
 - `paddle-webhook` ne doit jamais réécrire le plan, la source ou les dates d’un compte dont la source active n’est plus Paddle, y compris après un remboursement tardif. Une annulation Paddle tardive ne met à jour que les métadonnées legacy.
+
+### Ava Web 0.5.34 — publication Ava Desktop 1.5.26
+
+- Les téléchargements Windows, macOS Apple Silicon et macOS Intel utilisent Ava Desktop 1.5.26 et AvaBridgeEA 1.65.
+- Les manifestes d’auto-update Mac sont séparés par architecture et leurs SHA-512 correspondent aux DMG après notarisation/agrafage. Le manifest Ava Cloud contient les SHA-256 réels du Windows 1.5.26 et du Bridge 1.65.
+- Ava Cloud signale désormais toute version Bridge inférieure à 1.65 avant de lancer le moteur.
