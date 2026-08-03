@@ -877,7 +877,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
     setBillingMessage('')
 
     const source = String(user.subscription_source ?? '')
-    if (activePlanKey === plan.key) {
+    if (activePlanKey === plan.key && source !== 'paddle') {
       setBillingMessage(`${plan.label} est déjà votre formule active. Aucun nouvel abonnement n’a été créé.`)
       return
     }
@@ -906,16 +906,12 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
         setBillingMessage(`Votre abonnement actuel vient de ${subscriptionPaymentLabel(user)}. Pour renouveler ou changer de formule avec ce même moyen de paiement, contactez le support Ava afin d’éviter un double abonnement.`)
         return
       }
-      if (activePlanKey && activePlanKey !== plan.key && source === 'paddle' && !paddleRenewalStopped) {
-        setBillingMessage('Paddle est un ancien moyen de paiement. Arrêtez d’abord le renouvellement Paddle, puis choisissez une nouvelle formule par carte bancaire.')
-        return
-      }
       setPaymentChoicePlan(plan)
       return
     }
 
     setBillingError('Le paiement est indisponible pour cette formule.')
-  }, [activePlanKey, paddleRenewalStopped, user])
+  }, [activePlanKey, user])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -1118,7 +1114,12 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
 
   const handleLegacyRenewal = () => {
     setBillingError('')
-    setBillingMessage(`Votre accès ${legacyRenewalSourceLabel} reste actif jusqu’à sa date actuelle. Pour renouveler ou modifier la formule avec ce même moyen de paiement, contactez le support Ava afin d’éviter un double abonnement.`)
+    setBillingMessage('')
+    if (user.subscription_source === 'paddle') {
+      setPaymentChoicePlan(legacyRenewalPlan)
+      return
+    }
+    setBillingMessage(`Votre accès ${legacyRenewalSourceLabel} reste actif jusqu’à sa date actuelle. Contactez le support Ava pour éviter un double abonnement avec cet ancien moyen de paiement.`)
   }
 
   useEffect(() => {
@@ -1313,9 +1314,9 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
             type="button"
             onClick={handleLegacyRenewal}
             disabled={billingLoading}
-            className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-orange-400 px-5 text-sm font-black text-slate-950 transition-all hover:bg-orange-300 disabled:opacity-60"
+            className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-rose-500 px-5 text-sm font-black text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-400 disabled:opacity-60"
           >
-            Contacter le support
+            {user.subscription_source === 'paddle' ? 'Renouveler avec les moyens actuels' : 'Contacter le support'}
           </button>
         </motion.div>
       )}
@@ -1383,7 +1384,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
 
                   {['paddle', 'paypal', 'airwallex', 'whop'].includes(String(user.subscription_source ?? '')) && (
                     <div className="flex flex-col sm:flex-row flex-shrink-0 gap-3">
-                      {nextPlan && !paddleRenewalStopped && (
+                      {nextPlan && (
                         <button
                           type="button"
                           onClick={() => {
@@ -1429,8 +1430,8 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
                 {user.subscription_source === 'paddle' && (
                   <p className="relative z-10 mt-5 text-[11px] leading-relaxed text-slate-400">
                     {paddleRenewalStopped
-                      ? 'Renouvellement Paddle arrêté. Aucun nouveau prélèvement Paddle ne sera tenté; votre accès reste actif jusqu’à la date indiquée, puis vous pourrez renouveler avec les nouveaux moyens de paiement.'
-                      : 'Paddle est conservé seulement pour les anciens abonnements. Vous pouvez arrêter le prochain prélèvement ici; pour changer de formule, contactez le support Ava afin d’éviter un double abonnement.'}
+                      ? 'Renouvellement Paddle arrêté. Votre accès reste actif jusqu’à la date indiquée et vous pouvez dès maintenant renouveler avec les moyens de paiement actuels.'
+                      : 'Paddle est conservé seulement dans l’historique de cet ancien abonnement. Vous pouvez choisir immédiatement les moyens de paiement actuels; arrêter l’ancien renouvellement reste recommandé pour éviter un double prélèvement.'}
                   </p>
                 )}
               </motion.div>
@@ -1883,7 +1884,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
                   Ava va ouvrir le paiement correspondant à cette formule.
                 </p>
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  La transition vers <strong>{targetPlan.label}</strong> sera activée automatiquement après confirmation. Paddle reste conservé en arrière-plan pour les abonnements existants.
+                  La transition vers <strong>{targetPlan.label}</strong> sera activée automatiquement après confirmation par le moyen de paiement actuel. L’ancien historique Paddle ne détermine plus ce parcours.
                 </p>
                 {billingError && (
                   <div className="rounded-xl border border-rose-400/15 bg-rose-500/10 px-3 py-2">
@@ -1921,11 +1922,10 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
                 <button
                   type="button"
                   disabled={billingLoading}
-                  onClick={openPaddlePortal}
+                  onClick={() => setShowUpgradeModal(false)}
                   className="min-h-12 whitespace-nowrap flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-sm text-slate-200 transition-colors border border-white/5 bg-white/5 hover:bg-white/10 disabled:opacity-60"
                 >
-                  Portail Paddle
-                  <ExternalLink size={10} className="opacity-80" />
+                  Annuler
                 </button>
               </div>
             </motion.div>

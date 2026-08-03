@@ -65,6 +65,7 @@ If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before pub
 - Ava Web 0.5.30 fiabilise Ava Support : chaque message client enregistré déclenche désormais la réponse IA depuis l’Edge Function, indépendamment de la page ou de la connexion du navigateur. Une erreur fournisseur, une réponse invalide ou un échec de déclenchement place atomiquement la conversation dans la file humaine, ajoute un message explicite au client et notifie les conseillers. Le Web ne lance plus une seconde requête IA fragile après l’envoi et indique clairement lorsqu’aucun conseiller n’est connecté.
 - Ava Web 0.5.31 publie Ava Desktop 1.5.24 pour Windows, Mac Intel et Apple Silicon. AvaBridgeEA reste 1.62. Ava AI et Ava Support partagent désormais la même règle de communication financière responsable et préparent un résumé exact pour le conseiller lorsqu'un diagnostic automatique ne suffit pas.
 - Le contrôle global Ava Cloud permet à l’owner de publier un `volatility_default_config` serveur. Ce JSON est nettoyé par l’Edge Function, distingue Boom 1000 et Crash 1000 sous `symbolConfigs`, remplace les réglages locaux correspondants au prochain démarrage Desktop et ne peut jamais contourner le plan, les directions bloquées ou les plafonds par capital.
+- Le contrôle global permet aussi de publier `volatility_recommendation_rules`, des tranches consultatives par equity pour Ava vocale. Elles sont écrites uniquement via `trading-admin-control`, ne sont jamais consommées par le moteur/AvaBridge et ne remplacent aucun droit ni plafond. L’interface doit rappeler qu’Ava utilise une equity Desktop récente et demande confirmation avant toute proposition de configuration.
 
 ## Ava Cloud
 
@@ -119,3 +120,10 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 - Les pages publiques et le workflow Hostinger distribuent Ava Desktop `1.4.1` pour Windows x64, macOS Apple Silicon et macOS Intel.
 - Le workflow récupère les installateurs, blockmaps et manifestes depuis la release publique `stayelles/ava-desktop-releases@v1.4.1`; aucun gros binaire Desktop n'est commité dans Ava Web.
 - AvaBridgeEA reste strictement en version `1.48` et Ava Cloud Agent en version `0.3.4`.
+
+### Ava Web 0.5.33 — migration des anciens abonnés Paddle
+
+- Un ancien `subscription_source='paddle'` ne verrouille plus l’achat, le renouvellement du même plan ni un changement de formule. L’utilisateur ouvre directement le sélecteur des moyens de paiement actuels.
+- L’arrêt de l’ancien renouvellement Paddle reste recommandé pour éviter un double prélèvement, mais il n’est plus une précondition au nouveau checkout.
+- Le message de transition précise que l’historique Paddle ne choisit plus le fournisseur actuel. Les protections contre deux abonnements réellement actifs chez les fournisseurs actuels restent appliquées.
+- `paddle-webhook` ne doit jamais réécrire le plan, la source ou les dates d’un compte dont la source active n’est plus Paddle, y compris après un remboursement tardif. Une annulation Paddle tardive ne met à jour que les métadonnées legacy.
