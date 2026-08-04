@@ -31,10 +31,10 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.5.24-arm64.dmg`
-- `Ava-1.5.24-x64.dmg`
-- `AvaSetup-1.5.24.exe`
-- `AvaBridgeEA-1.62.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
+- `Ava-1.5.28-arm64.dmg`
+- `Ava-1.5.28-x64.dmg`
+- `AvaSetup-1.5.28.exe`
+- `AvaBridgeEA-1.66.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
 If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before publishing: update Desktop required bridge version, web `AVA_BRIDGE_EA_VERSION`, download filenames, release assets, and docs together. Never ship a changed `.ex5` under an old bridge version.
@@ -133,3 +133,15 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 - Les téléchargements Windows, macOS Apple Silicon et macOS Intel utilisent Ava Desktop 1.5.26 et AvaBridgeEA 1.65.
 - Les manifestes d’auto-update Mac sont séparés par architecture et leurs SHA-512 correspondent aux DMG après notarisation/agrafage. Le manifest Ava Cloud contient les SHA-256 réels du Windows 1.5.26 et du Bridge 1.65.
 - Ava Cloud signale désormais toute version Bridge inférieure à 1.65 avant de lancer le moteur.
+
+### Ava Web 0.5.35 — publication Ava Desktop 1.5.27 et AvaBridgeEA 1.66
+
+- Les téléchargements Desktop ciblent Ava 1.5.27 et AvaBridgeEA 1.66. Le workflow Hostinger récupère les artefacts versionnés depuis la release Desktop correspondante.
+- AvaBridgeEA 1.66 exclut les positions Stop Cycle du plafond ordinaire Burst/Rebond et conserve tout le nombre d’ordres demandé lors d’un repli sans TP après `10016 invalid stops`.
+- Ava Cloud refuse les versions Bridge inférieures à 1.66 avant le lancement du moteur. Gold Classic 1.2.5 conserve AvaBridgeEA 1.34.
+
+### Ava Web 0.5.36 — publication Ava Desktop 1.5.28
+
+- Les téléchargements Windows, macOS Apple Silicon et macOS Intel ciblent Ava Desktop 1.5.28; les manifestes d’auto-update restent séparés par architecture.
+- Ava Desktop 1.5.28 restaure les positions MT5 en temps réel, affiche séparément les prix Boom et Crash et maintient l’isolation entre Stop Cycle et les positions ordinaires Burst/cadence.
+- AvaBridgeEA reste en version 1.66 car son binaire et son protocole n’ont pas changé dans cette publication.

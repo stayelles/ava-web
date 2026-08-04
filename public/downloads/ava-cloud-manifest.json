@@ -6,9 +6,9 @@
     "sha256": "8c4606af0028a14d0a86d088a1ef6a18b71a9d4d3e443910fcb15f87434ca0f0"
   },
   "bridge": {
-    "version": "1.65",
-    "url": "https://call-ava.com/downloads/AvaBridgeEA-1.65.ex5",
-    "sha256": "fd665890d38ffe632d9332650fc084f992087e813beca0ced0b5da39255fd25e"
+    "version": "1.66",
+    "url": "https://call-ava.com/downloads/AvaBridgeEA-1.66.ex5",
+    "sha256": "604f32058258b9781c649f52a33c06777d9bdcc45fa07cfc00925f23d2f001b2"
   },
   "agent": {
     "version": "0.3.4",
