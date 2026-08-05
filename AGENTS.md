@@ -145,3 +145,11 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 - Les téléchargements Windows, macOS Apple Silicon et macOS Intel ciblent Ava Desktop 1.5.28; les manifestes d’auto-update restent séparés par architecture.
 - Ava Desktop 1.5.28 restaure les positions MT5 en temps réel, affiche séparément les prix Boom et Crash et maintient l’isolation entre Stop Cycle et les positions ordinaires Burst/cadence.
 - AvaBridgeEA reste en version 1.66 car son binaire et son protocole n’ont pas changé dans cette publication.
+
+### Ava Web 0.5.37 — authentification sécurisée et migration OTP
+
+- Ava Web ne lit plus directement `ava_users` ni `ava_user_memory` avec la clé publique. Le profil minimal, les droits, le portefeuille et les quotas proviennent de `ava-session-bootstrap` après vérification Supabase Auth.
+- La connexion permanente par PIN est remplacée par un OTP e-mail Supabase Auth. Les sessions Auth sont restaurées et renouvelées par le SDK officiel; seul le jeton Ava court nécessaire aux fonctions legacy reste dans le cache applicatif de transition.
+- L’owner et tout compte privilégié doivent atteindre `aal2`. Au premier accès, Ava Web enrôle un facteur TOTP, affiche le QR code une seule fois et refuse de lier le compte tant que le challenge n’est pas vérifié.
+- Le bootstrap ne renvoie aucun identifiant fournisseur de paiement, jeton appareil, secret, champ administratif interne ou donnée d’un autre utilisateur.
+- Les anciens parcours création/réinitialisation de PIN sont retirés de l’écran de connexion pendant la migration de sécurité.

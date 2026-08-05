@@ -6,21 +6,18 @@ import { AppShell } from '@/components/app/AppShell'
 
 export default function AvaWebApp() {
   const {
-    user, loginLoading, loginError, login, logout,
-    refreshUser, updatePin, permissions,
-    registerRequest, registerVerify, requestPinReset, confirmPinReset,
+    user, loginLoading, loginError, requestOtp, verifyOtp, verifyMfa,
+    logout, refreshUser, updatePin, permissions,
   } = useUserData()
 
   if (!user) {
     return (
       <LoginScreen
-        onLogin={login}
         loading={loginLoading}
         error={loginError}
-        onRegisterRequest={registerRequest}
-        onRegisterVerify={registerVerify}
-        onPinResetRequest={requestPinReset}
-        onPinResetConfirm={confirmPinReset}
+        onOtpRequest={requestOtp}
+        onOtpVerify={verifyOtp}
+        onMfaVerify={verifyMfa}
       />
     )
   }

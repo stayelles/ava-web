@@ -1,248 +1,259 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_HEADERS } from '../constants'
-import type { UserData, AvaPermissions } from '../types'
-import { resolvePermissions, isCustomPlan } from '../types'
-
-function nextMonthReset(): string {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
-}
-
-// Check if monthly reset is needed and return corrected user object
-function applyVoiceReset(u: UserData): UserData {
-  const resetAt = u.voice_quota_reset_at ? new Date(u.voice_quota_reset_at) : null
-  if (!resetAt || resetAt <= new Date()) {
-    return { ...u, voice_minutes_used: 0, voice_quota_reset_at: nextMonthReset() }
-  }
-  return u
-}
+import { useCallback, useEffect, useRef, useState } from 'react'
+import type { Session } from '@supabase/supabase-js'
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../constants'
+import { supabaseAuth } from '../services/supabaseAuth'
+import type { AvaPermissions, UserData } from '../types'
+import { resolvePermissions } from '../types'
 
 const SESSION_KEY = 'ava_web_session'
-const SELECT_FIELDS = 'id,email,is_admin,credits,free_daily_credits,subscription_source,subscription_expires_at,subscription_plan,subscription_tier,paddle_subscription_id,paddle_renewal_cancelled_at,paddle_scheduled_cancel_at,paypal_subscription_id,paypal_plan_id,geniuspay_subscription_uuid,geniuspay_stripe_subscription_id,geniuspay_customer_id,mollie_customer_id,mollie_subscription_id,mollie_first_payment_id,mollie_last_payment_id,airwallex_customer_id,airwallex_checkout_id,airwallex_subscription_id,airwallex_price_id,airwallex_last_event_type,whop_checkout_id,whop_plan_id,whop_payment_id,whop_membership_id,whop_user_id,whop_last_event_type,nowpayments_payment_id,nowpayments_invoice_id,nowpayments_subscription_id,nowpayments_subscription_plan_id,nowpayments_last_status,nowpayments_last_event_id,billing_country_code,billing_country_name,billing_country_confirmed_at,ava_trading_trial_used,ava_trading_trial_started_at,ava_trading_trial_plan,ava_trading_trial_subscription_id,plan_switch_count,last_plan_change_at,subscription_abuse_flag,referral_code,telegram_id,first_name,last_name,voice_minutes_used,voice_quota_reset_at,custom_plan_expires_at,text_messages_used,text_quota_reset_at'
+const EMPTY_PERMISSIONS: AvaPermissions = {
+  webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false,
+  dailyTextMessages: 10, voiceMonthlyMinutes: 3, dailyWebSearches: 0,
+  memoryWordLimit: 150, agentDailyLimit: 0, mcpDailyLimit: 0,
+  desktopDailyLimit: 0, canUseAvaTrading: false,
+}
 
-async function fetchMemory(userId: string): Promise<string> {
-  try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/ava_user_memory?user_id=eq.${userId}&select=summary&limit=1`,
-      { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } }
-    )
-    const data = await res.json()
-    return Array.isArray(data) && data[0]?.summary ? data[0].summary : ''
-  } catch {
-    return ''
+type Bootstrap = {
+  user_id: string
+  status: string
+  profile?: { first_name?: string; last_name?: string; preferred_language?: string }
+  contact?: { email?: string; phone_number?: string }
+  roles?: string[]
+  subscription?: Record<string, unknown>
+  wallet?: Record<string, unknown>
+  quotas?: Record<string, unknown>
+}
+
+type MfaPrompt = { required: boolean; qrCode?: string; secret?: string }
+
+function asString(value: unknown): string | null {
+  return value == null || value === '' ? null : String(value)
+}
+
+function bootstrapToUser(bootstrap: Bootstrap, avaSessionToken: string): UserData {
+  const subscription = bootstrap.subscription ?? {}
+  const wallet = bootstrap.wallet ?? {}
+  const quotas = bootstrap.quotas ?? {}
+  const roles = bootstrap.roles ?? []
+  return {
+    id: bootstrap.user_id,
+    email: String(bootstrap.contact?.email ?? ''),
+    is_admin: roles.includes('owner') || roles.includes('admin'),
+    first_name: asString(bootstrap.profile?.first_name),
+    last_name: asString(bootstrap.profile?.last_name),
+    credits: Number(wallet.credits ?? 0),
+    free_daily_credits: Number(wallet.free_daily_credits ?? 0),
+    subscription_tier: asString(subscription.tier),
+    subscription_source: asString(subscription.source),
+    subscription_plan: asString(subscription.plan),
+    subscription_expires_at: asString(subscription.expires_at),
+    custom_plan_expires_at: asString(subscription.custom_plan_expires_at),
+    billing_country_code: asString(subscription.billing_country_code),
+    billing_country_name: asString(subscription.billing_country_name),
+    billing_country_confirmed_at: asString(subscription.billing_country_confirmed_at),
+    ava_trading_trial_used: subscription.trial_used === true,
+    ava_trading_trial_started_at: asString(subscription.trial_started_at),
+    ava_trading_trial_plan: asString(subscription.trial_plan),
+    plan_switch_count: Number(subscription.plan_switch_count ?? 0),
+    last_plan_change_at: asString(subscription.last_plan_change_at),
+    subscription_abuse_flag: subscription.abuse_flag === true,
+    voice_minutes_used: Number(quotas.voice_minutes_used ?? 0),
+    voice_quota_reset_at: asString(quotas.voice_quota_reset_at),
+    text_messages_used: Number(quotas.text_messages_used ?? 0),
+    text_quota_reset_at: asString(quotas.text_quota_reset_at),
+    referral_code: null,
+    telegram_id: null,
+    web_session_token: avaSessionToken,
+    ava_session_token: avaSessionToken,
   }
 }
 
-async function fetchUserProfile(userId: string): Promise<UserData | null> {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/ava_users?id=eq.${userId}&select=${SELECT_FIELDS}`, {
-      headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
-    })
-    const data = await res.json()
-    return Array.isArray(data) && data[0] ? data[0] as UserData : null
-  } catch {
-    return null
-  }
+async function edgeRequest(path: string, body: Record<string, unknown>, accessToken?: string) {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/${path}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${accessToken || SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify(body),
+  })
+  const data = await response.json().catch(() => ({}))
+  return { response, data }
+}
+
+async function loadMemory(user: UserData) {
+  if (!user.ava_session_token) return ''
+  const { response, data } = await edgeRequest('ava-voice', {
+    action: 'get_memory',
+    user_id: user.id,
+    ava_session_token: user.ava_session_token,
+  })
+  return response.ok ? String(data.summary ?? '') : ''
 }
 
 export function useUserData() {
   const [user, setUser] = useState<UserData | null>(null)
   const [loginLoading, setLoginLoading] = useState(false)
   const [loginError, setLoginError] = useState('')
-  const [permissions, setPermissions] = useState<AvaPermissions>({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false, dailyTextMessages: 10, voiceMonthlyMinutes: 3, dailyWebSearches: 0, memoryWordLimit: 150, agentDailyLimit: 0, mcpDailyLimit: 0, desktopDailyLimit: 0, canUseAvaTrading: false })
+  const [permissions, setPermissions] = useState<AvaPermissions>(EMPTY_PERMISSIONS)
+  const pendingMfaFactorId = useRef('')
 
-  // Load saved session on mount + refresh memory + apply voice reset
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(SESSION_KEY)
-      if (saved) {
-        const raw = JSON.parse(saved) as UserData
-        const u = applyVoiceReset(raw)
-        setUser(u)
-        setPermissions(resolvePermissions(u))
-        // Persist reset if it happened
-        if (u.voice_minutes_used !== raw.voice_minutes_used) {
-          const { memorySummary: _, ...toStore } = u
-          localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
-        }
-        fetchUserProfile(u.id).then(fresh => {
-          if (!fresh) return
-          const updated = applyVoiceReset({ ...fresh, web_session_token: u.web_session_token, ava_session_token: u.ava_session_token, memorySummary: u.memorySummary })
-          setUser(updated)
-          setPermissions(resolvePermissions(updated))
-          const { memorySummary: _, ...toStore } = updated
-          localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
-        })
-        // Refresh memory in background
-        fetchMemory(u.id).then(memorySummary => {
-          if (memorySummary) setUser(prev => prev ? { ...prev, memorySummary } : prev)
-        })
-      }
-    } catch {}
+  const commitBootstrap = useCallback(async (data: Record<string, unknown>) => {
+    const bootstrap = data.bootstrap as Bootstrap | undefined
+    const avaSessionToken = String(data.ava_session_token ?? '')
+    if (!bootstrap?.user_id || !avaSessionToken) throw new Error('SESSION_BOOTSTRAP_INVALID')
+    const nextUser = bootstrapToUser(bootstrap, avaSessionToken)
+    setUser(nextUser)
+    setPermissions(resolvePermissions(nextUser))
+    const { memorySummary: _memory, ...safeCache } = nextUser
+    localStorage.setItem(SESSION_KEY, JSON.stringify(safeCache))
+    loadMemory(nextUser).then(memorySummary => {
+      if (memorySummary) setUser(current => current ? { ...current, memorySummary } : current)
+    }).catch(() => {})
   }, [])
 
-  const login = useCallback(async (identifier: string, pin: string) => {
+  const bootstrapSession = useCallback(async (session: Session) => {
+    const { response, data } = await edgeRequest(
+      'ava-session-bootstrap', { surface: 'web' }, session.access_token,
+    )
+    if (!response.ok) throw new Error(String(data.error ?? 'SESSION_BOOTSTRAP_FAILED'))
+    await commitBootstrap(data)
+  }, [commitBootstrap])
+
+  useEffect(() => {
+    let active = true
+    supabaseAuth.auth.getSession().then(async ({ data }) => {
+      if (!active || !data.session) return
+      try { await bootstrapSession(data.session) } catch { await supabaseAuth.auth.signOut() }
+    })
+    const { data: listener } = supabaseAuth.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        setUser(null)
+        setPermissions(EMPTY_PERMISSIONS)
+        localStorage.removeItem(SESSION_KEY)
+      }
+    })
+    return () => {
+      active = false
+      listener.subscription.unsubscribe()
+    }
+  }, [bootstrapSession])
+
+  const requestOtp = useCallback(async (email: string): Promise<{ ok: boolean; error?: string }> => {
     setLoginLoading(true)
     setLoginError('')
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` },
-        body: JSON.stringify({ identifier: identifier.trim(), pin, surface: 'web' }),
+      const { response, data } = await edgeRequest('ava-auth-migrate', {
+        action: 'request_otp', email: email.trim(), surface: 'web',
       })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        setLoginError((err as { error?: string }).error ?? 'Identifiant ou PIN incorrect')
-        return
-      }
-      const result = await res.json()
-      if (result.user) {
-        const u = applyVoiceReset({
-          ...(result.user as UserData),
-          web_session_token: result.web_session_token ?? result.ava_session_token ?? result.user.web_session_token ?? null,
-          ava_session_token: result.ava_session_token ?? result.web_session_token ?? null,
-        })
-        const perms = resolvePermissions(u)
-        setPermissions(perms)
-        setUser(u)
-        const { memorySummary: _ms, ...toStore } = u
-        localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
-        // Fetch memory async — inject into user state without blocking login
-        fetchMemory(u.id).then(memorySummary => {
-          if (memorySummary) setUser(prev => prev ? { ...prev, memorySummary } : prev)
-        })
-      }
+      if (!response.ok) throw new Error(String(data.error ?? 'OTP_REQUEST_FAILED'))
+      return { ok: true }
     } catch {
-      setLoginError('Erreur de connexion. Réessayez.')
+      const message = 'Impossible d’envoyer le code pour le moment.'
+      setLoginError(message)
+      return { ok: false, error: message }
     } finally {
       setLoginLoading(false)
     }
   }, [])
 
-  const registerRequest = useCallback(async (email: string, pin: string, lang = 'fr', referralCode?: string): Promise<{ ok: boolean; error?: string }> => {
-    try {
-      const body: Record<string, string> = { email: email.trim(), pin, lang }
-      if (referralCode?.trim()) body.referral_code = referralCode.trim()
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/email-signup-request`, {
-        method: 'POST',
-        headers: SUPABASE_HEADERS,
-        body: JSON.stringify(body),
-      })
-      const result = await res.json()
-      if (!res.ok || result.error) {
-        return { ok: false, error: result.error ?? 'Erreur lors de la création du compte' }
-      }
-      return { ok: true }
-    } catch {
-      return { ok: false, error: 'Erreur réseau' }
-    }
+  const linkAuthenticatedSession = useCallback(async (session: Session) => {
+    return edgeRequest('ava-auth-migrate', { action: 'link', surface: 'web' }, session.access_token)
   }, [])
 
-  const registerVerify = useCallback(async (email: string, code: string, pin: string): Promise<{ ok: boolean; error?: string }> => {
+  const verifyOtp = useCallback(async (
+    email: string,
+    code: string,
+  ): Promise<{ ok: boolean; error?: string; mfa?: MfaPrompt }> => {
+    setLoginLoading(true)
+    setLoginError('')
     try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/email-signup-verify`, {
-        method: 'POST',
-        headers: SUPABASE_HEADERS,
-        body: JSON.stringify({ email: email.trim(), code: code.trim() }),
+      const { data: verified, error } = await supabaseAuth.auth.verifyOtp({
+        email: email.trim().toLowerCase(), token: code.trim(), type: 'email',
       })
-      const result = await res.json()
-      if (!res.ok || result.error) {
-        return { ok: false, error: result.error ?? 'Code incorrect ou expiré' }
+      if (error || !verified.session) throw new Error('OTP_INVALID')
+      const linked = await linkAuthenticatedSession(verified.session)
+      if (linked.response.ok) {
+        await commitBootstrap(linked.data)
+        return { ok: true }
       }
-      
-      // Verification succeeded, now log in using the regular login flow to populate local state & storage
-      await login(email, pin)
+      if (linked.data.error !== 'MFA_REQUIRED') throw new Error(String(linked.data.error ?? 'ACCOUNT_LINK_FAILED'))
+
+      const { data: factors } = await supabaseAuth.auth.mfa.listFactors()
+      const existing = factors?.totp?.find(factor => factor.status === 'verified')
+      if (existing) {
+        pendingMfaFactorId.current = existing.id
+        return { ok: false, mfa: { required: true } }
+      }
+      const { data: enrolled, error: enrollError } = await supabaseAuth.auth.mfa.enroll({
+        factorType: 'totp', friendlyName: 'Ava Owner',
+      })
+      if (enrollError || !enrolled) throw new Error('MFA_ENROLL_FAILED')
+      pendingMfaFactorId.current = enrolled.id
+      return {
+        ok: false,
+        mfa: { required: true, qrCode: enrolled.totp.qr_code, secret: enrolled.totp.secret },
+      }
+    } catch (error) {
+      const codeValue = error instanceof Error ? error.message : ''
+      const message = codeValue === 'OTP_INVALID'
+        ? 'Code incorrect ou expiré.'
+        : codeValue === 'DUPLICATE_EMAIL_REVIEW_REQUIRED'
+          ? 'Ce compte nécessite une vérification manuelle du support.'
+          : 'Connexion sécurisée indisponible. Réessayez.'
+      setLoginError(message)
+      return { ok: false, error: message }
+    } finally {
+      setLoginLoading(false)
+    }
+  }, [commitBootstrap, linkAuthenticatedSession])
+
+  const verifyMfa = useCallback(async (code: string): Promise<{ ok: boolean; error?: string }> => {
+    setLoginLoading(true)
+    setLoginError('')
+    try {
+      const factorId = pendingMfaFactorId.current
+      if (!factorId) throw new Error('MFA_FACTOR_MISSING')
+      const { error } = await supabaseAuth.auth.mfa.challengeAndVerify({ factorId, code: code.trim() })
+      if (error) throw error
+      const { data } = await supabaseAuth.auth.getSession()
+      if (!data.session) throw new Error('AUTH_SESSION_INVALID')
+      const linked = await linkAuthenticatedSession(data.session)
+      if (!linked.response.ok) throw new Error(String(linked.data.error ?? 'ACCOUNT_LINK_FAILED'))
+      await commitBootstrap(linked.data)
+      pendingMfaFactorId.current = ''
       return { ok: true }
     } catch {
-      return { ok: false, error: 'Erreur réseau' }
+      const message = 'Code d’authentification incorrect ou expiré.'
+      setLoginError(message)
+      return { ok: false, error: message }
+    } finally {
+      setLoginLoading(false)
     }
-  }, [login])
+  }, [commitBootstrap, linkAuthenticatedSession])
 
-  const requestPinReset = useCallback(async (email: string): Promise<{ ok: boolean; error?: string }> => {
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/pin-reset-request`, {
-        method: 'POST',
-        headers: SUPABASE_HEADERS,
-        body: JSON.stringify({ email: email.trim() }),
-      })
-      const result = await res.json().catch(() => ({}))
-      if (!res.ok || result.error) {
-        return { ok: false, error: result.error ?? 'Impossible d’envoyer le lien' }
-      }
-      return { ok: true }
-    } catch {
-      return { ok: false, error: 'Erreur réseau' }
-    }
-  }, [])
-
-  const confirmPinReset = useCallback(async (email: string, token: string, newPin: string): Promise<{ ok: boolean; error?: string }> => {
-    if (!/^\d{4,5}$/.test(newPin)) return { ok: false, error: 'Le PIN doit contenir 4 à 5 chiffres' }
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/pin-reset-confirm`, {
-        method: 'POST',
-        headers: SUPABASE_HEADERS,
-        body: JSON.stringify({ email: email.trim(), token: token.trim(), pin: newPin }),
-      })
-      const result = await res.json().catch(() => ({}))
-      if (!res.ok || result.error) {
-        return { ok: false, error: result.error ?? 'Lien invalide ou expiré' }
-      }
-      return { ok: true }
-    } catch {
-      return { ok: false, error: 'Erreur réseau' }
-    }
-  }, [])
-
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    await supabaseAuth.auth.signOut()
     setUser(null)
-    setPermissions({ webSearch: false, imageUpload: false, unlimited: false, canUseCustomApiKey: false, dailyTextMessages: 10, voiceMonthlyMinutes: 3, dailyWebSearches: 0, memoryWordLimit: 150, agentDailyLimit: 0, mcpDailyLimit: 0, desktopDailyLimit: 0, canUseAvaTrading: false })
+    setPermissions(EMPTY_PERMISSIONS)
     localStorage.removeItem(SESSION_KEY)
   }, [])
 
   const refreshUser = useCallback(async () => {
-    if (!user) return
-    try {
-      const fresh = await fetchUserProfile(user.id)
-      if (fresh) {
-        const u = { ...fresh, web_session_token: user.web_session_token, ava_session_token: user.ava_session_token, memorySummary: user.memorySummary }
-        setUser(u)
-        setPermissions(resolvePermissions(u))
-        const { memorySummary: _, ...toStore } = u
-        localStorage.setItem(SESSION_KEY, JSON.stringify(toStore))
-        // Re-fetch memory so the next session benefits from the updated summary
-        fetchMemory(u.id).then(memorySummary => {
-          if (memorySummary) setUser(prev => prev ? { ...prev, memorySummary } : prev)
-        })
-      }
-    } catch {}
-  }, [user])
+    const { data } = await supabaseAuth.auth.getSession()
+    if (data.session) await bootstrapSession(data.session)
+  }, [bootstrapSession])
 
-  const updatePin = useCallback(async (currentPin: string, newPin: string): Promise<{ ok: boolean; error?: string }> => {
-    if (!user) return { ok: false, error: 'Non connecté' }
-    if (!/^\d{4,6}$/.test(currentPin)) return { ok: false, error: 'PIN actuel incorrect' }
-    if (!/^\d{4,5}$/.test(newPin)) return { ok: false, error: 'Le PIN doit contenir 4 à 5 chiffres' }
-    try {
-      const res = await fetch(`${SUPABASE_URL}/functions/v1/update-pin`, {
-        method: 'POST',
-        headers: SUPABASE_HEADERS,
-        body: JSON.stringify({ user_id: user.id, current_pin: currentPin, new_pin: newPin }),
-      })
-      const result = await res.json().catch(() => ({}))
-      if (res.ok && !result.error) {
-        return { ok: true }
-      }
-      return { ok: false, error: result.error ?? 'Erreur lors de la mise à jour' }
-    } catch {
-      return { ok: false, error: 'Erreur réseau. Réessayez.' }
-    }
-  }, [user])
+  const updatePin = useCallback(async (): Promise<{ ok: boolean; error?: string }> => ({
+    ok: false,
+    error: 'Le PIN permanent a été supprimé. La connexion utilise désormais un code e-mail.',
+  }), [])
 
   return {
-    user, setUser, permissions,
-    loginLoading, loginError, login, logout,
-    refreshUser, updatePin,
-    registerRequest, registerVerify, requestPinReset, confirmPinReset,
+    user, setUser, permissions, loginLoading, loginError,
+    requestOtp, verifyOtp, verifyMfa, logout, refreshUser, updatePin,
   }
 }
