@@ -116,7 +116,7 @@ export function AiCreditsTab({ user, onGoToSubscription }: { user: UserData; onG
   const [target, setTarget] = useState(150)
   const [monthlyCap, setMonthlyCap] = useState<number | ''>(10000)
 
-  const eligible = user.is_admin === true || user.subscription_plan === 'custom_max'
+  const eligible = user.is_admin === true || user.subscription_plan === 'custom_max' || user.subscription_plan === 'custom_max_2'
 
   const refresh = useCallback(async () => {
     if (!eligible) return

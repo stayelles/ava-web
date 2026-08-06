@@ -190,6 +190,33 @@ const ALL_PLANS = [
       'Accompagnement direct',
       'Support maximal',
     ]
+  },
+  {
+    key: 'custom_max_2',
+    label: 'Custom Max 2',
+    price: 'Sur devis',
+    per: '',
+    priceId: '',
+    paypalPlanId: '',
+    capital: 'Accès premium attribué par Ava',
+    popular: false,
+    badge: 'Cycles Ava Alpha',
+    accentColor: '#22d3ee',
+    bg: 'linear-gradient(135deg, rgba(34, 211, 238, 0.09) 0%, rgba(15, 23, 42, 0.18) 100%)',
+    border: 'rgba(34, 211, 238, 0.38)',
+    glow: 'rgba(34, 211, 238, 0.22)',
+    btnBg: 'linear-gradient(90deg, #0891b2 0%, #0e7490 100%)',
+    btnHoverBg: 'linear-gradient(90deg, #22d3ee 0%, #0891b2 100%)',
+    btnColor: '#fff',
+    description: 'Tous les droits Custom Max, avec accès serveur aux cycles Ava Alpha.',
+    features: [
+      'Tout Custom Max inclus',
+      'Cycles BUY STOP et SELL STOP',
+      'Cycles BUY LIMIT et SELL LIMIT',
+      'Cycles STOP-LIMIT',
+      'Règles sécurisées par capital',
+      'Autorisation signée côté serveur',
+    ]
   }
 ]
 
@@ -259,15 +286,17 @@ const planLabels: Record<string, string> = {
   custom_pro: 'Custom Pro',
   custom_ultra: 'Custom Ultra',
   custom_max: 'Custom Max',
+  custom_max_2: 'Custom Max 2',
 }
 
-const CUSTOM_PLAN_ORDER = ['custom_simple', 'custom_pro', 'custom_ultra', 'custom_max']
+const CUSTOM_PLAN_ORDER = ['custom_simple', 'custom_pro', 'custom_ultra', 'custom_max', 'custom_max_2']
 const CHECKOUT_PLAN_KEYS = ['custom_pro', 'custom_ultra', 'custom_max']
 const CUSTOM_PLAN_CTA: Record<string, string> = {
   custom_simple: 'Profiter de Simple',
   custom_pro: 'Profiter de Pro',
   custom_ultra: 'Profiter de Ultra',
   custom_max: 'Profiter de Max',
+  custom_max_2: 'Activation par Ava',
 }
 
 function normalizePlanKey(plan: string | null | undefined, custom: boolean): string | null {
@@ -698,6 +727,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
   }, [activePlanKey])
 
   const checkoutLabel = (plan: typeof ALL_PLANS[number]) => {
+    if (plan.key === 'custom_max_2') return 'Activation par Ava'
     if (!isPlanCheckoutReady(plan)) return 'Paiement en attente'
     if (isNowPaymentsPlan(plan)) return `Choisir le paiement`
     if (subscriptionExpired && plan.key === lastPlanKey) {

@@ -133,7 +133,7 @@ export function AvaAiTab({ user }: { user: UserData }) {
     } catch (error) {
       const code = error instanceof Error ? error.message : 'AVA_AI_ERROR'
       if (code === 'AI_CREDITS_EXHAUSTED') setShowCreditBanner(true)
-      setMessages(prev => [...prev, { role: 'assistant', content: code === 'CUSTOM_MAX_REQUIRED' ? 'Cette fonction avancée est réservée au plan Custom Max.' : 'Ava AI est momentanément indisponible.' }])
+      setMessages(prev => [...prev, { role: 'assistant', content: code === 'CUSTOM_MAX_REQUIRED' ? 'Cette fonction avancée est réservée aux plans Custom Max et Custom Max 2.' : 'Ava AI est momentanément indisponible.' }])
     } finally { setLoading(false) }
   }
 
@@ -234,7 +234,7 @@ export function AvaAiTab({ user }: { user: UserData }) {
         {adminOpen && user.is_admin && <AdminAvaAiPanel user={user} />}
         {!user.is_admin && !supportAgent && (inviteId || role === 'support') && <details className="max-w-xl mx-auto rounded-2xl border border-white/10 bg-white/[0.03] p-4"><summary className="cursor-pointer text-xs font-bold text-slate-400">J’ai reçu une invitation conseiller</summary><div className="mt-3 flex gap-2"><input value={inviteCode} onChange={event => setInviteCode(event.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" placeholder="Code à 6 chiffres" className="flex-1 rounded-xl bg-slate-900 border border-white/10 p-2 text-sm text-white" /><button onClick={acceptSupportInvite} className="rounded-xl bg-rose-500 px-4 text-xs text-white font-bold">Valider</button></div></details>}
         {messages.length === 0 && <div className="max-w-xl mx-auto mt-12 rounded-3xl bg-white/[0.04] border border-white/10 backdrop-blur-xl p-6 text-center">
-          <Bot className="mx-auto text-rose-400 mb-3" size={28} /><p className="text-white font-bold">Que puis-je vérifier pour vous ?</p><p className="text-sm text-slate-400 mt-2">Le support est disponible pour tous. Les outils de compte et de configuration sont réservés à Custom Max.</p>
+          <Bot className="mx-auto text-rose-400 mb-3" size={28} /><p className="text-white font-bold">Que puis-je vérifier pour vous ?</p><p className="text-sm text-slate-400 mt-2">Le support est disponible pour tous. Les outils de compte et de configuration sont réservés à Custom Max et Custom Max 2.</p>
         </div>}
         {messages.map((message, index) => <div key={index} className={`max-w-2xl rounded-2xl px-4 py-3 text-sm whitespace-pre-wrap ${message.role === 'user' ? 'ml-auto bg-rose-500 text-white' : 'mr-auto bg-white/[0.04] border border-white/10 text-slate-200'}`}>{message.images?.length ? <div className="mb-2 flex flex-wrap gap-2">{message.images.map((src, imageIndex) => <img key={imageIndex} src={src} alt="Pièce jointe" className="max-h-36 rounded-xl" />)}</div> : null}{message.content}</div>)}
         {proposal && <div className="max-w-2xl mr-auto rounded-2xl bg-white/[0.04] border border-rose-500/30 p-4">

@@ -162,7 +162,7 @@ export const CUSTOM_PERMISSIONS: AvaPermissions = {
 
 /** subscription_plan → permissions */
 function paddlePlanPermissions(plan: string | null | undefined): AvaPermissions {
-  if (plan === 'custom_max') return CUSTOM_MAX_PERMISSIONS
+  if (plan === 'custom_max' || plan === 'custom_max_2') return CUSTOM_MAX_PERMISSIONS
   if (plan === 'custom_ultra') return CUSTOM_ULTRA_PERMISSIONS
   if (plan === 'pro_plus' || plan === 'custom_pro') return CUSTOM_PRO_PERMISSIONS
   if (plan === 'custom' || plan === 'custom_simple' || plan === 'custom_starter') return CUSTOM_PERMISSIONS
@@ -176,7 +176,7 @@ export function isPro(user: UserData): boolean {
   if (new Date(user.subscription_expires_at) <= new Date()) return false
   // Les plans Custom Paddle ne sont pas des plans Pro (ont leur propre section)
   const plan = user.subscription_plan
-  if (plan === 'custom' || plan === 'custom_simple' || plan === 'custom_starter' || plan === 'custom_pro' || plan === 'custom_ultra' || plan === 'custom_max') return false
+  if (plan === 'custom' || plan === 'custom_simple' || plan === 'custom_starter' || plan === 'custom_pro' || plan === 'custom_ultra' || plan === 'custom_max' || plan === 'custom_max_2') return false
   return true
 }
 
@@ -187,7 +187,7 @@ export function isCustomPlan(user: UserData): boolean {
   if ((user.subscription_source === 'paddle' || user.subscription_source === 'paypal' || user.subscription_source === 'geniuspay' || user.subscription_source === 'mollie' || user.subscription_source === 'airwallex' || user.subscription_source === 'whop' || user.subscription_source === 'wise' || user.subscription_source === 'nowpayments') &&
       user.subscription_expires_at &&
       new Date(user.subscription_expires_at) > new Date() &&
-      (user.subscription_plan === 'custom' || user.subscription_plan === 'custom_simple' || user.subscription_plan === 'custom_starter' || user.subscription_plan === 'custom_pro' || user.subscription_plan === 'custom_ultra' || user.subscription_plan === 'custom_max')) return true
+      (user.subscription_plan === 'custom' || user.subscription_plan === 'custom_simple' || user.subscription_plan === 'custom_starter' || user.subscription_plan === 'custom_pro' || user.subscription_plan === 'custom_ultra' || user.subscription_plan === 'custom_max' || user.subscription_plan === 'custom_max_2')) return true
   return false
 }
 

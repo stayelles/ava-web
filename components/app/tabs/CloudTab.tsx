@@ -200,6 +200,7 @@ type TradingGlobalControl = {
   max_crash_buy_open_positions?: number | null
   max_crash_sell_open_positions?: number | null
   capital_position_limit_rules?: TradingCapitalPositionLimitRule[] | null
+  volatility_recommendation_rules?: TradingVolatilityRecommendationRule[] | null
   bypass_min_net_equity_usd?: number | null
   bypass_boom_buy_entries?: boolean | null
   bypass_boom_sell_entries?: boolean | null
@@ -223,6 +224,19 @@ type TradingCapitalPositionLimitRule = {
   max_equity_usd: number
   max_total_open_positions: number
   max_stop_cycle_open_positions: number
+}
+
+type TradingVolatilityRecommendationRule = {
+  id: string
+  enabled: boolean
+  min_equity_usd: number
+  max_equity_usd: number | null
+  max_total_open_positions: number
+  max_boom_buy_open_positions: number
+  max_boom_sell_open_positions: number
+  max_crash_buy_open_positions: number
+  max_crash_sell_open_positions: number
+  configuration_guidance: string
 }
 
 type TradingPriceGuardRule = {
@@ -479,6 +493,8 @@ const GLOBAL_CONTROL_HELP = {
     'Nombre maximal de positions ouvertes au total, toutes origines et tous marchés confondus.\n0 désactive uniquement ce plafond.',
   maxStopCyclePositions:
     'Nombre maximal de positions Stop Cycle ouvertes au total, Boom et Crash confondus.\n0 désactive uniquement ce plafond.',
+  recommendations:
+    'Conseils consultatifs utilisés par Ava vocale lorsqu’elle dispose d’une equity Desktop récente.\nIls ne modifient aucun droit, aucune protection et aucune limite d’exécution. Ava demande toujours confirmation avant de proposer l’application d’une configuration.',
   barriers:
     'Une barrière bloque BUY, SELL ou les deux uniquement lorsque le prix du marché se trouve dans la zone définie.\nElle n’agit jamais sur les positions déjà ouvertes.',
   enabled:
@@ -522,11 +538,11 @@ const GLOBAL_CONTROL_HELP = {
   stopCycleFeature:
     'Interrupteur général, désactivé par défaut pour les comptes non-owner.\nDésactivé, Ava Desktop masque entièrement Ava Alpha et refuse toute nouvelle action STOP, LIMIT ou STOP-LIMIT. L’owner garde son accès. Les positions déjà déclenchées ne sont jamais liquidées; seuls les ordres encore en attente sont annulés.',
   stopCycle:
-    'Ava Alpha propose trois familles indépendantes : STOP pour la cassure, LIMIT pour le rebond et STOP-LIMIT pour la cassure suivie d’un retest.\nUne famille est choisie par nouveau cycle. Pour chaque famille, BUY et SELL sont indépendants. L’administrateur configure les règles globales ou par tranche de capital; Custom Max les consulte en lecture seule. À l’objectif, seuls les tickets individuellement positifs sont fermés.',
+    'Ava Alpha propose trois familles indépendantes : STOP pour la cassure, LIMIT pour le rebond et STOP-LIMIT pour la cassure suivie d’un retest.\nUne famille est choisie par nouveau cycle. Pour chaque famille, BUY et SELL sont indépendants. L’administrateur configure les règles globales ou par tranche de capital; Custom Max 2 les consulte en lecture seule. À l’objectif, seuls les tickets individuellement positifs sont fermés.',
   stopCycleMode:
-    'Bloqué : aucun nouveau cycle non-owner.\nAutorisé : l’owner et les comptes Custom Max autorisés peuvent utiliser Ava Alpha.\nForcé : Desktop active Ava Alpha selon la règle effective, sans contourner les sécurités. L’owner reste visible quel que soit l’interrupteur global.',
+    'Bloqué : aucun nouveau cycle non-owner.\nAutorisé : l’owner et les comptes Custom Max 2 autorisés peuvent utiliser Ava Alpha.\nForcé : Desktop active Ava Alpha selon la règle effective, sans contourner les sécurités. L’owner reste visible quel que soit l’interrupteur global.',
   stopCycleForced:
-    'Le mode forcé ne contourne jamais un blocage BUY/SELL, une autorisation de type, une zone, une capacité, le plan, le mode hedging, l’autorisation du compte réel ou AvaBridge 1.65.\nExemple : si BUY est autorisé et SELL bloqué pour une famille, Ava lance uniquement le côté BUY.',
+    'Le mode forcé ne contourne jamais un blocage BUY/SELL, une autorisation de type, une zone, une capacité, le plan, le mode hedging, l’autorisation du compte réel ou AvaBridge 1.66.\nExemple : si BUY est autorisé et SELL bloqué pour une famille, Ava lance uniquement le côté BUY.',
   stopCycleMarket:
     'Marché exact de la règle Stop Cycle.\nLa première bêta accepte uniquement Boom 1000 ou Crash 1000.',
   stopCycleMin:
@@ -602,6 +618,24 @@ function newCapitalPositionLimitRule(): TradingCapitalPositionLimitRule {
     max_equity_usd: 1000,
     max_total_open_positions: 14,
     max_stop_cycle_open_positions: 20,
+  }
+}
+
+function newVolatilityRecommendationRule(): TradingVolatilityRecommendationRule {
+  const id = typeof globalThis.crypto?.randomUUID === 'function'
+    ? globalThis.crypto.randomUUID()
+    : `volatility-advice-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  return {
+    id,
+    enabled: true,
+    min_equity_usd: 0,
+    max_equity_usd: 1000,
+    max_total_open_positions: 10,
+    max_boom_buy_open_positions: 0,
+    max_boom_sell_open_positions: 0,
+    max_crash_buy_open_positions: 0,
+    max_crash_sell_open_positions: 0,
+    configuration_guidance: '',
   }
 }
 
@@ -722,7 +756,7 @@ function isCloudEligible(user: UserData) {
   const plan = String(user.subscription_plan ?? '').toLowerCase()
   const customActive = user.custom_plan_expires_at && new Date(user.custom_plan_expires_at) > new Date()
   const subscriptionActive = user.subscription_expires_at && new Date(user.subscription_expires_at) > new Date()
-  return ['custom_pro', 'custom_ultra', 'custom_max'].includes(plan) && (customActive || subscriptionActive)
+  return ['custom_pro', 'custom_ultra', 'custom_max', 'custom_max_2'].includes(plan) && (customActive || subscriptionActive)
 }
 
 function formatDate(value?: string | null) {
@@ -1300,7 +1334,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const journalLines = agentConnected && Array.isArray(runtime?.journal) ? runtime.journal : []
   const bridgeVersion = String(instance?.bridge_version ?? '').replace(/^v/i, '')
   const bridgeVersionNumber = Number.parseFloat(bridgeVersion)
-  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.65
+  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.66
   const canRunCommands = agentConnected && (state === 'ready' || state === 'online' || state === 'attention')
   const canOpen = browserAccessReady && (state === 'ready' || state === 'online' || state === 'attention')
   const canProvision = state === 'not_created' || state === 'delayed' || state === 'deleted' || state === 'terminated'
@@ -1381,6 +1415,37 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
       ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
       capital_position_limit_rules: (
         Array.isArray(current?.capital_position_limit_rules) ? current.capital_position_limit_rules : []
+      ).filter(rule => rule.id !== id),
+    }))
+  }, [])
+  const addVolatilityRecommendationRule = useCallback(() => {
+    setAdminControlMessage('')
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      volatility_recommendation_rules: [
+        ...(Array.isArray(current?.volatility_recommendation_rules) ? current.volatility_recommendation_rules : []),
+        newVolatilityRecommendationRule(),
+      ],
+    }))
+  }, [])
+  const updateVolatilityRecommendationRule = useCallback((
+    id: string,
+    patch: Partial<TradingVolatilityRecommendationRule>,
+  ) => {
+    setAdminControlMessage('')
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      volatility_recommendation_rules: (
+        Array.isArray(current?.volatility_recommendation_rules) ? current.volatility_recommendation_rules : []
+      ).map(rule => rule.id === id ? { ...rule, ...patch } : rule),
+    }))
+  }, [])
+  const removeVolatilityRecommendationRule = useCallback((id: string) => {
+    setAdminControlMessage('')
+    setAdminControl(current => ({
+      ...(current ?? { min_equity_usd: 10000, volatility_sell_min_profit_usd: 0.5 }),
+      volatility_recommendation_rules: (
+        Array.isArray(current?.volatility_recommendation_rules) ? current.volatility_recommendation_rules : []
       ).filter(rule => rule.id !== id),
     }))
   }, [])
@@ -1470,7 +1535,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
           feature_enabled: currentPolicy?.feature_enabled === true,
           mode: currentPolicy?.mode ?? 'blocked',
           owner_override: true,
-          eligible_plans: ['custom_max'],
+          eligible_plans: ['custom_max_2'],
           user_controls: 'read_only',
           rules: Array.isArray(currentPolicy?.rules) ? currentPolicy.rules : [],
           ...patch,
@@ -1489,7 +1554,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
           feature_enabled: currentPolicy?.feature_enabled === true,
           mode: currentPolicy?.mode ?? 'blocked',
           owner_override: true,
-          eligible_plans: ['custom_max'],
+          eligible_plans: ['custom_max_2'],
           user_controls: 'read_only',
           rules: [...(Array.isArray(currentPolicy?.rules) ? currentPolicy.rules : []), newStopCycleRule()],
         },
@@ -1513,7 +1578,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
           feature_enabled: currentPolicy?.feature_enabled === true,
           mode: currentPolicy?.mode ?? 'blocked',
           owner_override: true,
-          eligible_plans: ['custom_max'],
+          eligible_plans: ['custom_max_2'],
           user_controls: 'read_only',
           rules: (Array.isArray(currentPolicy?.rules) ? currentPolicy.rules : []).map(rule =>
             rule.id === id ? { ...rule, ...patch } : rule,
@@ -1539,7 +1604,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
           feature_enabled: currentPolicy?.feature_enabled === true,
           mode: currentPolicy?.mode ?? 'blocked',
           owner_override: true,
-          eligible_plans: ['custom_max'],
+          eligible_plans: ['custom_max_2'],
           user_controls: 'read_only',
           rules: (Array.isArray(currentPolicy?.rules) ? currentPolicy.rules : []).filter(rule => rule.id !== id),
         },
@@ -1824,7 +1889,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
             </div>
             <h1 className="mt-5 text-2xl font-black text-white">Ava Cloud</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-              L’accès 24/7 est réservé aux plans Custom Pro, Custom Ultra et Custom Max. Passez sur un plan compatible pour préparer votre ordinateur Ava Cloud.
+              L’accès 24/7 est réservé aux plans Custom Pro, Custom Ultra, Custom Max et Custom Max 2. Passez sur un plan compatible pour préparer votre ordinateur Ava Cloud.
             </p>
             <button
               type="button"
@@ -1960,7 +2025,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] p-4">
                 <p className="text-sm font-black text-amber-100">AvaBridge version ancienne</p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  AvaBridge {instance?.bridge_version} est détecté. AvaBridge 1.65 est requis pour surveiller les profits à chaque tick et isoler l’historique MT5 des signaux frais. Réinstalle AvaBridge depuis Ava Desktop avant de relancer le moteur.
+                  AvaBridge {instance?.bridge_version} est détecté. AvaBridge 1.66 est requis pour isoler les quotas Stop Cycle, conserver les Bursts complets et surveiller les profits à chaque tick. Réinstalle AvaBridge depuis Ava Desktop avant de relancer le moteur.
                 </p>
               </div>
             )}
@@ -2434,7 +2499,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
-              {['custom_pro', 'custom_ultra', 'custom_max'].map(plan => {
+              {['custom_pro', 'custom_ultra', 'custom_max', 'custom_max_2'].map(plan => {
                 const selected = adminCriteria.plans?.includes(plan) === true
                 return (
                   <button
@@ -2744,6 +2809,9 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   const capitalRules = Array.isArray(adminControl?.capital_position_limit_rules)
                     ? adminControl.capital_position_limit_rules
                     : []
+                  const recommendationRules = Array.isArray(adminControl?.volatility_recommendation_rules)
+                    ? adminControl.volatility_recommendation_rules
+                    : []
                   const validationErrors = validatePriceGuardRules(rules)
                   const dualRules = Array.isArray(adminControl?.dual_entry_zone_rules) ? adminControl.dual_entry_zone_rules : []
                   const dualValidationErrors = validateDualEntryZoneRules(dualRules)
@@ -2752,7 +2820,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     feature_enabled: false,
                     mode: 'blocked',
                     owner_override: true,
-                    eligible_plans: ['custom_max'],
+                    eligible_plans: ['custom_max_2'],
                     user_controls: 'read_only',
                     rules: [],
                   }
@@ -2772,7 +2840,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   const forcedConfirmed = stopCyclePolicy.feature_enabled !== true
                     || stopCyclePolicy.mode !== 'forced'
                     || window.confirm(
-                    'Confirmer le mode forcé des cycles conditionnels ? Il restera limité à l’owner, aux comptes MT5 hedging, à AvaBridge 1.65 et à toutes les protections administrateur. Un compte réel exige aussi son autorisation explicite.',
+                    'Confirmer le mode forcé des cycles conditionnels ? Il restera limité à l’owner, aux comptes MT5 hedging, à AvaBridge 1.66 et à toutes les protections administrateur. Un compte réel exige aussi son autorisation explicite.',
                   )
                   if (!forcedConfirmed) {
                     setAdminControlMessage('Mode forcé non confirmé. Aucune configuration n’a été envoyée.')
@@ -2796,6 +2864,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       max_crash_buy_open_positions: toPositionLimit(adminControl?.max_crash_buy_open_positions),
                       max_crash_sell_open_positions: toPositionLimit(adminControl?.max_crash_sell_open_positions),
                       capital_position_limit_rules: capitalRules,
+                      volatility_recommendation_rules: recommendationRules,
                       bypass_min_net_equity_usd: Number(adminControl?.bypass_min_net_equity_usd ?? 1000),
                       bypass_boom_buy_entries: adminControl?.bypass_boom_buy_entries === true,
                       bypass_boom_sell_entries: adminControl?.bypass_boom_sell_entries === true,
@@ -2813,7 +2882,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                         version: 5,
                         feature_enabled: stopCyclePolicy.feature_enabled === true,
                         owner_override: true,
-                        eligible_plans: ['custom_max'],
+                        eligible_plans: ['custom_max_2'],
                         user_controls: 'read_only',
                         rules: stopRules,
                       },
@@ -2823,12 +2892,16 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     const savedCapitalRules = Array.isArray(savedControl?.capital_position_limit_rules)
                       ? savedControl.capital_position_limit_rules
                       : null
+                    const savedRecommendationRules = Array.isArray(savedControl?.volatility_recommendation_rules)
+                      ? savedControl.volatility_recommendation_rules
+                      : null
                     const savedRules = Array.isArray(savedControl?.price_guard_rules) ? savedControl.price_guard_rules : null
                     const savedDualRules = Array.isArray(savedControl?.dual_entry_zone_rules) ? savedControl.dual_entry_zone_rules : null
                     const savedStopPolicy = savedControl?.stop_cycle_policy ?? null
                     const savedStopRules = Array.isArray(savedStopPolicy?.rules) ? savedStopPolicy.rules : null
                     const savedRuleIds = new Set(savedRules?.map(rule => rule.id) ?? [])
                     const savedCapitalRuleIds = new Set(savedCapitalRules?.map(rule => rule.id) ?? [])
+                    const savedRecommendationRuleIds = new Set(savedRecommendationRules?.map(rule => rule.id) ?? [])
                     const savedDualRuleIds = new Set(savedDualRules?.map(rule => rule.id) ?? [])
                     const savedStopRuleIds = new Set(savedStopRules?.map(rule => rule.id) ?? [])
                     const barriersConfirmed = savedRules !== null
@@ -2837,6 +2910,9 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     const capitalLimitsConfirmed = savedCapitalRules !== null
                       && savedCapitalRules.length === capitalRules.length
                       && capitalRules.every(rule => savedCapitalRuleIds.has(rule.id))
+                    const recommendationsConfirmed = savedRecommendationRules !== null
+                      && savedRecommendationRules.length === recommendationRules.length
+                      && recommendationRules.every(rule => savedRecommendationRuleIds.has(rule.id))
                     const dualZonesConfirmed = savedDualRules !== null
                       && savedDualRules.length === dualRules.length
                       && dualRules.every(rule => savedDualRuleIds.has(rule.id))
@@ -2846,14 +2922,14 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                       && savedStopRules !== null
                       && savedStopRules.length === stopRules.length
                       && stopRules.every(rule => savedStopRuleIds.has(rule.id))
-                    if (!savedControl || !capitalLimitsConfirmed || !barriersConfirmed || !dualZonesConfirmed || !stopCycleConfirmed) {
-                      throw new Error('Le serveur n’a pas confirmé tous les plafonds, barrières, zones synchronisées et règles Ava Alpha. La saisie reste affichée.')
+                    if (!savedControl || !capitalLimitsConfirmed || !recommendationsConfirmed || !barriersConfirmed || !dualZonesConfirmed || !stopCycleConfirmed) {
+                      throw new Error('Le serveur n’a pas confirmé tous les plafonds, conseils Ava, barrières, zones synchronisées et règles Ava Alpha. La saisie reste affichée.')
                     }
                     setAdminControl(savedControl)
                     setPriceGuardErrors({})
                     setDualEntryZoneErrors({})
                     setStopCycleErrors({})
-                    setAdminControlMessage('Configuration enregistrée. Les plafonds par capital et les autres protections seront propagés aux moteurs Ava Desktop actifs.')
+                    setAdminControlMessage('Configuration enregistrée. Les protections seront propagées aux moteurs actifs et les conseils par capital seront disponibles pour Ava vocale sans modifier les règles d’exécution.')
                   } catch (err) {
                     const message = err instanceof Error ? err.message : 'Controle admin impossible.'
                     setError(message)
@@ -3102,6 +3178,145 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 {(adminControl?.capital_position_limit_rules?.length ?? 0) === 0 ? (
                   <div className="rounded-xl border border-dashed border-white/10 px-4 py-5 text-center text-xs text-slate-500">
                     Aucun plafond par capital. Ajoute un palier, par exemple moins de 1 000 USD : 14 positions totales.
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="mt-4 rounded-2xl border border-violet-400/20 bg-violet-400/[0.06] p-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-violet-300">Conseils Ava vocale</p>
+                  <p className="mt-1 flex items-center gap-2 text-sm font-black text-white">
+                    Recommandations par capital — consultatif
+                    <HelpHint text={GLOBAL_CONTROL_HELP.recommendations} />
+                  </p>
+                  <p className="mt-1 max-w-4xl text-xs leading-5 text-slate-400">
+                    Ces tranches n’autorisent, ne bloquent et n’exécutent aucune position. Ava utilise seulement une equity Desktop récente, propose une tranche et demande une confirmation avant toute configuration.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addVolatilityRecommendationRule}
+                  disabled={(adminControl?.volatility_recommendation_rules?.length ?? 0) >= 20}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-violet-300/25 bg-violet-300/10 px-3 py-2 text-xs font-black text-violet-100 hover:bg-violet-300/15 disabled:opacity-40"
+                >
+                  <Plus size={14} />
+                  Ajouter une tranche
+                </button>
+              </div>
+              <div className="mt-4 grid gap-3">
+                {(adminControl?.volatility_recommendation_rules ?? []).map((rule, index) => (
+                  <div key={rule.id} className="rounded-2xl border border-white/10 bg-slate-950/55 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <label className="flex min-h-[42px] items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3 text-sm font-bold text-slate-100">
+                        <input
+                          type="checkbox"
+                          checked={rule.enabled !== false}
+                          onChange={event => updateVolatilityRecommendationRule(rule.id, { enabled: event.target.checked })}
+                          className="h-4 w-4 accent-violet-300"
+                        />
+                        Tranche {index + 1}
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => removeVolatilityRecommendationRule(rule.id)}
+                        aria-label={`Supprimer la recommandation ${index + 1}`}
+                        className="inline-flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl border border-rose-300/20 bg-rose-300/[0.07] text-rose-200 hover:bg-rose-300/15"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                      <label className="block rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Equity minimum incluse</span>
+                        <div className="mt-1 flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100000000"
+                            step="100"
+                            value={Number(rule.min_equity_usd ?? 0)}
+                            onChange={event => updateVolatilityRecommendationRule(rule.id, {
+                              min_equity_usd: Math.max(0, toNumber(event.target.value, 0)),
+                            })}
+                            className="w-full bg-transparent text-sm font-black text-white outline-none"
+                          />
+                          <span className="text-xs font-black text-slate-500">USD</span>
+                        </div>
+                      </label>
+                      <label className="block rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Equity maximum exclue</span>
+                        <div className="mt-1 flex items-center gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            max="100000000"
+                            step="100"
+                            value={rule.max_equity_usd ?? ''}
+                            placeholder="Sans maximum"
+                            onChange={event => updateVolatilityRecommendationRule(rule.id, {
+                              max_equity_usd: event.target.value === '' ? null : Math.max(0, toNumber(event.target.value, 0)),
+                            })}
+                            className="w-full bg-transparent text-sm font-black text-white outline-none placeholder:text-slate-600"
+                          />
+                          <span className="text-xs font-black text-slate-500">USD</span>
+                        </div>
+                      </label>
+                      <label className="block rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                        <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Maximum total conseillé</span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="1000"
+                          step="1"
+                          value={Number(rule.max_total_open_positions ?? 1)}
+                          onChange={event => updateVolatilityRecommendationRule(rule.id, {
+                            max_total_open_positions: Math.max(1, toPositionLimit(event.target.value)),
+                          })}
+                          className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                        />
+                      </label>
+                    </div>
+                    <div className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                      {([
+                        ['max_boom_buy_open_positions', 'Boom BUY'],
+                        ['max_boom_sell_open_positions', 'Boom SELL'],
+                        ['max_crash_buy_open_positions', 'Crash BUY'],
+                        ['max_crash_sell_open_positions', 'Crash SELL'],
+                      ] as const).map(([field, label]) => (
+                        <label key={field} className="block rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                          <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">{label} conseillé</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="1000"
+                            step="1"
+                            value={Number(rule[field] ?? 0)}
+                            onChange={event => updateVolatilityRecommendationRule(rule.id, {
+                              [field]: toPositionLimit(event.target.value),
+                            })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
+                          />
+                        </label>
+                      ))}
+                    </div>
+                    <p className="mt-2 text-[10px] leading-4 text-slate-500">0 = aucune recommandation publiée pour cette direction, et non une interdiction.</p>
+                    <label className="mt-2 block rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                      <span className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Conseil de configuration facultatif</span>
+                      <textarea
+                        rows={2}
+                        maxLength={800}
+                        value={rule.configuration_guidance ?? ''}
+                        onChange={event => updateVolatilityRecommendationRule(rule.id, { configuration_guidance: event.target.value })}
+                        placeholder="Exemple : privilégier un lot prudent et conserver les protections du plan."
+                        className="mt-1 w-full resize-y bg-transparent text-xs leading-5 text-slate-100 outline-none placeholder:text-slate-600"
+                      />
+                    </label>
+                  </div>
+                ))}
+                {(adminControl?.volatility_recommendation_rules?.length ?? 0) === 0 ? (
+                  <div className="rounded-xl border border-dashed border-white/10 px-4 py-5 text-center text-xs text-slate-500">
+                    Aucune recommandation publiée. Ava n’inventera pas de tranche de capital.
                   </div>
                 ) : null}
               </div>
@@ -3589,7 +3804,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   <span className={`text-xs font-black uppercase tracking-[0.12em] ${
                     adminControl?.stop_cycle_policy?.feature_enabled === true ? 'text-emerald-300' : 'text-rose-300'
                   }`}>
-                    {adminControl?.stop_cycle_policy?.feature_enabled === true ? 'Custom Max autorisé' : 'Non-owner masqué'}
+                    {adminControl?.stop_cycle_policy?.feature_enabled === true ? 'Custom Max 2 autorisé' : 'Non-owner masqué'}
                   </span>
                   <input
                     type="checkbox"
@@ -3604,7 +3819,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Ava Alpha</p>
                     <span className="rounded-full border border-cyan-200/25 bg-cyan-200/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.12em] text-cyan-100">
-                      Custom Max · lecture seule
+                      Custom Max 2 · lecture seule
                     </span>
                   </div>
                   <p className="mt-1 flex items-center gap-2 text-sm font-black text-white">
@@ -3612,7 +3827,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     <HelpHint text={GLOBAL_CONTROL_HELP.stopCycle} />
                   </p>
                   <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
-                    Une tranche de capital prime sur la règle globale du même marché. Les utilisateurs Custom Max voient uniquement leur règle effective et l’état de leurs cycles. Un compte réel exige toujours son autorisation explicite.
+                    Une tranche de capital prime sur la règle globale du même marché. Les utilisateurs Custom Max 2 voient uniquement leur règle effective et l’état de leurs cycles. Un compte réel exige toujours son autorisation explicite.
                   </p>
                 </div>
                 <button

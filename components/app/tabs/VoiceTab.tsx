@@ -95,7 +95,7 @@ export function VoiceTab({
 
   const credits = totalCredits(user)
   const pro = isPro(user)
-  const usesAiWallet = user.is_admin === true || user.subscription_plan === 'custom_max'
+  const usesAiWallet = user.is_admin === true || user.subscription_plan === 'custom_max' || user.subscription_plan === 'custom_max_2'
   const isActive = sessionState === 'connected'
   const isConnecting = sessionState === 'connecting'
   const isError = sessionState === 'error'

@@ -31,7 +31,7 @@ export type StopCyclePolicy = {
   feature_enabled: boolean
   mode: StopCycleMode
   owner_override: true
-  eligible_plans: ['custom_max']
+  eligible_plans: ['custom_max_2']
   user_controls: 'read_only'
   rules: StopCycleRule[]
 }
