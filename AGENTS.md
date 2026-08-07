@@ -4,6 +4,12 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.40 — vérification Turnstile pour Ava Desktop 1.5.38
+
+- La route publique non indexée `/security-check/` héberge le widget Cloudflare Turnstile utilisé uniquement lorsque le backend classe une demande OTP Desktop comme suspecte.
+- Le site key public est transmis par Ava Desktop; le secret Turnstile reste exclusivement dans Supabase sous `TURNSTILE_SECRET_KEY` et chaque jeton est validé côté Edge Function avec l'action `ava_desktop_otp` et le hostname `call-ava.com`.
+- Après succès, la page place le jeton et l’état aléatoire dans le fragment `#` d’une navigation vers `/security-check/callback/`; ce fragment n’est jamais envoyé au serveur et Ava Desktop intercepte la navigation avant toute requête réseau. Aucun OTP, mot de passe ou secret Supabase ne transite par cette page.
+
 ### Ava Web 0.5.39 — publication Ava Desktop 1.5.37
 
 - La page de téléchargements et le workflow Hostinger publient Ava Desktop 1.5.37 pour Windows, macOS Apple Silicon et macOS Intel.
