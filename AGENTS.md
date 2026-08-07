@@ -4,6 +4,12 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.41 — publication Ava Desktop 1.5.38
+
+- La page de téléchargements et le workflow Hostinger publient Ava Desktop 1.5.38 pour Windows, macOS Apple Silicon et macOS Intel.
+- Les manifestes d’auto-update Mac sont régénérés après l’agrafage des DMG et restent séparés par architecture.
+- Le manifest Ava Cloud utilise le SHA-256 réel de l’installateur Windows 1.5.38; AvaBridgeEA reste en version 1.66, inchangé.
+
 ### Ava Web 0.5.40 — vérification Turnstile pour Ava Desktop 1.5.38
 
 - La route publique non indexée `/security-check/` héberge le widget Cloudflare Turnstile utilisé uniquement lorsque le backend classe une demande OTP Desktop comme suspecte.
@@ -43,9 +49,9 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.5.28-arm64.dmg`
-- `Ava-1.5.28-x64.dmg`
-- `AvaSetup-1.5.28.exe`
+- `Ava-1.5.38-arm64.dmg`
+- `Ava-1.5.38-x64.dmg`
+- `AvaSetup-1.5.38.exe`
 - `AvaBridgeEA-1.66.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
