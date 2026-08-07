@@ -4,6 +4,12 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.39 — publication Ava Desktop 1.5.37
+
+- La page de téléchargements et le workflow Hostinger publient Ava Desktop 1.5.37 pour Windows, macOS Apple Silicon et macOS Intel.
+- Les manifests d'auto-update Mac sont séparés par architecture et correspondent aux DMG 1.5.37 après notarisation et agrafage Apple.
+- Le manifest Ava Cloud pointe vers l'installateur Windows 1.5.37 avec son SHA-256 réel; AvaBridgeEA reste en version 1.66, inchangé.
+
 ## Deployment Guardrails
 
 Do not replace the Hostinger deploy workflow with an SFTP/SSH deploy action.

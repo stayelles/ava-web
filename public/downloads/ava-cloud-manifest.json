@@ -1,9 +1,9 @@
 {
   "ava": {
-    "version": "1.5.26",
-    "windows_url": "https://call-ava.com/downloads/AvaSetup-1.5.26.exe",
+    "version": "1.5.37",
+    "windows_url": "https://call-ava.com/downloads/AvaSetup-1.5.37.exe",
     "silent_args": "/S",
-    "sha256": "8c4606af0028a14d0a86d088a1ef6a18b71a9d4d3e443910fcb15f87434ca0f0"
+    "sha256": "a202b7eee9beba6c25405592a1211d30d4c9314b69ea3e0fa2dc9be3d9fa4bd6"
   },
   "bridge": {
     "version": "1.66",
