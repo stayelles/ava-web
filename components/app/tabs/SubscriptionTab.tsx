@@ -193,29 +193,29 @@ const ALL_PLANS = [
   },
   {
     key: 'custom_max_2',
-    label: 'Custom Max 2',
-    price: 'Sur devis',
+    label: 'Spécial',
+    price: 'Sur demande',
     per: '',
     priceId: '',
     paypalPlanId: '',
-    capital: 'Accès premium attribué par Ava',
+    capital: 'Nous contacter pour accéder',
     popular: false,
-    badge: 'Cycles Ava Alpha',
-    accentColor: '#22d3ee',
-    bg: 'linear-gradient(135deg, rgba(34, 211, 238, 0.09) 0%, rgba(15, 23, 42, 0.18) 100%)',
-    border: 'rgba(34, 211, 238, 0.38)',
-    glow: 'rgba(34, 211, 238, 0.22)',
-    btnBg: 'linear-gradient(90deg, #0891b2 0%, #0e7490 100%)',
-    btnHoverBg: 'linear-gradient(90deg, #22d3ee 0%, #0891b2 100%)',
+    badge: 'Accès exclusif',
+    accentColor: '#f43f5e',
+    bg: 'linear-gradient(135deg, rgba(244, 63, 94, 0.11) 0%, rgba(15, 23, 42, 0.22) 100%)',
+    border: 'rgba(244, 63, 94, 0.42)',
+    glow: 'rgba(244, 63, 94, 0.28)',
+    btnBg: 'linear-gradient(90deg, #f43f5e 0%, #be123c 100%)',
+    btnHoverBg: 'linear-gradient(90deg, #fb7185 0%, #e11d48 100%)',
     btnColor: '#fff',
-    description: 'Tous les droits Custom Max, avec accès serveur aux cycles Ava Alpha.',
+    description: 'Le plan supérieur à Max, attribué par Ava après échange avec notre service.',
     features: [
       'Tout Custom Max inclus',
-      'Cycles BUY STOP et SELL STOP',
-      'Cycles BUY LIMIT et SELL LIMIT',
-      'Cycles STOP-LIMIT',
-      'Règles sécurisées par capital',
-      'Autorisation signée côté serveur',
+      'Cycles Ava Alpha avancés',
+      'STOP, LIMIT et STOP-LIMIT',
+      'Règles personnalisées par capital',
+      'Autorisation cryptographique renforcée',
+      'Accompagnement exclusif Ava',
     ]
   }
 ]
@@ -286,7 +286,7 @@ const planLabels: Record<string, string> = {
   custom_pro: 'Custom Pro',
   custom_ultra: 'Custom Ultra',
   custom_max: 'Custom Max',
-  custom_max_2: 'Custom Max 2',
+  custom_max_2: 'Spécial',
 }
 
 const CUSTOM_PLAN_ORDER = ['custom_simple', 'custom_pro', 'custom_ultra', 'custom_max', 'custom_max_2']
@@ -296,7 +296,7 @@ const CUSTOM_PLAN_CTA: Record<string, string> = {
   custom_pro: 'Profiter de Pro',
   custom_ultra: 'Profiter de Ultra',
   custom_max: 'Profiter de Max',
-  custom_max_2: 'Activation par Ava',
+  custom_max_2: 'Contacter le service Ava',
 }
 
 function normalizePlanKey(plan: string | null | undefined, custom: boolean): string | null {
@@ -453,11 +453,11 @@ function suggestedBillingCountry() {
 }
 
 function isCheckoutVisiblePlan(plan: typeof ALL_PLANS[number]) {
-  return CHECKOUT_PLAN_KEYS.includes(plan.key)
+  return CHECKOUT_PLAN_KEYS.includes(plan.key) || plan.key === 'custom_max_2'
 }
 
 function isVisibleCheckoutPlanKey(plan: string | null) {
-  return !!plan && CHECKOUT_PLAN_KEYS.includes(plan)
+  return !!plan && (CHECKOUT_PLAN_KEYS.includes(plan) || plan === 'custom_max_2')
 }
 
 function isLegacyRenewalSource(source: string | null | undefined) {
@@ -727,7 +727,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
   }, [activePlanKey])
 
   const checkoutLabel = (plan: typeof ALL_PLANS[number]) => {
-    if (plan.key === 'custom_max_2') return 'Activation par Ava'
+    if (plan.key === 'custom_max_2') return 'Contacter le service Ava'
     if (!isPlanCheckoutReady(plan)) return 'Paiement en attente'
     if (isNowPaymentsPlan(plan)) return `Choisir le paiement`
     if (subscriptionExpired && plan.key === lastPlanKey) {
@@ -746,6 +746,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
     const isExpiredPreviousPlan = subscriptionExpired && plan.key === lastPlanKey
     const isSelected = plan.key === selectedPlanKey
     const isRecommended = plan.key === 'custom_pro'
+    const isSpecial = plan.key === 'custom_max_2'
     const features = Array.from(new Set(plan.features)).slice(0, 5)
     const extraFeatures = Math.max(0, Array.from(new Set(plan.features)).length - features.length)
     const cardBorder = isActive
@@ -824,10 +825,17 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
               </div>
             ) : (
               <button
-                onClick={() => startCheckout(plan)}
-                disabled={!isPlanCheckoutReady(plan) || billingLoading}
+                onClick={() => {
+                  if (isSpecial) {
+                    setBillingMessage('Présentez votre demande à Ava Support pour étudier l’accès au plan Spécial.')
+                    window.dispatchEvent(new CustomEvent('ava-open-support'))
+                    return
+                  }
+                  startCheckout(plan)
+                }}
+                disabled={(!isSpecial && !isPlanCheckoutReady(plan)) || billingLoading}
                 className={`w-full rounded-xl py-3 text-sm font-black transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 ${
-                  isRecommended || plan.key === 'custom_ultra' || plan.key === 'custom_max'
+                  isRecommended || plan.key === 'custom_ultra' || plan.key === 'custom_max' || isSpecial
                     ? 'bg-rose-500 text-white shadow-xl shadow-rose-500/25 hover:bg-rose-400'
                     : 'border border-white/10 bg-slate-950/60 text-white hover:border-rose-400/35 hover:bg-white/[0.06]'
                 }`}
@@ -1567,7 +1575,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
               </p>
             </div>
             
-            <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 md:grid-cols-3">
+            <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
               {ALL_PLANS.filter(isCheckoutVisiblePlan).map((plan, index) => renderPlanCard(plan, index))}
             </div>
 
@@ -1618,7 +1626,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
             </p>
           </div>
 
-          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 md:grid-cols-3">
+          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {ALL_PLANS.filter(isCheckoutVisiblePlan).map((plan, index) => renderPlanCard(plan, index))}
           </div>
 

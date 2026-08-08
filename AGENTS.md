@@ -4,6 +4,13 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.42 — plan public Spécial
+
+- Le plan interne `custom_max_2` est présenté aux utilisateurs sous le nom public `Spécial`, au-dessus de Max.
+- Aucun prix public ni checkout automatique n'est affiché. Le bouton `Contacter le service Ava` ouvre directement Ava Support afin que l'accès soit étudié et attribué manuellement.
+- Spécial hérite de Custom Max et expose notamment les cycles Ava Alpha STOP, LIMIT et STOP-LIMIT, les règles personnalisées par capital et l'autorisation cryptographique renforcée.
+- La grille des plans reste responsive : une colonne sur mobile, deux sur petit écran et quatre sur grand écran, dans le design sombre et rose Ava.
+
 ### Ava Web 0.5.41 — publication Ava Desktop 1.5.38
 
 - La page de téléchargements et le workflow Hostinger publient Ava Desktop 1.5.38 pour Windows, macOS Apple Silicon et macOS Intel.
