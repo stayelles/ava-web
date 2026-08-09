@@ -4,6 +4,13 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.44 — publication Ava Desktop 1.5.42
+
+- La page de téléchargements et le workflow Hostinger publient Ava Desktop 1.5.42 pour Windows, macOS Apple Silicon et macOS Intel.
+- Les manifestes Mac sont régénérés après l’agrafage Apple et restent séparés par architecture; le manifest Ava Cloud utilise le SHA-256 réel de l’installateur Windows 1.5.42.
+- Desktop corrige la saisie décimale des délais Burst, expose les fenêtres post-burst Boom/Crash et ajoute les presets portables validés avec aperçu/confirmation. La création de presets distribuables reste réservée au mode développeur local.
+- AvaBridgeEA reste en version 1.66, inchangé et vérifié.
+
 ### Ava Web 0.5.43 — publication Ava Desktop 1.5.39
 
 - La page de téléchargements et le workflow Hostinger publient Ava Desktop 1.5.39 pour Windows, macOS Apple Silicon et macOS Intel.
@@ -63,9 +70,9 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.5.39-arm64.dmg`
-- `Ava-1.5.39-x64.dmg`
-- `AvaSetup-1.5.39.exe`
+- `Ava-1.5.42-arm64.dmg`
+- `Ava-1.5.42-x64.dmg`
+- `AvaSetup-1.5.42.exe`
 - `AvaBridgeEA-1.66.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
