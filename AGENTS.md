@@ -4,6 +4,13 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.43 — publication Ava Desktop 1.5.39
+
+- La page de téléchargements et le workflow Hostinger publient Ava Desktop 1.5.39 pour Windows, macOS Apple Silicon et macOS Intel.
+- Desktop reconnaît `custom_max_2` sous le nom public Spécial et Custom Pro peut lancer le moteur quel que soit son capital, tout en conservant strictement ses limites de plan signées.
+- Les manifestes Mac ont été régénérés après l’agrafage Apple; le manifest Ava Cloud utilise le SHA-256 réel de l’installateur Windows 1.5.39. AvaBridgeEA reste en version 1.66, inchangé.
+- Le CDN Hostinger est activé pour réduire les problèmes de routage régionaux vers `call-ava.com`, notamment ceux signalés au Ghana.
+
 ### Ava Web 0.5.42 — plan public Spécial
 
 - Le plan interne `custom_max_2` est présenté aux utilisateurs sous le nom public `Spécial`, au-dessus de Max.
@@ -56,9 +63,9 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.5.38-arm64.dmg`
-- `Ava-1.5.38-x64.dmg`
-- `AvaSetup-1.5.38.exe`
+- `Ava-1.5.39-arm64.dmg`
+- `Ava-1.5.39-x64.dmg`
+- `AvaSetup-1.5.39.exe`
 - `AvaBridgeEA-1.66.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
