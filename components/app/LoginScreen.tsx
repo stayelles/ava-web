@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
+import Script from 'next/script'
 import { ArrowRight, LockKeyhole, Mail, ShieldCheck } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -10,7 +11,13 @@ type MfaPrompt = { required: boolean; qrCode?: string; secret?: string }
 interface Props {
   loading: boolean
   error: string
-  onOtpRequest: (email: string) => Promise<{ ok: boolean; error?: string }>
+  onOtpRequest: (email: string, turnstileToken?: string) => Promise<{
+    ok: boolean
+    error?: string
+    captchaRequired?: boolean
+    captchaSiteKey?: string
+    captchaAction?: string
+  }>
   onOtpVerify: (email: string, code: string) => Promise<{ ok: boolean; error?: string; mfa?: MfaPrompt }>
   onMfaVerify: (code: string) => Promise<{ ok: boolean; error?: string }>
 }
@@ -23,15 +30,49 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
   const [code, setCode] = useState('')
   const [localError, setLocalError] = useState('')
   const [mfa, setMfa] = useState<MfaPrompt | null>(null)
+  const [captcha, setCaptcha] = useState<{ siteKey: string; action: string } | null>(null)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const captchaRef = useRef<HTMLDivElement | null>(null)
+  const widgetIdRef = useRef<string | null>(null)
+
+  const renderCaptcha = () => {
+    if (!captcha || !captchaRef.current || !window.turnstile || widgetIdRef.current) return
+    widgetIdRef.current = window.turnstile.render(captchaRef.current, {
+      sitekey: captcha.siteKey,
+      action: captcha.action,
+      theme: 'dark',
+      callback: (token: string) => { setTurnstileToken(token); setLocalError('') },
+      'expired-callback': () => setTurnstileToken(''),
+      'error-callback': () => { setTurnstileToken(''); setLocalError('Vérification anti-robot indisponible. Réessayez.') },
+    })
+  }
+
+  useEffect(() => {
+    renderCaptcha()
+    return () => {
+      if (widgetIdRef.current && window.turnstile) window.turnstile.remove(widgetIdRef.current)
+      widgetIdRef.current = null
+    }
+  // renderCaptcha intentionally depends on the current challenge only.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [captcha])
 
   const submit = async () => {
     setLocalError('')
     if (step === 'email') {
       if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setLocalError('Entrez une adresse e-mail valide.')
-      const result = await onOtpRequest(email)
+      if (captcha && !turnstileToken) return setLocalError('Terminez la vérification anti-robot.')
+      const result = await onOtpRequest(email, turnstileToken || undefined)
       if (result.ok) {
         setCode('')
+        setCaptcha(null)
+        setTurnstileToken('')
         setStep('otp')
+      } else if (result.captchaRequired && result.captchaSiteKey) {
+        widgetIdRef.current = null
+        setTurnstileToken('')
+        setCaptcha({ siteKey: result.captchaSiteKey, action: result.captchaAction ?? 'ava_web_otp' })
+        setLocalError('Confirmez que vous n’êtes pas un robot, puis continuez.')
       } else setLocalError(result.error ?? '')
       return
     }
@@ -49,9 +90,9 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
     if (!result.ok) setLocalError(result.error ?? '')
   }
 
-  const title = step === 'email' ? 'Connexion sécurisée' : step === 'otp' ? 'Vérifiez votre e-mail' : 'Protection administrateur'
+  const title = step === 'email' ? 'Connexion ou création de compte' : step === 'otp' ? 'Vérifiez votre e-mail' : 'Protection administrateur'
   const subtitle = step === 'email'
-    ? 'Aucun mot de passe ni PIN permanent'
+    ? 'Un seul code temporaire, sans mot de passe'
     : step === 'otp'
       ? `Code envoyé à ${email.trim()}`
       : 'Authentification TOTP obligatoire'
@@ -91,7 +132,12 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={17} />
                 <input
-                  type="email" value={email} onChange={event => setEmail(event.target.value)}
+                  type="email" value={email} onChange={event => {
+                    setEmail(event.target.value)
+                    setCaptcha(null)
+                    setTurnstileToken('')
+                    widgetIdRef.current = null
+                  }}
                   onKeyDown={event => event.key === 'Enter' && void submit()}
                   autoComplete="email" placeholder="votre@email.com"
                   className="w-full rounded-2xl border border-white/[0.09] bg-white/[0.05] py-3.5 pl-11 pr-4 text-[15px] text-slate-50 outline-none transition focus:border-rose-500/50"
@@ -118,6 +164,13 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
             </label>
           )}
 
+          {step === 'email' && captcha && (
+            <div className="rounded-2xl border border-white/[0.09] bg-white/[0.025] p-3">
+              <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" strategy="afterInteractive" onReady={renderCaptcha} />
+              <div ref={captchaRef} className="flex min-h-[65px] items-center justify-center" />
+            </div>
+          )}
+
           {(localError || error) && <p className="text-sm text-rose-400">{localError || error}</p>}
 
           <button
@@ -140,7 +193,7 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
         <div className="mt-7 flex gap-3 rounded-2xl border border-emerald-400/10 bg-emerald-400/[0.04] p-3.5">
           <ShieldCheck className="mt-0.5 shrink-0 text-emerald-400" size={17} />
           <p className="text-[11px] leading-relaxed text-slate-500">
-            Les anciens PIN ont été retirés. Le code e-mail est temporaire et les comptes privilégiés exigent une seconde vérification TOTP.
+            Si l’adresse est nouvelle, Ava crée le compte uniquement après validation du code e-mail. Les comptes privilégiés exigent aussi une seconde vérification TOTP.
           </p>
         </div>
       </motion.div>

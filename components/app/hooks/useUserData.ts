@@ -27,6 +27,13 @@ type Bootstrap = {
 }
 
 type MfaPrompt = { required: boolean; qrCode?: string; secret?: string }
+type OtpRequestResult = {
+  ok: boolean
+  error?: string
+  captchaRequired?: boolean
+  captchaSiteKey?: string
+  captchaAction?: string
+}
 
 function asString(value: unknown): string | null {
   return value == null || value === '' ? null : String(value)
@@ -142,13 +149,22 @@ export function useUserData() {
     }
   }, [bootstrapSession])
 
-  const requestOtp = useCallback(async (email: string): Promise<{ ok: boolean; error?: string }> => {
+  const requestOtp = useCallback(async (email: string, turnstileToken?: string): Promise<OtpRequestResult> => {
     setLoginLoading(true)
     setLoginError('')
     try {
       const { response, data } = await edgeRequest('ava-auth-migrate', {
         action: 'request_otp', email: email.trim(), surface: 'web',
+        ...(turnstileToken ? { turnstile_token: turnstileToken } : {}),
       })
+      if (response.status === 403 && data.error === 'CAPTCHA_REQUIRED') {
+        return {
+          ok: false,
+          captchaRequired: true,
+          captchaSiteKey: String(data.captcha_site_key ?? ''),
+          captchaAction: String(data.captcha_action ?? 'ava_web_otp'),
+        }
+      }
       if (!response.ok) throw new Error(String(data.error ?? 'OTP_REQUEST_FAILED'))
       return { ok: true }
     } catch {

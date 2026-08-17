@@ -27,6 +27,7 @@ import {
 import { SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
 import type { StopCyclePolicy, StopCycleRule } from '../stopCycleTypes'
 import type { UserData } from '../types'
+import { AdminAssistancePanel } from '../admin/AdminAssistancePanel'
 
 const ADMIN_ACCESS_TOKEN_KEY = 'ava_admin_access_token'
 const ADMIN_TRUSTED_DEVICE_KEY = 'ava_admin_trusted_device_token'
@@ -1219,6 +1220,11 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
       setError(null)
       const result = await callAdminAccess({ action: 'request_code' })
       if (result.adminAccess === true) {
+        const token = String(result.admin_access_token ?? '')
+        if (token) {
+          setAdminAccessToken(token)
+          window.localStorage.setItem(ADMIN_ACCESS_TOKEN_KEY, token)
+        }
         setAdminAccessGranted(true)
         setAdminAccessMessage('Acces admin autorise par IP.')
         return
@@ -2211,6 +2217,10 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               </p>
             )}
           </section>
+        )}
+
+        {canUseAdminConsole && adminAccessGranted && adminAccessToken && (
+          <AdminAssistancePanel user={user} adminAccessToken={adminAccessToken} />
         )}
 
         {canUseAdminConsole && adminAccessGranted && (

@@ -4,9 +4,12 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
-### Ava Web 0.5.47 — publication Ava Desktop 1.5.44
+### Ava Web 0.5.48 — publication Ava Desktop 1.5.45
 
-- La page de téléchargements et le workflow Hostinger publient Ava Desktop 1.5.44 pour Windows, macOS Apple Silicon et macOS Intel.
+- La page de téléchargements et le workflow Hostinger publient Ava Desktop 1.5.45 pour Windows, macOS Apple Silicon et macOS Intel.
+- L'écran d'accès Web présente désormais un parcours unifié « Connexion ou création de compte ». Une adresse inconnue peut créer un compte par code e-mail sans exposer son existence; les contrôles de campagne OTP, de compte et Cloudflare Turnstile restent appliqués côté serveur.
+- La bibliothèque `/presets` présente les presets Ava Volatility signés, leur plan, leur capital et leur révision; l'installation passe par un lien `ava://preset/...` dont Desktop vérifie la signature et les limites.
+- Le Mode Assistance administrateur est en lecture seule, limité à 15 minutes, protégé par MFA et entièrement audité; aucun OTP, jeton, mot de passe ou identifiant MT5 n'est exposé.
 - Boom et Crash activent par défaut leurs directions BUY et SELL au premier lancement de cette version; l'utilisateur peut toujours les modifier avant de démarrer Ava.
 - Le moteur limite chaque pic confirmé à un seul panier Burst par direction et attend le prochain pic avant de réarmer le cycle.
 - Les manifestes Mac sont régénérés après l'agrafage Apple et restent séparés par architecture; AvaBridgeEA reste en version 1.66, inchangé.
@@ -77,9 +80,9 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.5.44-arm64.dmg`
-- `Ava-1.5.44-x64.dmg`
-- `AvaSetup-1.5.44.exe`
+- `Ava-1.5.45-arm64.dmg`
+- `Ava-1.5.45-x64.dmg`
+- `AvaSetup-1.5.45.exe`
 - `AvaBridgeEA-1.66.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
@@ -199,3 +202,11 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 - L’owner et tout compte privilégié doivent atteindre `aal2`. Au premier accès, Ava Web enrôle un facteur TOTP, affiche le QR code une seule fois et refuse de lier le compte tant que le challenge n’est pas vérifié.
 - Le bootstrap ne renvoie aucun identifiant fournisseur de paiement, jeton appareil, secret, champ administratif interne ou donnée d’un autre utilisateur.
 - Les anciens parcours création/réinitialisation de PIN sont retirés de l’écran de connexion pendant la migration de sécurité.
+
+### Bibliothèque de presets et Mode Assistance (publié avec Ava Web 0.5.48)
+
+- `/presets` affiche seulement les métadonnées publiques des presets Ava Volatility publiés : plan, capital minimum, plage recommandée, date et révision. Le bouton d’installation utilise `ava://preset/<uuid>?revision=<n>` et ne place jamais la configuration brute dans l’URL.
+- La configuration et sa signature sont téléchargées par Ava Desktop après authentification, puis vérifiées localement avant confirmation. Le Web ne peut pas accorder un plan, contourner un capital minimum ni signer un preset.
+- Le Mode Assistance owner/admin est strictement en lecture seule. Il exige le step-up administrateur déjà protégé par MFA, un motif, une cible précise et expire après 15 minutes; ouverture, consultation et fermeture sont auditées.
+- La vue Assistance affiche le profil sûr, les sessions moteur, les paramètres nettoyés utilisés au lancement et l’historique des presets. Elle ne fournit aucun OTP client, mot de passe, jeton, secret, identifiant MT5 ou possibilité d’usurpation.
+- Ne jamais rendre le Mode Assistance modifiable ni permettre l'usurpation d'une session utilisateur; toute future action support doit rester explicite, séparée et auditée.
