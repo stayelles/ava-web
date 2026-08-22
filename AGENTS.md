@@ -210,3 +210,12 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 - Le Mode Assistance owner/admin est strictement en lecture seule. Il exige le step-up administrateur déjà protégé par MFA, un motif, une cible précise et expire après 15 minutes; ouverture, consultation et fermeture sont auditées.
 - La vue Assistance affiche le profil sûr, les sessions moteur, les paramètres nettoyés utilisés au lancement et l’historique des presets. Elle ne fournit aucun OTP client, mot de passe, jeton, secret, identifiant MT5 ou possibilité d’usurpation.
 - Ne jamais rendre le Mode Assistance modifiable ni permettre l'usurpation d'une session utilisateur; toute future action support doit rester explicite, séparée et auditée.
+
+### Ava OPS — opérations multi-utilisateurs auditées (Ava Web 0.5.49)
+
+- `/ops` est un portail distinct du compte client. Chaque collaborateur utilise son propre compte Ava, son OTP e-mail et un facteur TOTP; aucun compte partagé ni code OTP client n'est autorisé.
+- Les rôles OPS sont `owner`, `admin`, `operator` et `auditor`. Les permissions sont explicites et révocables; seul l'owner gère l'équipe.
+- Chaque intervention conserve le demandeur, la cible, le motif, le niveau de risque, l'approbateur, l'exécutant, les horaires, le résultat et les erreurs éventuelles dans un journal append-only.
+- Une personne ne peut jamais approuver sa propre demande à risque élevé ou critique. Les prolongations, réactivations, investigations et déploiements passent par l'approbation; seul le diagnostic d'accès utilisateur est exécuté immédiatement en lecture seule.
+- La saisie libre d'un opérateur ne doit jamais devenir une commande terminal. Toute exécution future doit utiliser une action serveur prédéfinie, validée et idempotente.
+- Le frontend appelle uniquement `ava-ops`; les tables `ava_ops_*` sont privées aux clients et accessibles au service role après vérification simultanée de Supabase Auth AAL2 et de la session Ava Web signée.

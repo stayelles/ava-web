@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+@layer components {
+  .ops-input {
+    @apply w-full rounded-xl border border-white/[0.09] bg-slate-950/70 px-3 py-3 text-sm font-bold text-slate-100 outline-none transition placeholder:text-slate-700 focus:border-rose-400/40;
+  }
+}
+
 :root {
   --background: #020617;
   --foreground: #f8fafc;
