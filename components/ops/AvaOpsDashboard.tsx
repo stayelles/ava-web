@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Activity, AlertTriangle, Check, CheckCircle2, ClipboardList, Clock3,
   FileClock, Loader2, LockKeyhole, LogOut, Plus, RefreshCw,
-  ShieldCheck, UserPlus, Users, X, XCircle,
+  MessageSquareText, ShieldCheck, UserPlus, Users, X, XCircle,
 } from 'lucide-react'
 import type { UserData } from '@/components/app/types'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/components/app/constants'
@@ -63,12 +63,25 @@ type Bootstrap = {
 
 const requestTypes = [
   ['user_access_diagnosis', 'Diagnostic accès utilisateur'],
+  ['support_question', 'Question au support Ava OPS'],
   ['subscription_extension', 'Prolongation abonnement'],
   ['account_reactivation', 'Réactivation de compte'],
   ['incident_review', 'Investigation sécurité'],
   ['deployment', 'Demande de déploiement'],
   ['other', 'Autre intervention'],
 ] as const
+
+const requestTypeLabels = Object.fromEntries(requestTypes)
+
+const requestDefaults: Record<string, { title: string; reason: string }> = {
+  user_access_diagnosis: { title: 'Diagnostic d’accès utilisateur', reason: 'Diagnostic demandé par le service client Ava.' },
+  support_question: { title: 'Question au support Ava OPS', reason: '' },
+  subscription_extension: { title: 'Prolongation abonnement', reason: '' },
+  account_reactivation: { title: 'Réactivation de compte', reason: '' },
+  incident_review: { title: 'Investigation sécurité', reason: '' },
+  deployment: { title: 'Demande de déploiement', reason: '' },
+  other: { title: 'Autre intervention', reason: '' },
+}
 
 const rolePermissions: Record<string, string[]> = {
   admin: ['requests.read', 'requests.create', 'requests.approve', 'users.read', 'audit.read', 'deployments.request'],
@@ -83,8 +96,8 @@ const formatDate = (value?: string | null) => {
 }
 
 const statusLabel: Record<string, string> = {
-  pending: 'En attente', needs_approval: 'À approuver', approved: 'Approuvée',
-  running: 'En cours', succeeded: 'Terminée', failed: 'Échec', rejected: 'Rejetée',
+  pending: 'En attente', needs_approval: 'À approuver', approved: 'En attente de Codex',
+  running: 'Analyse Codex', succeeded: 'Terminée', failed: 'Échec', rejected: 'Rejetée',
   cancelled: 'Annulée',
 }
 
@@ -127,8 +140,8 @@ export function AvaOpsDashboard({ user, onLogout }: { user: UserData; onLogout: 
     return result
   }, [user.web_session_token])
 
-  const refresh = useCallback(async () => {
-    setLoading(true)
+  const refresh = useCallback(async (withSpinner = true) => {
+    if (withSpinner) setLoading(true)
     setError('')
     try {
       const result = await call({ action: 'bootstrap' })
@@ -141,7 +154,7 @@ export function AvaOpsDashboard({ user, onLogout }: { user: UserData; onLogout: 
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Ava OPS indisponible.')
     } finally {
-      setLoading(false)
+      if (withSpinner) setLoading(false)
     }
   }, [call])
 
@@ -153,6 +166,17 @@ export function AvaOpsDashboard({ user, onLogout }: { user: UserData; onLogout: 
     completed: data?.requests.filter(item => item.status === 'succeeded').length ?? 0,
     operators: data?.operators.filter(item => item.active).length ?? 0,
   }), [data])
+
+  const shouldPoll = useMemo(
+    () => data?.requests.some(item => ['approved', 'running'].includes(item.status)) ?? false,
+    [data],
+  )
+
+  useEffect(() => {
+    if (!shouldPoll) return
+    const interval = window.setInterval(() => void refresh(false), 8_000)
+    return () => window.clearInterval(interval)
+  }, [refresh, shouldPoll])
 
   const mutate = async (key: string, payload: Record<string, unknown>) => {
     setBusy(key)
@@ -253,12 +277,12 @@ export function AvaOpsDashboard({ user, onLogout }: { user: UserData; onLogout: 
               <div className="rounded-3xl border border-rose-300/15 bg-white/[0.035] p-5 lg:p-6">
                 <div className="flex items-start justify-between gap-4"><div><h2 className="text-lg font-black">Nouvelle intervention</h2><p className="mt-1 text-xs text-slate-500">Les actions sensibles attendent l’approbation d’une autre personne.</p></div><button onClick={() => setShowCreate(false)} className="text-slate-500 hover:text-white"><X size={18} /></button></div>
                 <div className="mt-5 grid gap-3 lg:grid-cols-2">
-                  <Field label="Type"><select value={requestType} onChange={event => { setRequestType(event.target.value); setTitle(requestTypes.find(item => item[0] === event.target.value)?.[1] ?? '') }} className="ops-input">{requestTypes.map(item => <option key={item[0]} value={item[0]}>{item[1]}</option>)}</select></Field>
-                  <Field label="Utilisateur ciblé"><input value={targetEmail} onChange={event => setTargetEmail(event.target.value)} type="email" placeholder="utilisateur@email.com" className="ops-input" /></Field>
+                  <Field label="Type"><select value={requestType} onChange={event => { const next = event.target.value; setRequestType(next); setTitle(requestDefaults[next]?.title ?? ''); setReason(requestDefaults[next]?.reason ?? '') }} className="ops-input">{requestTypes.map(item => <option key={item[0]} value={item[0]}>{item[1]}</option>)}</select></Field>
+                  <Field label={requestType === 'support_question' ? 'Utilisateur ciblé (facultatif)' : 'Utilisateur ciblé'}><input value={targetEmail} onChange={event => setTargetEmail(event.target.value)} type="email" placeholder="utilisateur@email.com" className="ops-input" /></Field>
                   <Field label="Titre"><input value={title} onChange={event => setTitle(event.target.value)} maxLength={160} className="ops-input" /></Field>
-                  <Field label="Motif précis"><input value={reason} onChange={event => setReason(event.target.value)} maxLength={2000} className="ops-input" /></Field>
+                  <div className="lg:col-span-2"><Field label={requestType === 'support_question' ? 'Question ou problème détaillé' : 'Motif précis'}><textarea value={reason} onChange={event => setReason(event.target.value)} maxLength={2000} rows={4} placeholder={requestType === 'support_question' ? 'Écrivez ici la question complète du service client…' : 'Décrivez précisément la demande…'} className="ops-input min-h-28 resize-y" /></Field></div>
                 </div>
-                <div className="mt-4 flex items-center justify-between gap-4"><p className="text-[11px] text-slate-500">Diagnostic : lecture seule immédiate. Réactivation, prolongation et déploiement : approbation obligatoire.</p><button onClick={() => void createRequest()} disabled={busy === 'create' || title.length < 3 || reason.length < 10} className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-rose-600 px-4 py-3 text-xs font-black disabled:opacity-40">{busy === 'create' ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Enregistrer</button></div>
+                <div className="mt-4 flex items-center justify-between gap-4"><p className="text-[11px] text-slate-500">{requestType === 'support_question' ? 'Après approbation, Codex analyse en lecture seule et publie sa réponse directement dans cette demande.' : 'Diagnostic : lecture seule immédiate. Réactivation, prolongation et déploiement : approbation obligatoire.'}</p><button onClick={() => void createRequest()} disabled={busy === 'create' || title.length < 3 || reason.length < 10} className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-rose-600 px-4 py-3 text-xs font-black disabled:opacity-40">{busy === 'create' ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Enregistrer</button></div>
               </div>
             )}
 
@@ -266,14 +290,14 @@ export function AvaOpsDashboard({ user, onLogout }: { user: UserData; onLogout: 
               {data.requests.length ? data.requests.map(request => (
                 <article key={request.id} className="rounded-2xl border border-white/[0.075] bg-white/[0.025] p-4 transition hover:bg-white/[0.04] lg:p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><StatusBadge status={request.status} /><RiskBadge risk={request.risk_level} /><span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">{request.request_type.replaceAll('_', ' ')}</span></div><h3 className="mt-2 font-black text-white">{request.title}</h3><p className="mt-1 break-all text-xs text-slate-500">{request.target_email_normalized || 'Aucune cible'} · demandé le {formatDate(request.requested_at)}</p></div>
+                    <div className="min-w-0"><div className="flex flex-wrap items-center gap-2"><StatusBadge status={request.status} /><RiskBadge risk={request.risk_level} /><span className="text-[10px] font-bold uppercase tracking-wider text-slate-600">{requestTypeLabels[request.request_type] ?? request.request_type.replaceAll('_', ' ')}</span></div><h3 className="mt-2 font-black text-white">{request.title}</h3><p className="mt-1 break-all text-xs text-slate-500">{request.target_email_normalized || 'Aucune cible'} · demandé le {formatDate(request.requested_at)}</p></div>
                     {request.status === 'needs_approval' && data.operator.permissions.includes('requests.approve') && (
                       <div className="flex gap-2"><button onClick={() => void mutate(`approve-${request.id}`, { action: 'approve_request', request_id: request.id })} disabled={busy === `approve-${request.id}`} className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-400/12 px-3 py-2 text-xs font-black text-emerald-200 ring-1 ring-emerald-300/20"><Check size={14} /> Approuver</button><button onClick={() => void mutate(`reject-${request.id}`, { action: 'reject_request', request_id: request.id })} className="inline-flex items-center gap-1.5 rounded-xl bg-rose-400/10 px-3 py-2 text-xs font-black text-rose-200 ring-1 ring-rose-300/15"><X size={14} /> Rejeter</button></div>
                     )}
                   </div>
                   <p className="mt-3 text-sm leading-6 text-slate-300">{request.reason}</p>
                   <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[10px] text-slate-600"><span>Demandeur : {shortId(request.requested_by)}</span><span>Approbateur : {shortId(request.approved_by)}</span><span>Exécutant : {request.executed_by_label || shortId(request.executed_by)}</span></div>
-                  {(request.result && Object.keys(request.result).length > 0) || request.error_code ? <details className="mt-3 rounded-xl border border-white/[0.06] bg-slate-950/55 p-3"><summary className="cursor-pointer text-xs font-bold text-slate-300">Résultat détaillé</summary><pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-all text-[11px] leading-5 text-slate-400">{request.error_code || JSON.stringify(request.result, null, 2)}</pre></details> : null}
+                  <RequestResult request={request} />
                 </article>
               )) : <Empty icon={ClipboardList} text="Aucune demande OPS pour le moment." />}
             </div>
@@ -322,6 +346,19 @@ function RiskBadge({ risk }: { risk: string }) {
 
 function Empty({ icon: Icon, text }: { icon: typeof Activity; text: string }) {
   return <div className="flex flex-col items-center justify-center p-12 text-center text-slate-600"><Icon size={28} /><p className="mt-3 text-sm font-bold">{text}</p></div>
+}
+
+function RequestResult({ request }: { request: OpsRequest }) {
+  const summary = typeof request.result?.summary === 'string' ? request.result.summary : ''
+  if (summary) {
+    return <div className="mt-4 rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.055] p-4"><div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-emerald-200"><MessageSquareText size={15} /> Réponse Ava OPS</div><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">{summary}</p></div>
+  }
+  if ((request.result && Object.keys(request.result).length > 0) || request.error_code) {
+    return <details className="mt-3 rounded-xl border border-white/[0.06] bg-slate-950/55 p-3"><summary className="cursor-pointer text-xs font-bold text-slate-300">Résultat détaillé</summary><pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-all text-[11px] leading-5 text-slate-400">{request.error_code || JSON.stringify(request.result, null, 2)}</pre></details>
+  }
+  if (request.status === 'approved') return <p className="mt-3 text-xs font-bold text-violet-200">Question approuvée : Codex la prendra automatiquement dans quelques secondes.</p>
+  if (request.status === 'running') return <p className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-violet-200"><Loader2 size={13} className="animate-spin" /> Codex vérifie les éléments disponibles en lecture seule…</p>
+  return null
 }
 
 function shortId(value?: string | null) { return value ? `${value.slice(0, 8)}…` : '—' }
