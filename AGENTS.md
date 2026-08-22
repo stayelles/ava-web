@@ -4,6 +4,13 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.51 — réponses Ava OPS destinées au service client
+
+- Les questions Ava OPS affichent une conclusion courte et, si nécessaire, une seule prochaine étape dans deux blocs lisibles.
+- Les réponses visibles ne mentionnent jamais les outils internes, les fournisseurs techniques, le code source, les chemins locaux, les commandes ou les identifiants d'infrastructure.
+- Les anciennes réponses techniques déjà enregistrées sont réduites à leur conclusion directe dans l'interface; les détails internes restent réservés à l'audit.
+- Le traitement automatique est présenté publiquement sous le nom `Ava OPS`; aucun nom d'outil interne n'est exposé aux opérateurs.
+
 ### Ava Web 0.5.48 — publication Ava Desktop 1.5.45
 
 - La page de téléchargements et le workflow Hostinger publient Ava Desktop 1.5.45 pour Windows, macOS Apple Silicon et macOS Intel.

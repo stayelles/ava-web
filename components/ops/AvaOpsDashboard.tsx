@@ -96,8 +96,8 @@ const formatDate = (value?: string | null) => {
 }
 
 const statusLabel: Record<string, string> = {
-  pending: 'En attente', needs_approval: 'À approuver', approved: 'En attente de Codex',
-  running: 'Analyse Codex', succeeded: 'Terminée', failed: 'Échec', rejected: 'Rejetée',
+  pending: 'En attente', needs_approval: 'À approuver', approved: 'En attente d’analyse',
+  running: 'Analyse en cours', succeeded: 'Terminée', failed: 'Échec', rejected: 'Rejetée',
   cancelled: 'Annulée',
 }
 
@@ -282,7 +282,7 @@ export function AvaOpsDashboard({ user, onLogout }: { user: UserData; onLogout: 
                   <Field label="Titre"><input value={title} onChange={event => setTitle(event.target.value)} maxLength={160} className="ops-input" /></Field>
                   <div className="lg:col-span-2"><Field label={requestType === 'support_question' ? 'Question ou problème détaillé' : 'Motif précis'}><textarea value={reason} onChange={event => setReason(event.target.value)} maxLength={2000} rows={4} placeholder={requestType === 'support_question' ? 'Écrivez ici la question complète du service client…' : 'Décrivez précisément la demande…'} className="ops-input min-h-28 resize-y" /></Field></div>
                 </div>
-                <div className="mt-4 flex items-center justify-between gap-4"><p className="text-[11px] text-slate-500">{requestType === 'support_question' ? 'Après approbation, Codex analyse en lecture seule et publie sa réponse directement dans cette demande.' : 'Diagnostic : lecture seule immédiate. Réactivation, prolongation et déploiement : approbation obligatoire.'}</p><button onClick={() => void createRequest()} disabled={busy === 'create' || title.length < 3 || reason.length < 10} className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-rose-600 px-4 py-3 text-xs font-black disabled:opacity-40">{busy === 'create' ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Enregistrer</button></div>
+                <div className="mt-4 flex items-center justify-between gap-4"><p className="text-[11px] text-slate-500">{requestType === 'support_question' ? 'Après approbation, Ava OPS vérifie la situation et publie ici une réponse claire pour le service client.' : 'Diagnostic : lecture seule immédiate. Réactivation, prolongation et déploiement : approbation obligatoire.'}</p><button onClick={() => void createRequest()} disabled={busy === 'create' || title.length < 3 || reason.length < 10} className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-rose-600 px-4 py-3 text-xs font-black disabled:opacity-40">{busy === 'create' ? <Loader2 size={15} className="animate-spin" /> : <Check size={15} />} Enregistrer</button></div>
               </div>
             )}
 
@@ -296,7 +296,7 @@ export function AvaOpsDashboard({ user, onLogout }: { user: UserData; onLogout: 
                     )}
                   </div>
                   <p className="mt-3 text-sm leading-6 text-slate-300">{request.reason}</p>
-                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[10px] text-slate-600"><span>Demandeur : {shortId(request.requested_by)}</span><span>Approbateur : {shortId(request.approved_by)}</span><span>Exécutant : {request.executed_by_label || shortId(request.executed_by)}</span></div>
+                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[10px] text-slate-600"><span>Demandeur : {shortId(request.requested_by)}</span><span>Approbateur : {shortId(request.approved_by)}</span><span>Traitement : {request.request_type === 'support_question' && request.executed_by_label ? 'Ava OPS' : request.executed_by_label || shortId(request.executed_by)}</span></div>
                   <RequestResult request={request} />
                 </article>
               )) : <Empty icon={ClipboardList} text="Aucune demande OPS pour le moment." />}
@@ -351,14 +351,44 @@ function Empty({ icon: Icon, text }: { icon: typeof Activity; text: string }) {
 function RequestResult({ request }: { request: OpsRequest }) {
   const summary = typeof request.result?.summary === 'string' ? request.result.summary : ''
   if (summary) {
-    return <div className="mt-4 rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.055] p-4"><div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-emerald-200"><MessageSquareText size={15} /> Réponse Ava OPS</div><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">{summary}</p></div>
+    const response = request.request_type === 'support_question' ? parseSupportResponse(summary) : null
+    if (response) {
+      return (
+        <div className="mt-4 rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.055] p-4">
+          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-emerald-200"><MessageSquareText size={15} /> Réponse claire</div>
+          <p className="mt-3 text-sm font-medium leading-6 text-slate-100">{response.answer}</p>
+          {response.nextStep ? <div className="mt-4 rounded-xl border border-white/[0.07] bg-slate-950/35 px-3.5 py-3"><div className="text-[10px] font-black uppercase tracking-wider text-slate-500">Prochaine étape</div><p className="mt-1.5 text-sm leading-6 text-slate-300">{response.nextStep}</p></div> : null}
+        </div>
+      )
+    }
+    return <div className="mt-4 rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.055] p-4"><div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-emerald-200"><MessageSquareText size={15} /> Résultat Ava OPS</div><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-200">{summary}</p></div>
   }
   if ((request.result && Object.keys(request.result).length > 0) || request.error_code) {
     return <details className="mt-3 rounded-xl border border-white/[0.06] bg-slate-950/55 p-3"><summary className="cursor-pointer text-xs font-bold text-slate-300">Résultat détaillé</summary><pre className="mt-3 max-h-80 overflow-auto whitespace-pre-wrap break-all text-[11px] leading-5 text-slate-400">{request.error_code || JSON.stringify(request.result, null, 2)}</pre></details>
   }
-  if (request.status === 'approved') return <p className="mt-3 text-xs font-bold text-violet-200">Question approuvée : Codex la prendra automatiquement dans quelques secondes.</p>
-  if (request.status === 'running') return <p className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-violet-200"><Loader2 size={13} className="animate-spin" /> Codex vérifie les éléments disponibles en lecture seule…</p>
+  if (request.status === 'approved') return <p className="mt-3 text-xs font-bold text-violet-200">Question approuvée : l’analyse va commencer automatiquement.</p>
+  if (request.status === 'running') return <p className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-violet-200"><Loader2 size={13} className="animate-spin" /> Ava OPS vérifie la situation…</p>
   return null
+}
+
+function parseSupportResponse(summary: string) {
+  const normalized = summary.replace(/\r/g, '').trim()
+  const modern = normalized.match(/^Réponse\s*\n([\s\S]*?)(?:\n\s*Action recommandée\s*\n([\s\S]*))?$/i)
+  const legacy = normalized.match(/(?:^|\s)(?:#{1,4}\s*)?Réponse directe\s+([\s\S]*?)(?=\s+(?:#{1,4}\s*)?(?:Faits confirmés|Éléments non confirmés|Prochaine étape sûre)\b|$)/i)
+  const answer = cleanPublicSupportText(modern?.[1] || legacy?.[1] || normalized)
+  const nextStep = cleanPublicSupportText(modern?.[2] || '')
+  return answer ? { answer, nextStep } : null
+}
+
+function cleanPublicSupportText(value: string) {
+  return value
+    .replace(/\[([^\]]+)]\([^)]+\)/g, '$1')
+    .replace(/\/?(?:Users|home|var)\/\S+/gi, '')
+    .replace(/[`*_#>|]/g, '')
+    .replace(/\b(?:Codex|Supabase|Postgres|Resend|Edge Function|CLI)\b/gi, 'le système Ava')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 900)
 }
 
 function shortId(value?: string | null) { return value ? `${value.slice(0, 8)}…` : '—' }
