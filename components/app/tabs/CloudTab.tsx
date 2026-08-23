@@ -543,7 +543,7 @@ const GLOBAL_CONTROL_HELP = {
   stopCycleMode:
     'Bloqué : aucun nouveau cycle non-owner.\nAutorisé : l’owner et les comptes Custom Max 2 autorisés peuvent utiliser Ava Alpha.\nForcé : Desktop active Ava Alpha selon la règle effective, sans contourner les sécurités. L’owner reste visible quel que soit l’interrupteur global.',
   stopCycleForced:
-    'Le mode forcé ne contourne jamais un blocage BUY/SELL, une autorisation de type, une zone, une capacité, le plan, le mode hedging, l’autorisation du compte réel ou AvaBridge 1.66.\nExemple : si BUY est autorisé et SELL bloqué pour une famille, Ava lance uniquement le côté BUY.',
+    'Le mode forcé ne contourne jamais un blocage BUY/SELL, une autorisation de type, une zone, une capacité, le plan, le mode hedging, l’autorisation du compte réel ou AvaBridge 1.68.\nExemple : si BUY est autorisé et SELL bloqué pour une famille, Ava lance uniquement le côté BUY.',
   stopCycleMarket:
     'Marché exact de la règle Stop Cycle.\nLa première bêta accepte uniquement Boom 1000 ou Crash 1000.',
   stopCycleMin:
@@ -932,7 +932,8 @@ function isAvaWebSessionExpired(payload: Record<string, unknown>, message: strin
   return normalized.includes('session ava web expiree') || normalized.includes('session ava web expirée')
 }
 
-export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user: UserData; onGoToSubscription?: () => void; onSessionExpired?: () => void }) {
+export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionExpired }: { user: UserData; language?: string; onGoToSubscription?: () => void; onSessionExpired?: () => void }) {
+  const tr = useCallback((fr: string, en: string) => language === 'en' ? en : fr, [language])
   const eligible = useMemo(() => isCloudEligible(user), [user])
   const [data, setData] = useState<CloudStatus | null>(null)
   const [loading, setLoading] = useState(true)
@@ -953,9 +954,27 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     marketKey: 'BOOM1000',
     direction: 'BUY' as 'BUY' | 'SELL',
     minNetEquityUsd: 5000,
+    maxNetEquityUsd: 0,
+    minFreeMarginUsd: 0,
+    maxPriceDeviationPoints: 15,
+    maxPriceDeviationPct: 0.1,
+    maxSpreadPoints: 0,
+    lotPolicy: 'local' as 'local' | 'master' | 'proportional',
+    proportionalBaseEquityUsd: 5000,
+    targetScope: 'all' as 'all' | 'devices' | 'groups',
+    targetDeviceIds: [] as string[],
+    targetGroupIds: [] as string[],
+    targetPlanKeys: ['custom_max', 'custom_max_2'] as string[],
     ttlSeconds: 120,
   })
   const [instantSignalMessage, setInstantSignalMessage] = useState('')
+  const [copyDevices, setCopyDevices] = useState<Array<Record<string, any>>>([])
+  const [copyGroups, setCopyGroups] = useState<Array<Record<string, any>>>([])
+  const [copyMasterConfig, setCopyMasterConfig] = useState<Record<string, any> | null>(null)
+  const [copySimulation, setCopySimulation] = useState<Record<string, any> | null>(null)
+  const [copyNetworkMessage, setCopyNetworkMessage] = useState('')
+  const [copyGroupName, setCopyGroupName] = useState('')
+  const [copyGroupDeviceIds, setCopyGroupDeviceIds] = useState<string[]>([])
   const [supportQuery, setSupportQuery] = useState('')
   const [supportUsers, setSupportUsers] = useState<SupportUser[]>([])
   const [supportSelected, setSupportSelected] = useState<SupportUser | null>(null)
@@ -1114,6 +1133,153 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
     if (!res.ok || json.ok === false) throw new Error(message)
     return json
   }, [adminAccessToken, onSessionExpired, user.id, user.web_session_token])
+
+  const loadCopyNetwork = useCallback(async () => {
+    if (!adminAccessGranted) return
+    try {
+      const [devicesResult, groupsResult, configResult] = await Promise.all([
+        callAdminSignal({ action: 'devices' }),
+        callAdminSignal({ action: 'groups_get' }),
+        callAdminSignal({ action: 'master_config_get' }),
+      ])
+      const devices = Array.isArray(devicesResult.devices) ? devicesResult.devices as Array<Record<string, any>> : []
+      setCopyDevices(devices)
+      setCopyGroups(Array.isArray(groupsResult.groups) ? groupsResult.groups as Array<Record<string, any>> : [])
+      setCopyMasterConfig(configResult.config && typeof configResult.config === 'object'
+        ? configResult.config as Record<string, any>
+        : {
+            enabled: false,
+            master_device_id: String(devices[0]?.device_id ?? ''),
+            target_scope: 'devices',
+            target_device_ids: [],
+            target_group_ids: [],
+            target_plan_keys: ['custom_max', 'custom_max_2'],
+            require_opt_in: true,
+            min_net_equity_usd: 0,
+            max_net_equity_usd: null,
+            min_free_margin_usd: 0,
+            max_price_deviation_points: 15,
+            max_price_deviation_pct: 0.1,
+            max_spread_points: null,
+            ttl_seconds: 3,
+            lot_policy: 'local',
+            proportional_base_equity_usd: null,
+            sync_modifications: true,
+            sync_closes: true,
+          })
+    } catch (err) {
+      setCopyNetworkMessage(err instanceof Error ? err.message : tr('Réseau Ava S indisponible.', 'Ava S network is unavailable.'))
+    }
+  }, [adminAccessGranted, callAdminSignal, tr])
+
+  useEffect(() => {
+    if (!adminAccessGranted) return
+    void loadCopyNetwork()
+  }, [adminAccessGranted, loadCopyNetwork])
+
+  const saveCopyMasterConfig = useCallback(async () => {
+    if (!copyMasterConfig) return
+    try {
+      setBusy('copy_master_save')
+      setCopyNetworkMessage('')
+      const result = await callAdminSignal({
+        action: 'master_config_set',
+        ...copyMasterConfig,
+        max_net_equity_usd: Number(copyMasterConfig.max_net_equity_usd ?? 0) > 0 ? Number(copyMasterConfig.max_net_equity_usd) : null,
+        max_spread_points: Number(copyMasterConfig.max_spread_points ?? 0) > 0 ? Number(copyMasterConfig.max_spread_points) : null,
+      })
+      setCopyMasterConfig(result.config as Record<string, any>)
+      setCopyNetworkMessage(tr('Configuration maître Ava S enregistrée.', 'Ava S master configuration saved.'))
+    } catch (err) {
+      setCopyNetworkMessage(err instanceof Error ? err.message : tr('Enregistrement impossible.', 'Unable to save.'))
+    } finally {
+      setBusy(null)
+    }
+  }, [callAdminSignal, copyMasterConfig, tr])
+
+  const simulateCopySignal = useCallback(async () => {
+    try {
+      setBusy('copy_simulate')
+      const result = await callAdminSignal({
+        action: 'simulate',
+        event_type: 'open',
+        market_key: instantSignal.marketKey,
+        direction: instantSignal.direction,
+        min_net_equity_usd: instantSignal.minNetEquityUsd,
+        max_net_equity_usd: instantSignal.maxNetEquityUsd > 0 ? instantSignal.maxNetEquityUsd : null,
+        min_free_margin_usd: instantSignal.minFreeMarginUsd,
+        target_scope: instantSignal.targetScope,
+        target_device_ids: instantSignal.targetDeviceIds.length ? instantSignal.targetDeviceIds : (copyMasterConfig?.target_device_ids ?? []),
+        target_group_ids: instantSignal.targetGroupIds.length ? instantSignal.targetGroupIds : (copyMasterConfig?.target_group_ids ?? []),
+        target_plan_keys: instantSignal.targetPlanKeys,
+        require_opt_in: true,
+      })
+      setCopySimulation(result)
+      setCopyNetworkMessage(tr(
+        `Simulation : ${Number(result.eligible ?? 0)} ordinateur(s) éligible(s) sur ${Number(result.total ?? 0)}.`,
+        `Simulation: ${Number(result.eligible ?? 0)} eligible computer(s) out of ${Number(result.total ?? 0)}.`,
+      ))
+    } catch (err) {
+      setCopyNetworkMessage(err instanceof Error ? err.message : tr('Simulation impossible.', 'Simulation failed.'))
+    } finally {
+      setBusy(null)
+    }
+  }, [callAdminSignal, copyMasterConfig, instantSignal, tr])
+
+  const emergencyStopCopyNetwork = useCallback(async () => {
+    if (!window.confirm(tr(
+      'Arrêter immédiatement toute nouvelle diffusion Ava S ? Les positions déjà ouvertes seront conservées.',
+      'Immediately stop all new Ava S broadcasts? Existing positions will be preserved.',
+    ))) return
+    try {
+      setBusy('copy_emergency')
+      await callAdminSignal({
+        action: 'emergency_stop',
+        idempotency_key: `emergency:${globalThis.crypto?.randomUUID?.() ?? Date.now()}`,
+        ttl_seconds: 120,
+        target_scope: 'all',
+      })
+      setCopyMasterConfig(current => current ? { ...current, enabled: false } : current)
+      setCopyNetworkMessage(tr('Diffusion Ava S arrêtée. Positions existantes conservées.', 'Ava S broadcasting stopped. Existing positions were preserved.'))
+    } catch (err) {
+      setCopyNetworkMessage(err instanceof Error ? err.message : tr('Arrêt impossible.', 'Unable to stop.'))
+    } finally {
+      setBusy(null)
+    }
+  }, [callAdminSignal, tr])
+
+  const saveCopyGroup = useCallback(async () => {
+    if (!copyGroupName.trim()) return
+    try {
+      setBusy('copy_group_save')
+      await callAdminSignal({
+        action: 'group_save',
+        name: copyGroupName.trim(),
+        member_device_ids: copyGroupDeviceIds,
+      })
+      setCopyGroupName('')
+      setCopyGroupDeviceIds([])
+      await loadCopyNetwork()
+      setCopyNetworkMessage(tr('Groupe Ava S créé.', 'Ava S group created.'))
+    } catch (err) {
+      setCopyNetworkMessage(err instanceof Error ? err.message : tr('Création du groupe impossible.', 'Unable to create group.'))
+    } finally {
+      setBusy(null)
+    }
+  }, [callAdminSignal, copyGroupDeviceIds, copyGroupName, loadCopyNetwork, tr])
+
+  const deleteCopyGroup = useCallback(async (groupId: string) => {
+    try {
+      setBusy(`copy_group_delete:${groupId}`)
+      await callAdminSignal({ action: 'group_delete', group_id: groupId })
+      await loadCopyNetwork()
+      setCopyNetworkMessage(tr('Groupe supprimé.', 'Group deleted.'))
+    } catch (err) {
+      setCopyNetworkMessage(err instanceof Error ? err.message : tr('Suppression impossible.', 'Unable to delete group.'))
+    } finally {
+      setBusy(null)
+    }
+  }, [callAdminSignal, loadCopyNetwork, tr])
 
   const callAdminConsole = useCallback(async (payload: Record<string, unknown>) => {
     const token = adminAccessToken || (typeof window !== 'undefined' ? window.localStorage.getItem(ADMIN_ACCESS_TOKEN_KEY) ?? '' : '')
@@ -1340,7 +1506,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   const journalLines = agentConnected && Array.isArray(runtime?.journal) ? runtime.journal : []
   const bridgeVersion = String(instance?.bridge_version ?? '').replace(/^v/i, '')
   const bridgeVersionNumber = Number.parseFloat(bridgeVersion)
-  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.66
+  const bridgeOutdated = agentConnected && instance?.bridge_version && Number.isFinite(bridgeVersionNumber) && bridgeVersionNumber < 1.68
   const canRunCommands = agentConnected && (state === 'ready' || state === 'online' || state === 'attention')
   const canOpen = browserAccessReady && (state === 'ready' || state === 'online' || state === 'attention')
   const canProvision = state === 'not_created' || state === 'delayed' || state === 'deleted' || state === 'terminated'
@@ -1619,7 +1785,10 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
   }, [])
   const dispatchInstantSignal = useCallback(async () => {
     const confirmation = window.confirm(
-      `Envoyer maintenant un signal ${instantSignal.direction} ${instantSignal.marketKey} aux moteurs éligibles pendant ${instantSignal.ttlSeconds} secondes ?`,
+      tr(
+        `Envoyer maintenant un signal ${instantSignal.direction} ${instantSignal.marketKey} aux moteurs éligibles pendant ${instantSignal.ttlSeconds} secondes ?`,
+        `Send a ${instantSignal.direction} ${instantSignal.marketKey} signal to eligible engines for ${instantSignal.ttlSeconds} seconds?`,
+      ),
     )
     if (!confirmation) return
     try {
@@ -1631,16 +1800,32 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
         : `main-ai:${Date.now()}:${Math.random().toString(36).slice(2, 12)}`
       const result = await callAdminSignal({
         action: 'dispatch',
+        event_type: 'open',
         market_key: instantSignal.marketKey,
         direction: instantSignal.direction,
         min_net_equity_usd: instantSignal.minNetEquityUsd,
+        max_net_equity_usd: instantSignal.maxNetEquityUsd > 0 ? instantSignal.maxNetEquityUsd : null,
+        min_free_margin_usd: instantSignal.minFreeMarginUsd,
+        max_price_deviation_points: instantSignal.maxPriceDeviationPoints,
+        max_price_deviation_pct: instantSignal.maxPriceDeviationPct,
+        max_spread_points: instantSignal.maxSpreadPoints > 0 ? instantSignal.maxSpreadPoints : null,
+        lot_policy: instantSignal.lotPolicy,
+        proportional_base_equity_usd: instantSignal.lotPolicy === 'proportional' ? instantSignal.proportionalBaseEquityUsd : null,
+        target_scope: instantSignal.targetScope,
+        target_device_ids: instantSignal.targetDeviceIds.length ? instantSignal.targetDeviceIds : (copyMasterConfig?.target_device_ids ?? []),
+        target_group_ids: instantSignal.targetGroupIds.length ? instantSignal.targetGroupIds : (copyMasterConfig?.target_group_ids ?? []),
+        target_plan_keys: instantSignal.targetPlanKeys,
+        require_opt_in: true,
         ttl_seconds: instantSignal.ttlSeconds,
         idempotency_key: idempotencyKey,
       })
       const expiresAt = String((result.signal as { expires_at?: string } | undefined)?.expires_at ?? '')
       const signalId = String((result.signal as { id?: string } | undefined)?.id ?? '')
       setInstantSignalMessage(
-        `Signal envoyé, en attente de confirmation Desktop/MT5. Validité : ${expiresAt ? formatDate(expiresAt) : `${instantSignal.ttlSeconds} secondes`}.`,
+        tr(
+          `Signal envoyé, en attente de confirmation Desktop/MT5. Validité : ${expiresAt ? formatDate(expiresAt) : `${instantSignal.ttlSeconds} secondes`}.`,
+          `Signal sent; waiting for Desktop/MT5 confirmation. Valid until: ${expiresAt ? formatDate(expiresAt) : `${instantSignal.ttlSeconds} seconds`}.`,
+        ),
       )
       if (signalId) {
         const statusDeadline = Date.now() + Math.min(20_000, Math.max(8_000, instantSignal.ttlSeconds * 1000))
@@ -1661,20 +1846,20 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
           const reason = String(terminalResult.error ?? terminalResult.reason ?? '').trim()
           setInstantSignalMessage(
             terminalStatus === 'done'
-              ? `Position ${instantSignal.direction} ${instantSignal.marketKey} confirmée par Desktop et MT5.`
-              : `Signal non exécuté (${terminalStatus})${reason ? ` : ${reason}` : '.'}`,
+              ? tr(`Position ${instantSignal.direction} ${instantSignal.marketKey} confirmée par Desktop et MT5.`, `${instantSignal.direction} ${instantSignal.marketKey} position confirmed by Desktop and MT5.`)
+              : tr(`Signal non exécuté (${terminalStatus})${reason ? ` : ${reason}` : '.'}`, `Signal not executed (${terminalStatus})${reason ? `: ${reason}` : '.'}`),
           )
           break
         }
       }
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Signal impossible.'
+      const message = err instanceof Error ? err.message : tr('Signal impossible.', 'Signal failed.')
       setError(message)
-      setInstantSignalMessage(`Envoi impossible : ${message}`)
+      setInstantSignalMessage(tr(`Envoi impossible : ${message}`, `Unable to send: ${message}`))
     } finally {
       setBusy(null)
     }
-  }, [callAdminSignal, instantSignal, user.id])
+  }, [callAdminSignal, copyMasterConfig, instantSignal, tr, user.id])
   const runSupportSearch = useCallback(async () => {
     try {
       setBusy('support_search')
@@ -2031,7 +2216,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
               <div className="mt-5 rounded-2xl border border-amber-400/20 bg-amber-400/[0.08] p-4">
                 <p className="text-sm font-black text-amber-100">AvaBridge version ancienne</p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  AvaBridge {instance?.bridge_version} est détecté. AvaBridge 1.66 est requis pour isoler les quotas Stop Cycle, conserver les Bursts complets et surveiller les profits à chaque tick. Réinstalle AvaBridge depuis Ava Desktop avant de relancer le moteur.
+                  AvaBridge {instance?.bridge_version} est détecté. AvaBridge 1.68 est requis pour protéger les Take Profit après swap, synchroniser Ava S et conserver les protections Stop Cycle. Réinstalle AvaBridge depuis Ava Desktop avant de relancer le moteur.
                 </p>
               </div>
             )}
@@ -2850,7 +3035,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   const forcedConfirmed = stopCyclePolicy.feature_enabled !== true
                     || stopCyclePolicy.mode !== 'forced'
                     || window.confirm(
-                    'Confirmer le mode forcé des cycles conditionnels ? Il restera limité à l’owner, aux comptes MT5 hedging, à AvaBridge 1.66 et à toutes les protections administrateur. Un compte réel exige aussi son autorisation explicite.',
+                    'Confirmer le mode forcé des cycles conditionnels ? Il restera limité à l’owner, aux comptes MT5 hedging, à AvaBridge 1.68 et à toutes les protections administrateur. Un compte réel exige aussi son autorisation explicite.',
                   )
                   if (!forcedConfirmed) {
                     setAdminControlMessage('Mode forcé non confirmé. Aucune configuration n’a été envoyée.')
@@ -4239,7 +4424,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   className="inline-flex items-center gap-2 rounded-xl border border-fuchsia-300/20 bg-fuchsia-300/[0.07] px-3 py-2 text-xs font-black text-fuchsia-100 hover:bg-fuchsia-300/10"
                 >
                   <Send size={14} />
-                  Signal immédiat
+                  {tr('Signal immédiat', 'Instant signal')}
                   <span className="rounded-full bg-fuchsia-300/15 px-2 py-0.5 text-[9px] uppercase">Nouveau · 72 h</span>
                 </a>
                 <a
@@ -4252,6 +4437,201 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 </a>
               </div>
             </div>
+            <div className="mt-4 rounded-2xl border border-rose-300/20 bg-gradient-to-br from-rose-400/[0.08] to-slate-950/20 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-rose-300/25 bg-rose-300/10 text-rose-100">
+                    <ArrowLeftRight size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-white">{tr('Réseau maître → suiveurs Ava S', 'Ava S master → follower network')}</p>
+                    <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
+                      {tr(
+                        'Les utilisateurs doivent autoriser Ava S sur leur ordinateur. Les filtres serveur et toutes les protections locales restent obligatoires.',
+                        'Users must explicitly enable Ava S on their computer. Server filters and all local safeguards remain mandatory.',
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={busy === 'copy_emergency'}
+                  onClick={() => void emergencyStopCopyNetwork()}
+                  className="inline-flex items-center gap-2 rounded-xl border border-red-300/35 bg-red-400/15 px-3 py-2 text-xs font-black text-red-100 hover:bg-red-400/25 disabled:opacity-50"
+                >
+                  {busy === 'copy_emergency' ? <Loader2 className="animate-spin" size={14} /> : <Power size={14} />}
+                  {tr('Arrêt d’urgence', 'Emergency stop')}
+                </button>
+              </div>
+
+              {copyMasterConfig ? (
+                <div className="mt-4 grid gap-3 xl:grid-cols-3">
+                  <label className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{tr('Ordinateur maître', 'Master computer')}</span>
+                    <select
+                      value={String(copyMasterConfig.master_device_id ?? '')}
+                      onChange={event => setCopyMasterConfig(current => ({ ...(current ?? {}), master_device_id: event.target.value }))}
+                      className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none"
+                    >
+                      <option value="" className="bg-slate-950">{tr('Sélectionner…', 'Select…')}</option>
+                      {copyDevices.map(device => (
+                        <option key={String(device.device_id)} value={String(device.device_id)} className="bg-slate-950">
+                          {String(device.email || device.user_id)} · {String(device.device_id).slice(0, 18)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{tr('Ciblage', 'Targeting')}</span>
+                    <select
+                      value={String(copyMasterConfig.target_scope ?? 'devices')}
+                      onChange={event => setCopyMasterConfig(current => ({ ...(current ?? {}), target_scope: event.target.value }))}
+                      className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none"
+                    >
+                      <option value="devices" className="bg-slate-950">{tr('Ordinateurs choisis', 'Selected computers')}</option>
+                      <option value="groups" className="bg-slate-950">{tr('Groupes', 'Groups')}</option>
+                      <option value="all" className="bg-slate-950">{tr('Tous les consentants', 'All opted-in users')}</option>
+                    </select>
+                  </label>
+                  <label className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{tr('Politique de lot', 'Lot policy')}</span>
+                    <select
+                      value={String(copyMasterConfig.lot_policy ?? 'local')}
+                      onChange={event => setCopyMasterConfig(current => ({ ...(current ?? {}), lot_policy: event.target.value }))}
+                      className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none"
+                    >
+                      <option value="local" className="bg-slate-950">{tr('Limites locales', 'Local limits')}</option>
+                      <option value="master" className="bg-slate-950">{tr('Lot maître plafonné', 'Capped master lot')}</option>
+                      <option value="proportional" className="bg-slate-950">{tr('Proportionnel à l’équity', 'Equity proportional')}</option>
+                    </select>
+                  </label>
+                  {[
+                    ['min_net_equity_usd', tr('Equity minimum', 'Minimum equity'), 0],
+                    ['max_net_equity_usd', tr('Equity maximum (0 = aucune)', 'Maximum equity (0 = none)'), 0],
+                    ['min_free_margin_usd', tr('Marge libre minimum', 'Minimum free margin'), 0],
+                    ['max_price_deviation_points', tr('Écart prix max (points)', 'Max price deviation (points)'), 15],
+                    ['max_price_deviation_pct', tr('Écart prix max (%)', 'Max price deviation (%)'), 0.1],
+                    ['max_spread_points', tr('Spread max (0 = aucun)', 'Max spread (0 = none)'), 0],
+                    ['ttl_seconds', tr('Validité événement (2–10 s)', 'Event lifetime (2–10 s)'), 3],
+                  ].map(([key, label, fallback]) => (
+                    <label key={String(key)} className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{String(label)}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step={key === 'max_price_deviation_pct' ? '0.01' : '1'}
+                        value={Number(copyMasterConfig[String(key)] ?? fallback)}
+                        onChange={event => setCopyMasterConfig(current => ({ ...(current ?? {}), [String(key)]: Number(event.target.value) }))}
+                        className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none"
+                      />
+                    </label>
+                  ))}
+                  <div className="rounded-xl border border-white/10 bg-slate-950/45 p-3 xl:col-span-2">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">{tr('Ordinateurs suiveurs', 'Follower computers')}</p>
+                    <div className="mt-2 grid max-h-36 gap-2 overflow-y-auto sm:grid-cols-2">
+                      {copyDevices.filter(device => String(device.device_id) !== String(copyMasterConfig.master_device_id ?? '')).map(device => {
+                        const id = String(device.device_id)
+                        const selected = (copyMasterConfig.target_device_ids ?? []).includes(id)
+                        return (
+                          <label key={id} className="flex items-center gap-2 rounded-lg border border-white/10 px-2 py-2 text-xs text-slate-300">
+                            <input
+                              type="checkbox"
+                              checked={selected}
+                              onChange={() => setCopyMasterConfig(current => {
+                                const ids = Array.isArray(current?.target_device_ids) ? current.target_device_ids as string[] : []
+                                return { ...(current ?? {}), target_device_ids: selected ? ids.filter(value => value !== id) : [...ids, id] }
+                              })}
+                            />
+                            <span className="min-w-0 truncate">{String(device.email || device.user_id)} · {device.opted_in ? tr('autorisé', 'enabled') : tr('désactivé', 'disabled')}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                    <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-slate-500">{tr('Plans autorisés', 'Allowed plans')}</p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {[
+                        ['custom_pro', 'Custom Pro'],
+                        ['custom_ultra', 'Custom Ultra'],
+                        ['custom_max', 'Custom Max'],
+                        ['custom_max_2', tr('Spécial', 'Special')],
+                      ].map(([key, label]) => {
+                        const plans = Array.isArray(copyMasterConfig.target_plan_keys) ? copyMasterConfig.target_plan_keys as string[] : []
+                        const selected = plans.includes(key)
+                        return (
+                          <label key={key} className="flex items-center gap-2 rounded-lg border border-white/10 px-2 py-1.5 text-xs text-slate-300">
+                            <input type="checkbox" checked={selected} onChange={() => setCopyMasterConfig(current => ({ ...(current ?? {}), target_plan_keys: selected ? plans.filter(value => value !== key) : [...plans, key] }))} />
+                            {label}
+                          </label>
+                        )
+                      })}
+                    </div>
+                    {copyMasterConfig.target_scope === 'groups' ? (
+                      <>
+                        <p className="mt-3 text-[10px] font-black uppercase tracking-wider text-slate-500">{tr('Groupes ciblés', 'Target groups')}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {copyGroups.map(group => {
+                            const id = String(group.id)
+                            const ids = Array.isArray(copyMasterConfig.target_group_ids) ? copyMasterConfig.target_group_ids as string[] : []
+                            const selected = ids.includes(id)
+                            return (
+                              <label key={id} className="flex items-center gap-2 rounded-lg border border-white/10 px-2 py-1.5 text-xs text-slate-300">
+                                <input type="checkbox" checked={selected} onChange={() => setCopyMasterConfig(current => ({ ...(current ?? {}), target_group_ids: selected ? ids.filter(value => value !== id) : [...ids, id] }))} />
+                                {String(group.name)}
+                              </label>
+                            )
+                          })}
+                        </div>
+                      </>
+                    ) : null}
+                    {copyMasterConfig.lot_policy === 'proportional' ? (
+                      <label className="mt-3 block rounded-lg border border-white/10 px-2 py-2">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{tr('Equity de base du maître', 'Master base equity')}</span>
+                        <input type="number" min="1" value={Number(copyMasterConfig.proportional_base_equity_usd ?? 5000)} onChange={event => setCopyMasterConfig(current => ({ ...(current ?? {}), proportional_base_equity_usd: Math.max(1, Number(event.target.value) || 1) }))} className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none" />
+                      </label>
+                    ) : null}
+                  </div>
+                  <div className="flex flex-col justify-between gap-2 rounded-xl border border-white/10 bg-slate-950/45 p-3">
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-200">
+                      <input type="checkbox" checked={copyMasterConfig.enabled === true} onChange={event => setCopyMasterConfig(current => ({ ...(current ?? {}), enabled: event.target.checked }))} />
+                      {tr('Diffusion maître active', 'Master broadcasting enabled')}
+                    </label>
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-200">
+                      <input type="checkbox" checked={copyMasterConfig.sync_modifications !== false} onChange={event => setCopyMasterConfig(current => ({ ...(current ?? {}), sync_modifications: event.target.checked }))} />
+                      {tr('Synchroniser les modifications', 'Synchronize modifications')}
+                    </label>
+                    <label className="flex items-center gap-2 text-xs font-bold text-slate-200">
+                      <input type="checkbox" checked={copyMasterConfig.sync_closes !== false} onChange={event => setCopyMasterConfig(current => ({ ...(current ?? {}), sync_closes: event.target.checked }))} />
+                      {tr('Synchroniser les fermetures', 'Synchronize closes')}
+                    </label>
+                    <button type="button" disabled={busy === 'copy_master_save'} onClick={() => void saveCopyMasterConfig()} className="mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-3 py-2 text-xs font-black text-white hover:bg-rose-400 disabled:opacity-50">
+                      {busy === 'copy_master_save' ? <Loader2 className="animate-spin" size={14} /> : <ShieldCheck size={14} />}
+                      {tr('Enregistrer', 'Save')}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="mt-4 rounded-xl border border-white/10 bg-slate-950/35 p-3">
+                <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">{tr('Groupes de diffusion', 'Broadcast groups')}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {copyGroups.map(group => (
+                    <span key={String(group.id)} className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-xs text-slate-300">
+                      {String(group.name)} · {Array.isArray(group.member_device_ids) ? group.member_device_ids.length : 0}
+                      <button type="button" onClick={() => void deleteCopyGroup(String(group.id))} className="text-rose-300"><Trash2 size={12} /></button>
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <input value={copyGroupName} onChange={event => setCopyGroupName(event.target.value)} placeholder={tr('Nom du groupe', 'Group name')} className="min-w-48 flex-1 rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-xs text-white outline-none" />
+                  <select multiple value={copyGroupDeviceIds} onChange={event => setCopyGroupDeviceIds(Array.from(event.target.selectedOptions).map(option => option.value))} className="min-h-10 min-w-60 rounded-xl border border-white/10 bg-slate-950 px-3 py-2 text-xs text-white outline-none">
+                    {copyDevices.map(device => <option key={String(device.device_id)} value={String(device.device_id)}>{String(device.email || device.user_id)}</option>)}
+                  </select>
+                  <button type="button" disabled={!copyGroupName.trim() || busy === 'copy_group_save'} onClick={() => void saveCopyGroup()} className="inline-flex items-center gap-2 rounded-xl border border-rose-300/25 bg-rose-300/10 px-3 py-2 text-xs font-black text-rose-100 disabled:opacity-40"><Plus size={14} />{tr('Créer', 'Create')}</button>
+                </div>
+              </div>
+              {copyNetworkMessage ? <p className="mt-3 rounded-xl border border-white/10 bg-slate-950/50 px-3 py-2 text-xs font-bold text-slate-200">{copyNetworkMessage}</p> : null}
+            </div>
+
             <div id="ava-admin-instant-signal" className="mt-4 scroll-mt-6 rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/[0.06] p-4">
               <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border border-fuchsia-400/20 bg-fuchsia-400/10 text-fuchsia-200">
@@ -4259,18 +4639,21 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 </div>
                 <div>
                   <p className="flex items-center gap-2 text-sm font-black text-white">
-                    Signal immédiat de l’IA principale
+                    {tr('Signal immédiat de l’IA principale', 'Main AI instant signal')}
                     <HelpHint text={GLOBAL_CONTROL_HELP.instantSignal} />
                   </p>
                   <p className="mt-1 text-xs leading-5 text-slate-400">
-                    Un clic demande une seule position par moteur connecté et éligible. Le lot utilisateur et toutes les protections restent appliqués.
+                    {tr(
+                      'Un clic demande une seule position par moteur connecté et éligible. Le lot utilisateur et toutes les protections restent appliqués.',
+                      'One click requests one position per connected, eligible engine. The user lot and every safeguard remain enforced.',
+                    )}
                   </p>
                 </div>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
                   <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
-                    Marché
+                    {tr('Marché', 'Market')}
                     <HelpHint text={GLOBAL_CONTROL_HELP.instantMarket} />
                   </span>
                   <select
@@ -4285,7 +4668,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 </label>
                 <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
                   <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
-                    Direction
+                    {tr('Direction', 'Direction')}
                     <HelpHint text={GLOBAL_CONTROL_HELP.instantDirection} />
                   </span>
                   <select
@@ -4293,13 +4676,13 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     onChange={event => setInstantSignal(current => ({ ...current, direction: event.target.value as 'BUY' | 'SELL' }))}
                     className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
                   >
-                    <option value="BUY" className="bg-slate-950">BUY · Achat</option>
-                    <option value="SELL" className="bg-slate-950">SELL · Vente</option>
+                    <option value="BUY" className="bg-slate-950">BUY · {tr('Achat', 'Buy')}</option>
+                    <option value="SELL" className="bg-slate-950">SELL · {tr('Vente', 'Sell')}</option>
                   </select>
                 </label>
                 <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
                   <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
-                    Equity nette minimum
+                    {tr('Equity nette minimum', 'Minimum net equity')}
                     <HelpHint text={GLOBAL_CONTROL_HELP.instantEquity} />
                   </span>
                   <input
@@ -4313,7 +4696,7 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                 </label>
                 <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
                   <span className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">
-                    Expiration
+                    {tr('Expiration', 'Expiration')}
                     <HelpHint text={GLOBAL_CONTROL_HELP.instantTtl} />
                   </span>
                   <select
@@ -4321,8 +4704,8 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                     onChange={event => setInstantSignal(current => ({ ...current, ttlSeconds: Number(event.target.value) }))}
                     className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none"
                   >
-                    <option value={60} className="bg-slate-950">1 minute</option>
-                    <option value={120} className="bg-slate-950">2 minutes</option>
+                    <option value={60} className="bg-slate-950">1 {tr('minute', 'minute')}</option>
+                    <option value={120} className="bg-slate-950">2 {tr('minutes', 'minutes')}</option>
                   </select>
                 </label>
                 <button
@@ -4332,12 +4715,41 @@ export function CloudTab({ user, onGoToSubscription, onSessionExpired }: { user:
                   className="inline-flex min-h-14 items-center justify-center gap-2 rounded-xl bg-fuchsia-500 px-4 py-3 text-sm font-black text-white shadow-lg shadow-fuchsia-500/20 transition-colors hover:bg-fuchsia-400 disabled:opacity-50"
                 >
                   {busy === 'instant_signal' ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
-                  Envoyer le signal
+                  {tr('Envoyer le signal', 'Send signal')}
                 </button>
+              </div>
+              <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <label className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{tr('Ciblage', 'Targeting')}</span>
+                  <select value={instantSignal.targetScope} onChange={event => setInstantSignal(current => ({ ...current, targetScope: event.target.value as 'all' | 'devices' | 'groups' }))} className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none">
+                    <option value="all" className="bg-slate-950">{tr('Tous les consentants', 'All opted-in users')}</option>
+                    <option value="devices" className="bg-slate-950">{tr('Ordinateurs du profil maître', 'Master-profile computers')}</option>
+                    <option value="groups" className="bg-slate-950">{tr('Groupes du profil maître', 'Master-profile groups')}</option>
+                  </select>
+                </label>
+                <label className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{tr('Politique de lot', 'Lot policy')}</span>
+                  <select value={instantSignal.lotPolicy} onChange={event => setInstantSignal(current => ({ ...current, lotPolicy: event.target.value as 'local' | 'master' | 'proportional' }))} className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none">
+                    <option value="local" className="bg-slate-950">{tr('Limites locales', 'Local limits')}</option>
+                    <option value="master" className="bg-slate-950">{tr('Lot maître plafonné', 'Capped master lot')}</option>
+                    <option value="proportional" className="bg-slate-950">{tr('Proportionnel', 'Proportional')}</option>
+                  </select>
+                </label>
+                <label className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{tr('Marge libre minimum', 'Minimum free margin')}</span>
+                  <input type="number" min="0" value={instantSignal.minFreeMarginUsd} onChange={event => setInstantSignal(current => ({ ...current, minFreeMarginUsd: Math.max(0, Number(event.target.value) || 0) }))} className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none" />
+                </label>
+                <div className="flex items-end gap-2">
+                  <button type="button" disabled={busy === 'copy_simulate'} onClick={() => void simulateCopySignal()} className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-fuchsia-300/25 bg-fuchsia-300/10 px-3 py-2 text-xs font-black text-fuchsia-100 disabled:opacity-50">
+                    {busy === 'copy_simulate' ? <Loader2 className="animate-spin" size={14} /> : <Search size={14} />}
+                    {tr('Simuler', 'Simulate')}
+                  </button>
+                  {copySimulation ? <span className="rounded-xl border border-white/10 px-3 py-3 text-xs font-black text-white">{Number(copySimulation.eligible ?? 0)}/{Number(copySimulation.total ?? 0)}</span> : null}
+                </div>
               </div>
               {instantSignalMessage ? (
                 <p className={`mt-3 rounded-xl border px-3 py-2 text-xs font-bold ${
-                  instantSignalMessage.startsWith('Envoi impossible')
+                  instantSignalMessage.startsWith('Envoi impossible') || instantSignalMessage.startsWith('Unable to send')
                     ? 'border-amber-300/20 bg-amber-300/10 text-amber-100'
                     : 'border-emerald-300/20 bg-emerald-300/10 text-emerald-100'
                 }`}>

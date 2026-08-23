@@ -15,9 +15,11 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
 interface Props {
   activeTab: AppTab
   onTabChange: (tab: AppTab) => void
+  language?: string
 }
 
-export function BottomTabs({ activeTab, onTabChange }: Props) {
+export function BottomTabs({ activeTab, onTabChange, language = 'fr' }: Props) {
+  const labelFor = (id: AppTab, label: string) => id === 'settings' && language === 'en' ? 'Settings' : label
   return (
     <nav
       className="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex"
@@ -38,7 +40,7 @@ export function BottomTabs({ activeTab, onTabChange }: Props) {
             style={{ color: active ? '#f43f5e' : '#475569' }}
           >
             <Icon size={20} />
-            <span className="text-[10px] font-semibold">{label}</span>
+            <span className="text-[10px] font-semibold">{labelFor(id, label)}</span>
             {active && (
               <span
                 className="absolute bottom-0 w-8 h-0.5 rounded-full"

@@ -25,6 +25,7 @@ export function SettingsTab({
   settings, onSettingsChange, isPro, onGoToSubscription,
   userEmail, onLogout,
 }: Props) {
+  const tr = (fr: string, en: string) => settings.language === 'en' ? en : fr
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full space-y-4">
@@ -38,7 +39,7 @@ export function SettingsTab({
         <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <Globe size={13} style={{ color: '#475569' }} />
           <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#475569' }}>
-            Langue de conversation
+            {tr('Langue de conversation', 'Conversation language')}
           </p>
         </div>
         <div className="p-3 grid grid-cols-2 gap-2">
@@ -76,14 +77,14 @@ export function SettingsTab({
         <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <Search size={13} style={{ color: '#475569' }} />
           <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#475569' }}>
-            Fonctionnalités
+            {tr('Fonctionnalités', 'Features')}
           </p>
         </div>
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-white">Recherche web</p>
+                <p className="text-sm font-semibold text-white">{tr('Recherche web', 'Web search')}</p>
                 {!isPro && (
                   <span
                     className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider cursor-pointer"
@@ -95,7 +96,7 @@ export function SettingsTab({
                 )}
               </div>
               <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>
-                Recherche en ligne pour des informations en temps réel
+                {tr('Recherche en ligne pour des informations en temps réel', 'Search online for real-time information')}
               </p>
             </div>
             <button
@@ -127,10 +128,9 @@ export function SettingsTab({
       >
         <Info size={15} className="flex-shrink-0 mt-0.5" style={{ color: '#818cf8' }} />
         <div>
-          <p className="text-xs font-semibold" style={{ color: '#818cf8' }}>Serveurs MCP</p>
+          <p className="text-xs font-semibold" style={{ color: '#818cf8' }}>{tr('Serveurs MCP', 'MCP servers')}</p>
           <p className="text-xs mt-1" style={{ color: '#64748b' }}>
-            Les serveurs MCP (Notion, GitHub, etc.) ne sont disponibles que dans l&apos;application mobile Ava.
-            Téléchargez Ava sur iOS ou Android pour y accéder.
+            {tr('Les serveurs MCP (Notion, GitHub, etc.) ne sont disponibles que dans l’application mobile Ava. Téléchargez Ava sur iOS ou Android pour y accéder.', 'MCP servers (Notion, GitHub, etc.) are available only in the Ava mobile app. Download Ava on iOS or Android to use them.')}
           </p>
         </div>
       </motion.div>
@@ -147,7 +147,7 @@ export function SettingsTab({
           <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
             <User size={13} style={{ color: '#475569' }} />
             <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#475569' }}>
-              Compte
+              {tr('Compte', 'Account')}
             </p>
           </div>
           <div className="px-4 py-4 space-y-3">
@@ -171,7 +171,7 @@ export function SettingsTab({
               style={{ background: 'rgba(225,29,72,0.12)', color: '#fb7185', border: '1px solid rgba(225,29,72,0.24)' }}
             >
               <LogOut size={16} />
-              Se déconnecter
+              {tr('Se déconnecter', 'Sign out')}
             </button>
           </div>
         </motion.div>
@@ -187,7 +187,7 @@ export function SettingsTab({
       >
         <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: '#475569' }}>
-            À propos
+            {tr('À propos', 'About')}
           </p>
         </div>
         {[

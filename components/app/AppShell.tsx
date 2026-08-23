@@ -83,6 +83,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }
         onTabChange={setActiveTab}
         userEmail={user.email}
         onLogout={onLogout}
+        language={settings.language}
       />
 
       {/* Main content */}
@@ -124,7 +125,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }
           {activeTab === 'ai' && <AvaAiTab user={user} />}
           {activeTab === 'ai-credits' && <AiCreditsTab user={user} onGoToSubscription={handleGoToSubscription} />}
           {activeTab === 'cloud' && (
-            <CloudTab user={user} onGoToSubscription={handleGoToSubscription} onSessionExpired={onLogout} />
+            <CloudTab user={user} language={settings.language} onGoToSubscription={handleGoToSubscription} onSessionExpired={onLogout} />
           )}
           {activeTab === 'profile' && (
             <ProfileTab user={user} onUpdatePin={onUpdatePin} />
@@ -149,7 +150,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }
       </div>
 
       {/* Mobile bottom tabs */}
-      <BottomTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <BottomTabs activeTab={activeTab} onTabChange={setActiveTab} language={settings.language} />
       <SupportDock user={user} />
     </div>
   )

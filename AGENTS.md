@@ -9,6 +9,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Le pixel Whop de l'entreprise `biz_ZTmEfLtbw0ETyG` est initialisé une seule fois depuis le `<head>` du layout racine afin d'être présent dans chaque page exportée.
 - Chaque chargement de page initialise la portée Whop puis enregistre l'événement `page`; le script distant reste chargé de façon asynchrone depuis `https://t.whop.tw/s.js`.
 
+### Ava Web 0.5.58 — publication Ava Desktop 1.5.52 et AvaBridgeEA 1.68
+
+- Les pages publiques et authentifiées distribuent Ava Desktop `1.5.52` pour Windows x64, macOS Apple Silicon et macOS Intel, avec des manifestes Mac séparés par architecture.
+- AvaBridgeEA `1.68` protège chaque Take Profit au-dessus du swap négatif, poursuit sa surveillance locale après l’arrêt du moteur et conserve l’origine publique `Ava S` pour les positions synchronisées. Gold Classic 1.2.5 conserve AvaBridgeEA `1.34`.
+- Le workflow Hostinger télécharge tous les artefacts depuis la release publique `v1.5.52`. La version minimale Desktop ne doit être imposée qu’après vérification HTTP des trois installateurs, des manifestes et du Bridge.
+
 ### Ava Web 0.5.51 — réponses Ava OPS destinées au service client
 
 - Les questions Ava OPS affichent une conclusion courte et, si nécessaire, une seule prochaine étape dans deux blocs lisibles.
@@ -92,10 +98,10 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.5.45-arm64.dmg`
-- `Ava-1.5.45-x64.dmg`
-- `AvaSetup-1.5.45.exe`
-- `AvaBridgeEA-1.66.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
+- `Ava-1.5.52-arm64.dmg`
+- `Ava-1.5.52-x64.dmg`
+- `AvaSetup-1.5.52.exe`
+- `AvaBridgeEA-1.68.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
 If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before publishing: update Desktop required bridge version, web `AVA_BRIDGE_EA_VERSION`, download filenames, release assets, and docs together. Never ship a changed `.ex5` under an old bridge version.
@@ -175,6 +181,14 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 - Après l'envoi, Ava Web consulte les accusés Desktop et affiche si MT5 a confirmé la position ou le motif exact du blocage; un succès de création cloud ne doit jamais être présenté comme une exécution broker.
 - L'interface doit demander une confirmation explicite avant l'envoi et afficher uniquement `Signal précis de l'IA principale` dans les informations destinées aux utilisateurs.
 - Les aides `?` des barrières doivent conserver des exemples exacts : bornes inclusives, zone fermée, seuil ouvert vers l'infini, planification et marge de réactivation.
+
+### Ava Web 0.5.55 — console Ava S maître/suiveurs
+
+- La console owner de l’onglet Ava Cloud configure l’ordinateur maître, les appareils/groupes/plans ciblés, l’opt-in obligatoire, les bornes d’equity et de marge, l’écart de prix, le spread, la durée 2–10 secondes et la politique de lot locale/maître/proportionnelle.
+- Une simulation en lecture seule doit annoncer le nombre d’ordinateurs éligibles avant l’envoi. Le succès d’un insert cloud ne doit jamais être présenté comme une exécution MT5; les accusés affichent ticket suiveur, prix, lot, latence et motif de blocage.
+- L’arrêt d’urgence désactive la diffusion maître et envoie un événement court aux suiveurs, sans fermer ni modifier les positions déjà ouvertes.
+- Les groupes stockent uniquement des identifiants opaques d’installation Desktop. Le Web ne reçoit aucun identifiant MT5, secret broker, jeton Desktop ni logique interne Ava.
+- Les nouvelles surfaces Ava S et signal instantané suivent la langue active FR/EN. Les versions publiques de téléchargement restent inchangées tant que Desktop 1.5.49 et AvaBridgeEA 1.67 ne sont pas publiés sur toutes les plateformes.
 
 ### Ava Web 0.4.3 — publication Ava Desktop 1.4.1
 

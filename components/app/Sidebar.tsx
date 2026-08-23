@@ -60,9 +60,22 @@ interface Props {
   onTabChange: (tab: AppTab) => void
   userEmail: string
   onLogout: () => void
+  language?: string
 }
 
-export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) {
+export function Sidebar({ activeTab, onTabChange, userEmail, onLogout, language = 'fr' }: Props) {
+  const tr = (fr: string, en: string) => language === 'en' ? en : fr
+  const tabLabel = (id: AppTab, fallback: string) => ({
+    voice: tr('Conversation', 'Conversation'),
+    chat: 'Chat',
+    ai: 'Ava AI',
+    'ai-credits': tr('Crédits IA', 'AI credits'),
+    cloud: 'Ava Cloud',
+    profile: tr('Profil', 'Profile'),
+    subscription: tr('Abonnement', 'Subscription'),
+    referral: tr('Affiliation', 'Referrals'),
+    settings: tr('Paramètres', 'Settings'),
+  }[id] ?? fallback)
   const [showDownloads, setShowDownloads] = useState(false)
   const [showBridgeDownloads, setShowBridgeDownloads] = useState(false)
 
@@ -127,7 +140,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
                 size={17}
                 style={{ color: active ? '#f43f5e' : '#475569', flexShrink: 0 }}
               />
-              <span className="text-sm font-semibold">{label}</span>
+              <span className="text-sm font-semibold">{tabLabel(id, label)}</span>
             </button>
           )
         })}
@@ -144,7 +157,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
               }}
             >
               <Download size={17} style={{ color: '#f43f5e', flexShrink: 0 }} />
-              <span className="text-sm font-semibold">Télécharger Ava</span>
+              <span className="text-sm font-semibold">{tr('Télécharger Ava', 'Download Ava')}</span>
             </button>
             <button
               type="button"
@@ -157,12 +170,12 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
               }}
             >
               <Terminal size={17} style={{ color: '#93c5fd', flexShrink: 0 }} />
-              <span className="text-sm font-semibold">Connecteur Desktop</span>
+              <span className="text-sm font-semibold">{tr('Connecteur Desktop', 'Desktop connector')}</span>
             </button>
             <div className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">Compatibilité</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-white/25">{tr('Compatibilité', 'Compatibility')}</p>
               <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
-                Ava Desktop {AVA_DESKTOP_VERSION} recommande AvaBridgeEA {AVA_BRIDGE_EA_VERSION}. Gold Classic 1.2.5 peut utiliser 1.34.
+                {tr(`Ava Desktop ${AVA_DESKTOP_VERSION} recommande AvaBridgeEA ${AVA_BRIDGE_EA_VERSION}. Gold Classic 1.2.5 peut utiliser 1.34.`, `Ava Desktop ${AVA_DESKTOP_VERSION} recommends AvaBridgeEA ${AVA_BRIDGE_EA_VERSION}. Gold Classic 1.2.5 may use 1.34.`)}
               </p>
             </div>
           </div>
@@ -191,7 +204,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
           style={{ color: '#475569', background: 'rgba(255,255,255,0.03)' }}
         >
           <LogOut size={13} />
-          Déconnexion
+          {tr('Déconnexion', 'Sign out')}
         </button>
       </div>
       </aside>
@@ -208,13 +221,13 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-rose-300">Desktop</p>
-                <h2 className="mt-1 text-lg font-black text-white">Télécharger Ava</h2>
+                <h2 className="mt-1 text-lg font-black text-white">{tr('Télécharger Ava', 'Download Ava')}</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setShowDownloads(false)}
                 className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-slate-400 transition-colors hover:text-white"
-                aria-label="Fermer"
+                aria-label={tr('Fermer', 'Close')}
               >
                 <X size={16} />
               </button>
@@ -234,7 +247,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-black text-white">{title}</span>
-                    <span className="block truncate text-xs font-semibold text-slate-500">{subtitle}</span>
+                    <span className="block truncate text-xs font-semibold text-slate-500">{language === 'en' ? subtitle.replace('Installateur', 'Installer') : subtitle}</span>
                   </span>
                   <Download size={15} className="text-slate-500" />
                 </a>
@@ -256,16 +269,16 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-sky-300">MT5 Bridge</p>
-                <h2 className="mt-1 text-lg font-black text-white">Télécharger AvaBridgeEA</h2>
+                <h2 className="mt-1 text-lg font-black text-white">{tr('Télécharger AvaBridgeEA', 'Download AvaBridgeEA')}</h2>
                 <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-500">
-                  Choisissez la version à installer manuellement dans MetaTrader 5 si l&apos;installation automatique ne suffit pas.
+                  {tr('Choisissez la version à installer manuellement dans MetaTrader 5 si l’installation automatique ne suffit pas.', 'Choose the version to install manually in MetaTrader 5 if automatic installation is not enough.')}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowBridgeDownloads(false)}
                 className="flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-slate-400 transition-colors hover:text-white"
-                aria-label="Fermer"
+                aria-label={tr('Fermer', 'Close')}
               >
                 <X size={16} />
               </button>
@@ -287,10 +300,16 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout }: Props) 
                     <span className="flex items-center gap-2">
                       <span className="block text-sm font-black text-white">{title}</span>
                       <span className="rounded-full border border-sky-300/20 bg-sky-300/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-sky-200">
-                        {badge}
+                        {language === 'en' && badge === 'Recommandé' ? 'Recommended' : badge}
                       </span>
                     </span>
-                    <span className="block truncate text-xs font-semibold text-slate-500">{subtitle}</span>
+                    <span className="block truncate text-xs font-semibold text-slate-500">{
+                      language === 'en'
+                        ? subtitle
+                            .replace('Ava Volatility Boom/Crash et Ava Trading moderne', 'Ava Volatility Boom/Crash and modern Ava Trading')
+                            .replace('Compatibilité Gold Classic', 'Gold Classic compatibility')
+                        : subtitle
+                    }</span>
                   </span>
                   <Download size={15} className="text-slate-500" />
                 </a>
