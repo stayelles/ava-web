@@ -4,6 +4,11 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.57 — pixel Whop global
+
+- Le pixel Whop de l'entreprise `biz_ZTmEfLtbw0ETyG` est initialisé une seule fois depuis le `<head>` du layout racine afin d'être présent dans chaque page exportée.
+- Chaque chargement de page initialise la portée Whop puis enregistre l'événement `page`; le script distant reste chargé de façon asynchrone depuis `https://t.whop.tw/s.js`.
+
 ### Ava Web 0.5.51 — réponses Ava OPS destinées au service client
 
 - Les questions Ava OPS affichent une conclusion courte et, si nécessaire, une seule prochaine étape dans deux blocs lisibles.
