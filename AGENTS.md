@@ -4,6 +4,13 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.59 — renouvellement carte après Whop ou crypto
+
+- Le Web ne bloque plus un renouvellement parce que les identifiants privés Whop sont volontairement absents du bootstrap sécurisé. Ces identifiants restent uniquement côté serveur.
+- Un abonnement Whop actif ouvre son espace de gestion pour mettre à jour la carte sans créer de doublon; un abonnement Whop expiré ouvre un nouveau checkout de renouvellement.
+- Un abonnement NOWPayments encore actif peut renouveler le même plan par carte. Après confirmation signée, les 30 nouveaux jours sont ajoutés à la période déjà payée; un changement simultané de plan reste bloqué.
+- `whop-subscription` exige désormais la session Ava Web signée du compte avant toute création de checkout.
+
 ### Ava Web 0.5.57 — pixel Whop global
 
 - Le pixel Whop de l'entreprise `biz_ZTmEfLtbw0ETyG` est initialisé une seule fois depuis le `<head>` du layout racine afin d'être présent dans chaque page exportée.

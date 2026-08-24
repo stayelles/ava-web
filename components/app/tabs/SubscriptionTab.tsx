@@ -916,6 +916,10 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
 
     const source = String(user.subscription_source ?? '')
     if (activePlanKey === plan.key && source !== 'paddle') {
+      if (source === 'whop') {
+        window.location.href = 'https://whop.com/hub/'
+        return
+      }
       setBillingMessage(`${plan.label} est déjà votre formule active. Aucun nouvel abonnement n’a été créé.`)
       return
     }
@@ -928,12 +932,6 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
     }
 
     if (isPlanCheckoutReady(plan)) {
-      if (source === 'whop' && activePlanKey && activePlanKey !== plan.key) {
-        if (!user.whop_membership_id) {
-          setBillingMessage('Votre abonnement carte bancaire est actif, mais le lien de gestion n’est pas encore complet. Contactez le support Ava pour modifier la formule sans doublon.')
-          return
-        }
-      }
       if (source === 'paypal' && activePlanKey && activePlanKey !== plan.key) {
         if (!user.paypal_subscription_id) {
           setBillingMessage('Votre abonnement PayPal est actif, mais le lien PayPal n’est pas encore complet. Contactez le support Ava pour modifier la formule sans doublon.')
@@ -989,12 +987,21 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
         headers: SUPABASE_HEADERS,
         body: JSON.stringify({
           user_id: user.id,
+          ava_session_token: user.ava_session_token,
           target_plan: plan.key,
           preferred_payment_method: preferredPaymentMethod,
         }),
       })
       const result = await res.json().catch(() => ({}))
       if (!res.ok || result.error || !result.ok) {
+        if (result.manage_url) {
+          window.location.href = String(result.manage_url)
+          return
+        }
+        if (result.code === 'session_expired') {
+          setBillingError(result.error ?? 'Votre session a expiré. Reconnectez-vous puis relancez le paiement.')
+          return
+        }
         setBillingError(result.error ?? 'Paiement par carte indisponible pour le moment.')
         return
       }
