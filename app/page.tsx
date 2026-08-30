@@ -964,6 +964,18 @@ function Pricing() {
           </div>
         </FadeUp>
 
+        <FadeUp delay={0.16}>
+          <p className="mx-auto mt-5 max-w-4xl rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-4 text-center text-xs font-semibold leading-relaxed text-slate-400">
+            {tl({
+              fr: 'Paiement et activation immédiate : les abonnements, renouvellements et changements de formule sont des ventes finales après activation. Arrêter un renouvellement empêche uniquement le prochain prélèvement et ne rembourse pas la période déjà payée. Les droits impératifs applicables restent inchangés.',
+              en: 'Immediate payment and activation: subscriptions, renewals and plan changes are final sales after activation. Stopping a renewal only prevents the next charge and does not refund the period already paid. Mandatory statutory rights remain unchanged.',
+              de: 'Sofortige Zahlung und Aktivierung: Abonnements, Verlängerungen und Planwechsel sind nach der Aktivierung endgültige Verkäufe. Das Stoppen einer Verlängerung verhindert nur die nächste Abbuchung und erstattet den bereits bezahlten Zeitraum nicht. Zwingende gesetzliche Rechte bleiben unberührt.',
+              tr: 'Anında ödeme ve aktivasyon: abonelikler, yenilemeler ve plan değişiklikleri aktivasyondan sonra kesin satıştır. Yenilemeyi durdurmak yalnızca bir sonraki ödemeyi engeller ve ödenmiş dönemi iade etmez. Zorunlu yasal haklar saklıdır.',
+              es: 'Pago y activación inmediatos: las suscripciones, renovaciones y cambios de plan son ventas finales tras la activación. Detener una renovación solo evita el próximo cobro y no reembolsa el período ya pagado. Los derechos legales obligatorios permanecen vigentes.',
+            })}
+          </p>
+        </FadeUp>
+
         <FadeUp delay={0.22}>
           <div className="mt-8 space-y-5">
             <button

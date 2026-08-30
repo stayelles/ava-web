@@ -256,13 +256,13 @@ export const T = {
         } as TL,
       },
       {
-        q: { en: 'Can I cancel anytime?', fr: 'Puis-je annuler à tout moment ?', de: 'Kann ich jederzeit kündigen?', tr: 'İstediğim zaman iptal edebilir miyim?', es: '¿Puedo cancelar cuando quiera?' } as TL,
+        q: { en: 'Can I stop the renewal at any time?', fr: 'Puis-je arrêter le renouvellement à tout moment ?', de: 'Kann ich die Verlängerung jederzeit stoppen?', tr: 'Yenilemeyi istediğim zaman durdurabilir miyim?', es: '¿Puedo detener la renovación cuando quiera?' } as TL,
         a: {
-          en: 'Yes. Subscriptions are monthly and can be managed from your Ava account or by contacting support.',
-          fr: 'Oui. Les abonnements sont mensuels et peuvent être gérés depuis votre compte Ava ou via le support.',
-          de: 'Ja. Abonnements sind monatlich und können über Ihr Ava-Konto oder den Support verwaltet werden.',
-          tr: 'Evet. Abonelikler aylıktır ve Ava hesabınızdan ya da destek üzerinden yönetilebilir.',
-          es: 'Sí. Las suscripciones son mensuales y se pueden gestionar desde tu cuenta Ava o contactando con soporte.',
+          en: 'Yes. You can stop a future renewal from your Ava account or through support. This only prevents the next charge: after activation, the current paid period is a final sale and is not refunded, subject to mandatory statutory rights.',
+          fr: 'Oui. Vous pouvez arrêter un renouvellement futur depuis votre compte Ava ou via le support. Cela empêche uniquement le prochain prélèvement : après activation, la période déjà payée est une vente finale et n’est pas remboursée, sous réserve des droits impératifs applicables.',
+          de: 'Ja. Sie können eine künftige Verlängerung über Ihr Ava-Konto oder den Support stoppen. Dadurch wird nur die nächste Abbuchung verhindert: Nach der Aktivierung ist der bereits bezahlte Zeitraum ein endgültiger Verkauf und wird nicht erstattet, vorbehaltlich zwingender gesetzlicher Rechte.',
+          tr: 'Evet. Gelecekteki yenilemeyi Ava hesabınızdan veya destek aracılığıyla durdurabilirsiniz. Bu yalnızca bir sonraki ödemeyi engeller: aktivasyondan sonra ödenmiş dönem kesin satıştır ve zorunlu yasal haklar saklı kalmak üzere iade edilmez.',
+          es: 'Sí. Puedes detener una futura renovación desde tu cuenta Ava o mediante soporte. Esto solo evita el próximo cobro: tras la activación, el período ya pagado es una venta final y no se reembolsa, sin perjuicio de los derechos legales obligatorios.',
         } as TL,
       },
       {
