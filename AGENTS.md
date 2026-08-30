@@ -4,6 +4,13 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.60 — vente finale après activation
+
+- La page tarifaire ne promet plus de remboursement sous 14 jours et distingue explicitement l&apos;arrêt d&apos;un renouvellement futur du remboursement de la période déjà payée.
+- Les abonnements, renouvellements, changements de formule et services Ava activés sont présentés comme des ventes finales après confirmation du paiement et activation, quel que soit le canal de paiement approuvé ou le lien direct utilisé.
+- La politique conserve uniquement les droits impératifs non renonçables et le traitement individuel des doubles facturations, montants incorrects et transactions non autorisées. Elle ne doit jamais être présentée comme supprimant rétroactivement les conditions d&apos;un achat antérieur.
+- La justification publique mentionne uniquement les capacités techniques, licences, services tiers et ressources opérationnelles susceptibles d&apos;être engagés; ne jamais affirmer qu&apos;un serveur dédié est acheté pour chaque utilisateur sans preuve réelle.
+
 ### Ava Web 0.5.59 — renouvellement carte après Whop ou crypto
 
 - Le Web ne bloque plus un renouvellement parce que les identifiants privés Whop sont volontairement absents du bootstrap sécurisé. Ces identifiants restent uniquement côté serveur.

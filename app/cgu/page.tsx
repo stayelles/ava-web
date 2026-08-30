@@ -107,8 +107,12 @@ export default function CGUPage() {
           Google et nos partenaires de paiement web). Woonix LTD n&apos;est pas un prestataire
           de services de paiement et ne stocke pas vos données bancaires. Les abonnements
           se renouvellent automatiquement sauf résiliation avant la date de renouvellement.
-          Les crédits achetés ne sont pas remboursables. Woonix LTD se réserve le droit de
-          modifier les tarifs avec un préavis minimum de 30 jours communiqué par e-mail.
+          L&apos;arrêt d&apos;un renouvellement empêche uniquement le prochain prélèvement et
+          ne rembourse pas la période déjà payée. Les abonnements, renouvellements,
+          changements de formule, services activés et crédits achetés sont des ventes
+          finales, sous réserve des droits impératifs applicables. Woonix LTD se réserve
+          le droit de modifier les tarifs avec un préavis minimum de 30 jours communiqué
+          par e-mail.
         </p>
         <p className="mt-2">
           Notre politique de remboursement complète est disponible à{' '}
@@ -128,18 +132,18 @@ export default function CGUPage() {
         </p>
       </LegalSection>
 
-      <LegalSection n={7} title="Droit de rétractation (Union Européenne)">
+      <LegalSection n={7} title="Rétractation et droits impératifs">
         <p>
-          Conformément à la réglementation européenne applicable (Directive 2011/83/UE),
-          les utilisateurs résidant dans l&apos;Union Européenne bénéficient d&apos;un
-          droit de rétractation de <strong style={{ color: '#f1f5f9' }}>14 jours</strong>
-          {' '}à compter de la date de souscription d&apos;un abonnement payant.
+          Ava est un service numérique dont la fourniture commence immédiatement après
+          confirmation du paiement et activation de l&apos;accès. Dans les pays où la loi
+          l&apos;autorise, l&apos;utilisateur qui demande cette exécution immédiate reconnaît
+          que le commencement ou l&apos;exécution du service peut limiter ou éteindre son
+          droit de rétractation dans les conditions prévues par la loi applicable.
         </p>
         <p className="mt-2">
-          Toutefois, en souscrivant à un abonnement, vous reconnaissez que la fourniture
-          du service commence immédiatement et acceptez expressément que votre droit de
-          rétractation soit limité une fois le service entamé. Pour exercer votre droit
-          de rétractation, contactez-nous à{' '}
+          Aucune disposition des présentes ne supprime un droit impératif auquel le
+          consommateur ne peut légalement renoncer. Toute demande fondée sur un tel droit
+          doit être adressée à{' '}
           <a href="mailto:contact@call-ava.com" style={{ color: '#e11d48' }}>contact@call-ava.com</a>.
         </p>
       </LegalSection>
