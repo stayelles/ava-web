@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function RefundPage() {
   return (
-    <LegalLayout title="Politique de Remboursement" updatedAt="31 août 2026">
+    <LegalLayout title="Politique de Remboursement" updatedAt="Août 2026">
       <LegalSection n={1} title="Vente finale après activation">
         <p>
           Les abonnements, renouvellements, changements de formule et achats de services

@@ -4,6 +4,10 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.62 — date mensuelle de la politique
+
+- La politique de remboursement affiche `Août 2026` comme mois de dernière mise à jour, sans jour précis. Le contenu de vente finale et les droits impératifs restent inchangés.
+
 ### Ava Web 0.5.61 — vente finale après activation
 
 - La page tarifaire ne promet plus de remboursement sous 14 jours, affiche la règle de vente finale directement sous les offres et distingue explicitement l&apos;arrêt d&apos;un renouvellement futur du remboursement de la période déjà payée.
