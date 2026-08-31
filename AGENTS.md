@@ -4,6 +4,12 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.63 — publication Ava Desktop 1.5.53 et AvaBridgeEA 1.70
+
+- Les pages publiques et authentifiées distribuent Ava Desktop `1.5.53` et AvaBridgeEA `1.70`. Le déploiement Web ne doit partir qu'après disponibilité des trois installateurs Desktop, des manifestes par architecture et du Bridge compilé sous leurs noms versionnés.
+- AvaBridgeEA `1.70` donne la priorité au bénéfice monétaire configuré sur l’ancien plancher adaptatif en points, réaligne les Take Profit Ava existants au montant net après swap, ferme immédiatement un seuil net déjà franchi et soumet les fermetures bénéficiaires d’un panier en rafale.
+- Ava Cloud considère un Bridge inférieur à `1.70` comme ancien. Gold Classic 1.2.5 conserve AvaBridgeEA `1.34`.
+
 ### Ava Web 0.5.62 — date mensuelle de la politique
 
 - La politique de remboursement affiche `Août 2026` comme mois de dernière mise à jour, sans jour précis. Le contenu de vente finale et les droits impératifs restent inchangés.
@@ -116,10 +122,10 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.5.52-arm64.dmg`
-- `Ava-1.5.52-x64.dmg`
-- `AvaSetup-1.5.52.exe`
-- `AvaBridgeEA-1.68.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
+- `Ava-1.5.53-arm64.dmg`
+- `Ava-1.5.53-x64.dmg`
+- `AvaSetup-1.5.53.exe`
+- `AvaBridgeEA-1.70.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
 If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before publishing: update Desktop required bridge version, web `AVA_BRIDGE_EA_VERSION`, download filenames, release assets, and docs together. Never ship a changed `.ex5` under an old bridge version.
