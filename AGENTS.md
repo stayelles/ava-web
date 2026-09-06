@@ -4,6 +4,13 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+### Ava Web 0.5.64 — publication Ava Desktop 1.5.54 et AvaBridgeEA 1.71
+
+- Les pages publiques et authentifiées distribuent Ava Desktop `1.5.54` et AvaBridgeEA `1.71` pour Windows x64, macOS Apple Silicon et macOS Intel.
+- AvaBridgeEA `1.71` conserve pendant `STOP` le seuil monétaire directionnel configuré : le seuil global uniquement lorsqu'il remplace explicitement les directions, sinon le seuil BUY pour une position BUY et le seuil SELL pour une position SELL.
+- Desktop `1.5.54` ne transforme plus une indisponibilité temporaire du contrôle cloud en arrêt du moteur. Seul un refus signé peut arrêter Ava Trading, et l'interface avertit lorsque des positions MT5 restent ouvertes avec le moteur Desktop arrêté.
+- Le déploiement Web et `desktop-version` ne doivent imposer cette version qu'après vérification HTTP des trois installateurs, des manifestes par architecture et du Bridge compilé.
+
 ### Ava Web 0.5.63 — publication Ava Desktop 1.5.53 et AvaBridgeEA 1.70
 
 - Les pages publiques et authentifiées distribuent Ava Desktop `1.5.53` et AvaBridgeEA `1.70`. Le déploiement Web ne doit partir qu'après disponibilité des trois installateurs Desktop, des manifestes par architecture et du Bridge compilé sous leurs noms versionnés.
@@ -122,10 +129,10 @@ Large Desktop artifacts must not be committed to git. The Hostinger deploy workf
 
 When changing desktop download links, keep filenames versioned so older installers remain available. The current expected Ava Trading files are:
 
-- `Ava-1.5.53-arm64.dmg`
-- `Ava-1.5.53-x64.dmg`
-- `AvaSetup-1.5.53.exe`
-- `AvaBridgeEA-1.70.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
+- `Ava-1.5.54-arm64.dmg`
+- `Ava-1.5.54-x64.dmg`
+- `AvaSetup-1.5.54.exe`
+- `AvaBridgeEA-1.71.ex5` (obligatoire pour Ava Volatility Boom/Crash et Gold Cortex)
 - `AvaBridgeEA-1.34.ex5` (Gold Classic 1.2.5 compatibility)
 
 If AvaBridgeEA source or binary changes, bump the AvaBridgeEA version before publishing: update Desktop required bridge version, web `AVA_BRIDGE_EA_VERSION`, download filenames, release assets, and docs together. Never ship a changed `.ex5` under an old bridge version.
