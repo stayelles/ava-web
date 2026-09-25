@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Apple, Bot, Cloud, Coins, Mic, MessageSquare, User, Crown, Users, Settings, LogOut, Download, Terminal, X } from 'lucide-react'
+import { Apple, Bot, Workflow, Cloud, Coins, Mic, MessageSquare, User, Crown, Users, Settings, LogOut, Download, Terminal, X } from 'lucide-react'
 import { FaWindows } from 'react-icons/fa'
 import Image from 'next/image'
 import type { AppTab } from './types'
@@ -13,6 +13,7 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'ai', label: 'Ava AI', icon: Bot },
   { id: 'ai-credits', label: 'Crédits IA', icon: Coins },
+  { id: 'defi', label: 'Automatisations DeFi', icon: Workflow },
   { id: 'cloud', label: 'Ava Cloud', icon: Cloud },
   { id: 'profile', label: 'Profil', icon: User },
   { id: 'subscription', label: 'Abonnement', icon: Crown },
@@ -70,6 +71,7 @@ export function Sidebar({ activeTab, onTabChange, userEmail, onLogout, language 
     chat: 'Chat',
     ai: 'Ava AI',
     'ai-credits': tr('Crédits IA', 'AI credits'),
+    defi: tr('Automatisations DeFi', 'DeFi Automations'),
     cloud: 'Ava Cloud',
     profile: tr('Profil', 'Profile'),
     subscription: tr('Abonnement', 'Subscription'),

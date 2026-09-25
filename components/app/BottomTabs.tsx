@@ -1,6 +1,7 @@
 'use client'
 
-import { Bot, Cloud, Mic, MessageSquare, Crown, Settings } from 'lucide-react'
+import { useState } from 'react'
+import { Workflow, MoreHorizontal, Bot, Cloud, Mic, MessageSquare, Crown, Settings } from 'lucide-react'
 import type { AppTab } from './types'
 
 const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
@@ -9,7 +10,7 @@ const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
   { id: 'ai', label: 'Ava AI', icon: Bot },
   { id: 'cloud', label: 'Cloud', icon: Cloud },
   { id: 'subscription', label: 'Pro', icon: Crown },
-  { id: 'settings', label: 'Réglages', icon: Settings },
+  { id: 'defi', label: 'DeFi', icon: Workflow },
 ]
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function BottomTabs({ activeTab, onTabChange, language = 'fr' }: Props) {
+  const [more, setMore] = useState(false)
   const labelFor = (id: AppTab, label: string) => id === 'settings' && language === 'en' ? 'Settings' : label
   return (
     <nav
@@ -30,6 +32,7 @@ export function BottomTabs({ activeTab, onTabChange, language = 'fr' }: Props) {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
+      {more && <div className="absolute bottom-full right-2 mb-2 rounded-2xl border border-white/10 bg-slate-950 p-2 shadow-xl"><button className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm text-slate-200" onClick={() => { onTabChange('settings'); setMore(false) }}><Settings size={16}/>{language === 'en' ? 'Settings' : 'Réglages'}</button></div>}
       {TABS.map(({ id, label, icon: Icon }) => {
         const active = activeTab === id
         return (
@@ -50,6 +53,7 @@ export function BottomTabs({ activeTab, onTabChange, language = 'fr' }: Props) {
           </button>
         )
       })}
+      <button aria-label={language === 'en' ? 'More' : 'Plus'} aria-expanded={more} onClick={() => setMore(!more)} className="flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-slate-400"><MoreHorizontal size={20}/><span className="text-[10px]">{language === 'en' ? 'More' : 'Plus'}</span></button>
     </nav>
   )
 }

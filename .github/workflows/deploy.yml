@@ -21,6 +21,9 @@ jobs:
         run: npm ci
 
       - name: Build static site
+        env:
+          NEXT_PUBLIC_DEFI_API_URL: https://defi-api-test.call-ava.com
+          NEXT_PUBLIC_DEFI_WALLETCONNECT_PROJECT_ID: b44c082ec5b67d0c199887e6944144b4
         run: npm run build
 
       - name: Add Ava Desktop release downloads

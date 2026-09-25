@@ -7,6 +7,7 @@ import { VoiceTab } from './tabs/VoiceTab'
 import { ChatTab } from './tabs/ChatTab'
 import { AvaAiTab } from './tabs/AvaAiTab'
 import { AiCreditsTab } from './tabs/AiCreditsTab'
+import { DefiTab } from './tabs/DefiTab'
 import { CloudTab } from './tabs/CloudTab'
 import { ProfileTab } from './tabs/ProfileTab'
 import { SubscriptionTab } from './tabs/SubscriptionTab'
@@ -42,7 +43,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }
       window.setTimeout(() => setActiveTab('subscription'), 0)
       return
     }
-    if (tab && ['voice', 'chat', 'ai', 'ai-credits', 'cloud', 'profile', 'subscription', 'referral', 'settings'].includes(tab)) {
+    if (tab && ['voice', 'chat', 'ai', 'ai-credits', 'defi', 'cloud', 'profile', 'subscription', 'referral', 'settings'].includes(tab)) {
       window.setTimeout(() => setActiveTab(tab), 0)
     }
   }, [])
@@ -127,6 +128,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }
           {activeTab === 'cloud' && (
             <CloudTab user={user} language={settings.language} onGoToSubscription={handleGoToSubscription} onSessionExpired={onLogout} />
           )}
+          {activeTab === 'defi' && <DefiTab language={settings.language} />}
           {activeTab === 'profile' && (
             <ProfileTab user={user} onUpdatePin={onUpdatePin} />
           )}
