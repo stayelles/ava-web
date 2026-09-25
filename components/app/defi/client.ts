@@ -2,6 +2,7 @@
 import {createPublicClient,createWalletClient,custom,parseAbi,type Address,type EIP1193Provider} from 'viem'
 import {base,baseSepolia} from 'viem/chains'
 import {supabaseAuth} from '../services/supabaseAuth'
+import {establishWalletSession} from './wallet-session'
 
 export type Deployment={chain:8453|84532;stage:string;ready:boolean;factory:Address|null;executor:Address|null;usdc:Address|null;explorer:string}
 export type DefiAccount={id:string;strategy:'arbitrage'|'liquidations';chain_id:number;vault:Address;enabled:boolean;config:{amountMicros?:string;minimumNetMicros?:string;maxGasMicros?:string}}
@@ -25,16 +26,12 @@ export async function connect(kind:'extension'|'walletconnect',d:Deployment){
   const wc=await EthereumProvider.init({projectId,chains:[d.chain],showQrModal:true,metadata:{name:'Ava DeFi',description:'Automatisations DeFi',url:window.location.origin,icons:[window.location.origin+'/logo.png']}})
   await wc.enable();provider=wc as unknown as EIP1193Provider
  }else{
-  const injected=(window as unknown as {ethereum?:EIP1193Provider}).ethereum;if(!injected)throw Error('WALLET_MISSING');provider=injected
+  const injectedWindow=window as unknown as {ethereum?:EIP1193Provider;phantom?:{ethereum?:EIP1193Provider}}
+  const injected=injectedWindow.phantom?.ethereum??injectedWindow.ethereum;if(!injected)throw Error('WALLET_MISSING');provider=injected
  }
  const chain=d.chain===8453?base:baseSepolia
+ const address=await establishWalletSession(provider,chain)
  const wallet=createWalletClient({chain,transport:custom(provider)})
- try{await wallet.switchChain({id:d.chain})}catch(error){
-  const e=error as {code?:number;cause?:{code?:number}}
-  if(e.code!==4902&&e.cause?.code!==4902)throw error
-  await wallet.addChain({chain});await wallet.switchChain({id:d.chain})
- }
- const [address]=await wallet.requestAddresses();if(!address)throw Error('WALLET_MISSING')
  const publicClient=createPublicClient({chain,transport:custom(provider)})
  return{address,wallet,publicClient,provider}
 }
