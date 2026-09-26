@@ -18,8 +18,10 @@ export function DefiTab({language='fr'}:{language?:string}){
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[error,setError]=useState(''),[walletChoice,setWalletChoice]=useState(false)
  const account=accounts.find(a=>a.strategy===selected&&a.chain_id===deployment?.chain)
  const refresh=useCallback(async()=>{
-  const d=await api<Deployment>('/status',undefined,undefined,true);setDeployment(d)
-  if(!d.ready)return
+  const status=await api<Deployment>('/status',undefined,undefined,true)
+  if(!status.ready){setDeployment(status);return}
+  // Resolve the authenticated account's immutable factory; never silently use another lane.
+  try{setDeployment(await api<Deployment>('/deployment'))}catch(error){setDeployment(null);throw error}
   const [a,o,s]=await Promise.all([api<{accounts:DefiAccount[]}>('/accounts'),api<{operations:Operation[]}>('/operations'),api<{summaries:{strategy:string;profit:string;gas:string;count:number}[]}>('/summary')]);setAccounts(a.accounts);setOperations(o.operations);setSummaries(s.summaries)
  },[])
  useEffect(()=>{void refresh().catch(e=>setError(e.message));const timer=setInterval(()=>{void refresh().catch(()=>{})},10_000);return()=>clearInterval(timer)},[refresh])
@@ -57,9 +59,12 @@ export function DefiTab({language='fr'}:{language?:string}){
  const create=()=>work(async()=>{
   if(!connection||!deployment?.factory)throw Error('WALLET_MISSING')
   if(pending)throw Error('PENDING_TRANSACTION')
+  const assigned=await api<Deployment>('/deployment')
+  if(!assigned.ready||assigned.chain!==deployment.chain||!assigned.factory)throw Error('DEPLOYMENT_PENDING')
+  setDeployment(assigned)
   const index=selected==='arbitrage'?0:1
-  let vault=await connection.publicClient.readContract({address:deployment.factory,abi:factoryAbi,functionName:'vaults',args:[connection.address,index]})
-  if(vault===zeroAddress){await receipt(await connection.wallet.writeContract({account:connection.address,address:deployment.factory,abi:factoryAbi,functionName:'create',args:[index]}));vault=await connection.publicClient.readContract({address:deployment.factory,abi:factoryAbi,functionName:'vaults',args:[connection.address,index]})}
+  let vault=await connection.publicClient.readContract({address:assigned.factory,abi:factoryAbi,functionName:'vaults',args:[connection.address,index]})
+  if(vault===zeroAddress){await receipt(await connection.wallet.writeContract({account:connection.address,address:assigned.factory,abi:factoryAbi,functionName:'create',args:[index]}));vault=await connection.publicClient.readContract({address:assigned.factory,abi:factoryAbi,functionName:'vaults',args:[connection.address,index]})}
   await api('/accounts',{strategy:selected,vault})
  })
  const transfer=(withdraw:boolean)=>work(async()=>{
