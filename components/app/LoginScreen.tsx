@@ -9,6 +9,7 @@ import { motion } from 'framer-motion'
 type MfaPrompt = { required: boolean; qrCode?: string; secret?: string }
 
 interface Props {
+  language?: 'fr' | 'en'
   loading: boolean
   error: string
   onOtpRequest: (email: string, turnstileToken?: string) => Promise<{
@@ -24,7 +25,10 @@ interface Props {
 
 type Step = 'email' | 'otp' | 'mfa'
 
-export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVerify }: Props) {
+export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVerify, language='fr' }: Props) {
+  const t=(fr:string,en:string)=>language==='en'?en:fr
+  const authErrors:Record<string,string>={"Impossible d’envoyer le code pour le moment.": "Unable to send the code right now.", "Code incorrect ou expiré.": "Incorrect or expired code.", "Ce compte nécessite une vérification manuelle du support.": "This account requires a manual support review.", "Connexion sécurisée indisponible. Réessayez.": "Secure sign-in unavailable. Please retry.", "Code d’authentification incorrect ou expiré.": "Incorrect or expired authentication code."}
+  const errorText=(value:string)=>language==='en'?(authErrors[value]||value):value
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
@@ -41,9 +45,10 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
       sitekey: captcha.siteKey,
       action: captcha.action,
       theme: 'dark',
+      language,
       callback: (token: string) => { setTurnstileToken(token); setLocalError('') },
       'expired-callback': () => setTurnstileToken(''),
-      'error-callback': () => { setTurnstileToken(''); setLocalError('Vérification anti-robot indisponible. Réessayez.') },
+      'error-callback': () => { setTurnstileToken(''); setLocalError(t("Vérification anti-robot indisponible. Réessayez.","Anti-bot verification unavailable. Please retry.")) },
     })
   }
 
@@ -60,8 +65,8 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
   const submit = async () => {
     setLocalError('')
     if (step === 'email') {
-      if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setLocalError('Entrez une adresse e-mail valide.')
-      if (captcha && !turnstileToken) return setLocalError('Terminez la vérification anti-robot.')
+      if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setLocalError(t("Entrez une adresse e-mail valide.","Enter a valid email address."))
+      if (captcha && !turnstileToken) return setLocalError(t("Terminez la vérification anti-robot.","Complete the anti-bot verification."))
       const result = await onOtpRequest(email, turnstileToken || undefined)
       if (result.ok) {
         setCode('')
@@ -72,11 +77,11 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
         widgetIdRef.current = null
         setTurnstileToken('')
         setCaptcha({ siteKey: result.captchaSiteKey, action: result.captchaAction ?? 'ava_web_otp' })
-        setLocalError('Confirmez que vous n’êtes pas un robot, puis continuez.')
+        setLocalError(t("Confirmez que vous n’êtes pas un robot, puis continuez.","Confirm you are not a robot, then continue."))
       } else setLocalError(result.error ?? '')
       return
     }
-    if (!/^\d{6}$/.test(code)) return setLocalError('Le code doit contenir 6 chiffres.')
+    if (!/^\d{6}$/.test(code)) return setLocalError(t("Le code doit contenir 6 chiffres.","The code must contain 6 digits."))
     if (step === 'otp') {
       const result = await onOtpVerify(email, code)
       if (result.mfa?.required) {
@@ -90,12 +95,12 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
     if (!result.ok) setLocalError(result.error ?? '')
   }
 
-  const title = step === 'email' ? 'Connexion ou création de compte' : step === 'otp' ? 'Vérifiez votre e-mail' : 'Protection administrateur'
+  const title = step === 'email' ? t("Connexion ou création de compte","Sign in or create an account") : step === 'otp' ? t("Vérifiez votre e-mail","Check your email") : t("Protection administrateur","Administrator protection")
   const subtitle = step === 'email'
-    ? 'Un seul code temporaire, sans mot de passe'
+    ? t("Un seul code temporaire, sans mot de passe","One temporary code, no password")
     : step === 'otp'
-      ? `Code envoyé à ${email.trim()}`
-      : 'Authentification TOTP obligatoire'
+      ? t('Code envoyé à ','Code sent to ')+email.trim()
+      : t("Authentification TOTP obligatoire","TOTP authentication required")
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8 bg-[#020617]">
@@ -116,12 +121,12 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
         {step === 'mfa' && mfa?.qrCode && (
           <div className="mb-5 rounded-2xl border border-rose-400/20 bg-rose-400/[0.06] p-4 text-center">
             <p className="mb-3 text-xs leading-relaxed text-slate-300">
-              Scannez ce QR code avec votre application d’authentification, puis saisissez le code à six chiffres.
+              {t('Scannez ce QR code avec votre application d’authentification, puis saisissez le code à six chiffres.','Scan this QR code with your authenticator app, then enter the six-digit code.')}
             </p>
             {/* Supabase returns a data URL for the enrollment QR code. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={mfa.qrCode} alt="QR code TOTP Ava" className="mx-auto h-44 w-44 rounded-xl bg-white p-2" />
-            {mfa.secret && <p className="mt-3 break-all font-mono text-[10px] text-slate-500">Clé manuelle : {mfa.secret}</p>}
+            <img src={mfa.qrCode} alt={t('Code QR TOTP Ava','Ava TOTP QR code')} className="mx-auto h-44 w-44 rounded-xl bg-white p-2" />
+            {mfa.secret && <p className="mt-3 break-all font-mono text-[10px] text-slate-500">{t('Clé manuelle : ','Manual key: ')}{mfa.secret}</p>}
           </div>
         )}
 
@@ -139,7 +144,7 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
                     widgetIdRef.current = null
                   }}
                   onKeyDown={event => event.key === 'Enter' && void submit()}
-                  autoComplete="email" placeholder="votre@email.com"
+                  autoComplete="email" placeholder={t('votre@email.com','you@email.com')}
                   className="w-full rounded-2xl border border-white/[0.09] bg-white/[0.05] py-3.5 pl-11 pr-4 text-[15px] text-slate-50 outline-none transition focus:border-rose-500/50"
                 />
               </div>
@@ -147,7 +152,7 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
           ) : (
             <label className="block">
               <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-widest text-slate-600">
-                {step === 'otp' ? 'Code e-mail' : 'Code TOTP'}
+                {step === 'otp' ? t("Code e-mail","Email code") : t("Code TOTP","TOTP code")}
               </span>
               <div className="relative">
                 {step === 'otp'
@@ -171,13 +176,13 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
             </div>
           )}
 
-          {(localError || error) && <p className="text-sm text-rose-400">{localError || error}</p>}
+          {(localError || error) && <p className="text-sm text-rose-400">{errorText(localError || error)}</p>}
 
           <button
             onClick={() => void submit()} disabled={loading}
             className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-rose-600 py-3.5 text-sm font-bold text-white shadow-[0_4px_24px_rgba(225,29,72,0.35)] transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <>{step === 'email' ? 'Recevoir le code' : 'Continuer'} <ArrowRight size={15} /></>}
+            {loading ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> : <>{step === 'email' ? t("Recevoir le code","Send me a code") : t("Continuer","Continue")} <ArrowRight size={15} /></>}
           </button>
 
           {step !== 'email' && (
@@ -185,7 +190,7 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
               onClick={() => { setStep('email'); setCode(''); setMfa(null); setLocalError('') }}
               className="w-full pt-2 text-xs font-semibold text-slate-500 hover:text-slate-300"
             >
-              Utiliser une autre adresse
+              {t('Utiliser une autre adresse','Use another email address')}
             </button>
           )}
         </div>
@@ -193,7 +198,7 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
         <div className="mt-7 flex gap-3 rounded-2xl border border-emerald-400/10 bg-emerald-400/[0.04] p-3.5">
           <ShieldCheck className="mt-0.5 shrink-0 text-emerald-400" size={17} />
           <p className="text-[11px] leading-relaxed text-slate-500">
-            Si l’adresse est nouvelle, Ava crée le compte uniquement après validation du code e-mail. Les comptes privilégiés exigent aussi une seconde vérification TOTP.
+            {t('Si l’adresse est nouvelle, Ava crée le compte uniquement après validation du code e-mail. Les comptes privilégiés exigent aussi une seconde vérification TOTP.','New accounts are created only after email verification. Privileged accounts also require TOTP verification.')}
           </p>
         </div>
       </motion.div>
