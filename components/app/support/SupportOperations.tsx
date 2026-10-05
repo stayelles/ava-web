@@ -583,7 +583,7 @@ export function SupportAgentConsole({ user, initialAgent }: { user: UserData; in
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-4 sm:p-5 bg-white/[0.025]">
         <div className="flex items-center gap-3">
           <AgentAvatar profile={agent.profile} />
-          <div><h2 className="font-black text-white">Console de {agent.first_name}</h2><p className="text-xs text-slate-500">{assigned.length}/{agent.max_active_conversations} conversation(s) active(s) · {queue.length} en attente</p></div>
+          <div><h2 className="font-black text-white">Console de {agent.first_name}</h2><a href="/ops?tab=clients" className="mt-2 inline-block text-xs font-bold text-rose-300">Accès clients & Ava Cloud selon vos droits ↗</a><p className="text-xs text-slate-500">{assigned.length}/{agent.max_active_conversations} conversation(s) active(s) · {queue.length} en attente</p></div>
         </div>
         <div className="flex gap-2">
           <button onClick={toggleOnline} disabled={busy} className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-bold ${online ? 'border-emerald-400/30 bg-emerald-500/10 text-emerald-200' : 'border-white/10 bg-white/[0.03] text-slate-400'}`}>
@@ -842,7 +842,7 @@ export function SupportAdminPanel({ user }: { user: UserData }) {
   return (
     <section id="ava-support-admin" className="mx-auto max-w-6xl rounded-3xl border border-rose-400/20 bg-slate-950/90 p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div><h2 className="font-black text-white">Équipe Ava Support</h2><p className="mt-1 text-xs text-slate-500">Invitations, disponibilité, rapidité et satisfaction client.</p></div>
+        <div><h2 className="font-black text-white">Équipe Ava Support</h2><a href="/ops?tab=clients" className="mt-2 inline-block text-xs font-bold text-rose-300">Gérer les droits clients & Ava Cloud ↗</a><p className="mt-1 text-xs text-slate-500">Invitations, disponibilité, rapidité et satisfaction client.</p></div>
         <button onClick={() => void refresh()} disabled={busy} className="grid h-10 w-10 place-items-center rounded-xl border border-white/10 text-slate-300"><RefreshCw size={16} className={busy ? 'animate-spin' : ''} /></button>
       </div>
       {notice && <p className="mt-3 text-xs text-amber-300">{notice}</p>}

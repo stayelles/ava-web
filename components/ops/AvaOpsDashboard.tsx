@@ -6,6 +6,7 @@ import {
   FileClock, Loader2, LockKeyhole, LogOut, Plus, RefreshCw,
   MessageSquareText, ShieldCheck, UserPlus, Users, X, XCircle,
 } from 'lucide-react'
+import { OpsClientWorkspace, type ClientAccess } from './OpsClientWorkspace'
 import type { UserData } from '@/components/app/types'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '@/components/app/constants'
 import { supabaseAuth } from '@/components/app/services/supabaseAuth'
@@ -59,6 +60,8 @@ type Bootstrap = {
   requests: OpsRequest[]
   audit_events: AuditEvent[]
   operators: Operator[]
+  client_access: ClientAccess
+  client_access_manager: boolean
 }
 
 const requestTypes = [
@@ -106,7 +109,7 @@ export function AvaOpsDashboard({ user, onLogout }: { user: UserData; onLogout: 
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
-  const [tab, setTab] = useState<'requests' | 'audit' | 'team'>('requests')
+  const [tab, setTab] = useState<'requests' | 'audit' | 'team' | 'clients'>('requests')
   const [requestType, setRequestType] = useState('user_access_diagnosis')
   const [targetEmail, setTargetEmail] = useState('')
   const [title, setTitle] = useState('Diagnostic d’accès utilisateur')
@@ -150,6 +153,8 @@ export function AvaOpsDashboard({ user, onLogout }: { user: UserData; onLogout: 
         requests: (result.requests as OpsRequest[]) ?? [],
         audit_events: (result.audit_events as AuditEvent[]) ?? [],
         operators: (result.operators as Operator[]) ?? [],
+        client_access: result.client_access as ClientAccess,
+        client_access_manager: result.client_access_manager === true,
       })
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Ava OPS indisponible.')
@@ -158,7 +163,7 @@ export function AvaOpsDashboard({ user, onLogout }: { user: UserData; onLogout: 
     }
   }, [call])
 
-  useEffect(() => { void refresh() }, [refresh])
+  useEffect(() => { void refresh(); if (new URLSearchParams(window.location.search).get('tab') === 'clients') setTab('clients') }, [refresh])
 
   const counts = useMemo(() => ({
     approval: data?.requests.filter(item => item.status === 'needs_approval').length ?? 0,
@@ -263,6 +268,7 @@ export function AvaOpsDashboard({ user, onLogout }: { user: UserData; onLogout: 
         </section>
 
         <nav className="mt-6 flex flex-wrap items-center gap-2 border-b border-white/[0.07] pb-3">
+          {(data.client_access?.permissions.length > 0 || data.client_access_manager) && <Tab active={tab === 'clients'} onClick={() => setTab('clients')} icon={Users} label="Clients & Cloud" />}
           <Tab active={tab === 'requests'} onClick={() => setTab('requests')} icon={ClipboardList} label="Demandes" />
           {data.operator.permissions.includes('audit.read') || data.operator.ops_role === 'owner' ? <Tab active={tab === 'audit'} onClick={() => setTab('audit')} icon={FileClock} label="Journal d’audit" /> : null}
           {data.operator.ops_role === 'owner' ? <Tab active={tab === 'team'} onClick={() => setTab('team')} icon={Users} label="Équipe" /> : null}
@@ -270,6 +276,8 @@ export function AvaOpsDashboard({ user, onLogout }: { user: UserData; onLogout: 
             <button onClick={() => setShowCreate(value => !value)} className="ml-auto inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-black text-white shadow-[0_8px_30px_rgba(225,29,72,.2)]"><Plus size={15} /> Nouvelle demande</button>
           ) : null}
         </nav>
+
+        {tab === 'clients' && data.client_access && <OpsClientWorkspace call={call} manager={data.client_access_manager} access={data.client_access} userId={data.operator.user_id} />}
 
         {tab === 'requests' && (
           <section className="mt-5 space-y-4">

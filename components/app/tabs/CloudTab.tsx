@@ -2372,6 +2372,14 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
           </section>
         )}
 
+        {canUseAdminConsole && (
+          <section className="rounded-2xl border border-rose-400/20 bg-rose-400/[0.06] p-5">
+            <h3 className="font-bold text-white">Administration des clients</h3>
+            <p className="mt-2 text-sm text-slate-400">Ouvrez le bureau Ava Cloud d’un client et attribuez des droits à vos employés dans Ava OPS.</p>
+            <a href="/ops?tab=clients" className="mt-4 inline-flex rounded-xl bg-rose-600 px-4 py-3 text-sm font-bold text-white">Clients, bureaux et droits employés ↗</a>
+          </section>
+        )}
+
         {canUseAdminConsole && adminAccessGranted && adminAccessToken && (
           <AdminAssistancePanel user={user} adminAccessToken={adminAccessToken} />
         )}
