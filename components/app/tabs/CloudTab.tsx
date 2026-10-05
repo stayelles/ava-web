@@ -1,12 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { CloudCheckout } from '../CloudCheckout'
 import {
   AlertCircle,
   ArrowLeftRight,
   Bell,
   Cloud,
-  Coins,
   Crosshair,
   ExternalLink,
   LockKeyhole,
@@ -1079,8 +1079,9 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
     return json
   }, [onSessionExpired, user.id, user.web_session_token])
 
-  const callCloud = useCallback(async (payload: Record<string, unknown>) => {
+  const callCloud = useCallback(async (payload: Record<string, unknown>, signal?: AbortSignal) => {
     const res = await fetch(`${SUPABASE_URL}/functions/v1/ava-cloud`, {
+      signal,
       method: 'POST',
       headers: SUPABASE_HEADERS,
       body: JSON.stringify({ user_id: user.id, web_session_token: user.web_session_token, ...payload }),
@@ -2266,40 +2267,7 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
             </p>
 
             {entitlement?.status !== 'active' ? (
-              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <button
-                  type="button"
-                  disabled={!!busy}
-                  onClick={() => run('whop', { action: 'checkout_whop' }, (result) => {
-                    const url = String(result.redirect_url ?? '')
-                    if (url) window.location.href = url
-                  })}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-500 px-4 py-3 text-sm font-black text-white transition-colors hover:bg-rose-400 disabled:opacity-60"
-                >
-                  {busy === 'whop' ? (
-                    <Loader2 className="animate-spin" size={17} />
-                  ) : (
-                    <span className="flex items-center gap-1.5">
-                      <img src="/payment/visa.png" alt="" className="h-4 w-auto rounded-sm bg-white/90 px-1" />
-                      <img src="/payment/mastercard.png" alt="" className="h-4 w-auto rounded-sm bg-white/90 px-1" />
-                      <img src="/payment/paypal.png" alt="" className="h-4 w-auto rounded-sm bg-white/90 px-1" />
-                    </span>
-                  )}
-                  Payer par carte ou PayPal
-                </button>
-                <button
-                  type="button"
-                  disabled={!!busy}
-                  onClick={() => run('crypto', { action: 'checkout_crypto' }, (result) => {
-                    const url = String(result.invoice_url ?? '')
-                    if (url) window.location.href = url
-                  })}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-black text-white transition-colors hover:bg-white/[0.08] disabled:opacity-60"
-                >
-                  {busy === 'crypto' ? <Loader2 className="animate-spin" size={17} /> : <Coins size={17} />}
-                  Paiement en crypto
-                </button>
-              </div>
+              <CloudCheckout key={user.id} request={callCloud} disabled={!!busy} language={language} />
             ) : (
               <div className="mt-5 space-y-3">
                 {canProvision && (
