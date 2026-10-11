@@ -4,7 +4,7 @@ import {base,baseSepolia} from 'viem/chains'
 import {supabaseAuth} from '../services/supabaseAuth'
 import {establishWalletSession} from './wallet-session'
 
-export type Deployment={chain:8453|84532;stage:string;ready:boolean;factory:Address|null;executor:Address|null;usdc:Address|null;explorer:string}
+export type Deployment={chain:8453|84532;stage:string;ready:boolean;engineStopped?:boolean;routeCount?:number;canPrepare?:boolean;canStartStrategies?:{arbitrage:boolean;liquidations:boolean};factory:Address|null;executor:Address|null;usdc:Address|null;explorer:string}
 export type DefiAccount={id:string;strategy:'arbitrage'|'liquidations';chain_id:number;vault:Address;enabled:boolean;config:{amountMicros?:string;minimumNetMicros?:string;maxGasMicros?:string}}
 export type Operation={id:string;chain_id:number;hash:`0x${string}`|null;state:string;profit:string|null;gas:string|null;created_at:string;strategy:string}
 export const factoryAbi=parseAbi(['function create(uint8 strategy) returns(address)','function vaults(address,uint8) view returns(address)'])

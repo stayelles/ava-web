@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {baseSepolia} from 'viem/chains'
+import {base,baseSepolia} from 'viem/chains'
 import {establishWalletSession} from '../components/app/defi/wallet-session.ts'
 const owner='0x1111111111111111111111111111111111111111'
 function fixture(options={}){
@@ -12,7 +12,7 @@ function fixture(options={}){
   if(method==='eth_chainId')return chain
   if(method==='wallet_switchEthereumChain'){
    if(options.unknown&&!added)throw {cause:{code:4902}}
-   if(!options.wrong)chain='0x14a34'
+   if(!options.wrong)chain=options.targetChain??'0x14a34'
    return null
   }
   if(method==='wallet_addEthereumChain'){added=true;return null}
@@ -42,4 +42,9 @@ test('wallet falsely reporting successful switch cannot connect',async()=>{
 })
 test('account change during connection invalidates session',async()=>{
  const {provider}=fixture({changed:true});await assert.rejects(establishWalletSession(provider,baseSepolia),/WALLET_CHANGED/)
+})
+
+test('Mainnet session uses Base 8453 and refuses a wallet left on Sepolia',async()=>{
+ const mainnet=fixture({targetChain:'0x2105'});assert.equal(await establishWalletSession(mainnet.provider,base),owner)
+ const testnet=fixture();await assert.rejects(establishWalletSession(testnet.provider,base),/WALLET_NETWORK_UNAVAILABLE/)
 })
