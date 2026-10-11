@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Workflow, MoreHorizontal, Bot, Cloud, Mic, MessageSquare, Crown, Settings } from 'lucide-react'
+import { Compass, Workflow, MoreHorizontal, Bot, Cloud, Mic, MessageSquare, Crown, Settings } from 'lucide-react'
 import type { AppTab } from './types'
 
 const TABS: { id: AppTab; label: string; icon: React.ElementType }[] = [
@@ -32,7 +32,16 @@ export function BottomTabs({ activeTab, onTabChange, language = 'fr' }: Props) {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {more && <div className="absolute bottom-full right-2 mb-2 rounded-2xl border border-white/10 bg-slate-950 p-2 shadow-xl"><button className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm text-slate-200" onClick={() => { onTabChange('settings'); setMore(false) }}><Settings size={16}/>{language === 'en' ? 'Settings' : 'Réglages'}</button></div>}
+      {more && (
+        <div className="absolute bottom-full right-2 mb-2 rounded-2xl border border-white/10 bg-slate-950 p-2 shadow-xl">
+          <button className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm text-slate-200" onClick={() => { onTabChange('univers'); setMore(false) }}>
+            <Compass size={16}/>{language === 'en' ? 'Ava universe' : 'Univers Ava'}
+          </button>
+          <button className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm text-slate-200" onClick={() => { onTabChange('settings'); setMore(false) }}>
+            <Settings size={16}/>{language === 'en' ? 'Settings' : 'Réglages'}
+          </button>
+        </div>
+      )}
       {TABS.map(({ id, label, icon: Icon }) => {
         const active = activeTab === id
         return (

@@ -33,6 +33,7 @@ import {
   PADDLE_PRICE_CUSTOM_ULTRA,
   PADDLE_PRICE_CUSTOM_MAX,
 } from "@/components/app/constants";
+import { AvaUniverses } from "@/components/AvaUniverses";
 import { DESKTOP_DOWNLOAD_URLS } from "@/lib/downloads";
 
 const DOWNLOADS = {
@@ -171,6 +172,7 @@ function Navbar() {
 
   const NAV_ITEMS = [
     { name: tl(T.nav.features), link: "#features" },
+    { name: tl({ fr: "Univers Ava", en: "Ava universe", de: "Ava Universum", es: "Universo Ava", tr: "Ava evreni" }), link: "#univers" },
     { name: tl(T.nav.pricing),  link: "#pricing" },
     { name: tl(T.nav.download), link: "#download" },
     { name: "Affiliation",      link: "/affiliation" },
@@ -1245,6 +1247,7 @@ export default function Page() {
         <Integrations />
         <Testimonials />
         <Showcase />
+        <AvaUniverses language={lang} />
         <Pricing />
         <FAQ />
         <FinalCTA />

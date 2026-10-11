@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
+import { AvaUniverses } from '@/components/AvaUniverses'
 import { Sidebar } from './Sidebar'
 import { BottomTabs } from './BottomTabs'
 import { VoiceTab } from './tabs/VoiceTab'
@@ -43,7 +44,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }
       window.setTimeout(() => setActiveTab('subscription'), 0)
       return
     }
-    if (tab && ['voice', 'chat', 'ai', 'ai-credits', 'defi', 'cloud', 'profile', 'subscription', 'referral', 'settings'].includes(tab)) {
+    if (tab && ['voice', 'chat', 'ai', 'ai-credits', 'defi', 'univers', 'cloud', 'profile', 'subscription', 'referral', 'settings'].includes(tab)) {
       window.setTimeout(() => setActiveTab(tab), 0)
     }
   }, [])
@@ -128,6 +129,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }
           {activeTab === 'cloud' && (
             <CloudTab user={user} language={settings.language} onGoToSubscription={handleGoToSubscription} onSessionExpired={onLogout} />
           )}
+          {activeTab === 'univers' && <div className="flex-1 overflow-y-auto"><AvaUniverses language={settings.language} compact /></div>}
           {activeTab === 'defi' && <DefiTab language={settings.language} />}
           {activeTab === 'profile' && (
             <ProfileTab user={user} onUpdatePin={onUpdatePin} />
