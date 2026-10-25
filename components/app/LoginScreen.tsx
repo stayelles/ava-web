@@ -9,7 +9,8 @@ import { motion } from 'framer-motion'
 type MfaPrompt = { required: boolean; qrCode?: string; secret?: string }
 
 interface Props {
-  language?: 'fr' | 'en'
+  language?: 'fr' | 'en' | 'es' | 'de'
+  translations?: Record<string,string>
   loading: boolean
   error: string
   onOtpRequest: (email: string, turnstileToken?: string) => Promise<{
@@ -25,10 +26,10 @@ interface Props {
 
 type Step = 'email' | 'otp' | 'mfa'
 
-export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVerify, language='fr' }: Props) {
-  const t=(fr:string,en:string)=>language==='en'?en:fr
+export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVerify, language='fr', translations={} }: Props) {
+  const t=(fr:string,en:string)=>translations[en]||(language==='en'?en:fr)
   const authErrors:Record<string,string>={"Impossible d’envoyer le code pour le moment.": "Unable to send the code right now.", "Code incorrect ou expiré.": "Incorrect or expired code.", "Ce compte nécessite une vérification manuelle du support.": "This account requires a manual support review.", "Connexion sécurisée indisponible. Réessayez.": "Secure sign-in unavailable. Please retry.", "Code d’authentification incorrect ou expiré.": "Incorrect or expired authentication code."}
-  const errorText=(value:string)=>language==='en'?(authErrors[value]||value):value
+  const errorText=(value:string)=>translations[authErrors[value]||value]||(language==='en'?(authErrors[value]||value):value)
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
   const [code, setCode] = useState('')
