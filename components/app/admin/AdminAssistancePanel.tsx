@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Clock3, Eye, Loader2, Search, ShieldCheck, Square } from 'lucide-react'
 import { SUPABASE_HEADERS, SUPABASE_URL } from '../constants'
 import type { UserData } from '../types'
@@ -27,6 +27,8 @@ const formatDate = (value: unknown) => {
 }
 
 export function AdminAssistancePanel({ user, adminAccessToken }: { user: UserData; adminAccessToken: string }) {
+  const controlWindow = useRef<Window | null>(null)
+  const handedOff = useRef(false)
   const [query, setQuery] = useState('')
   const [reason, setReason] = useState('Diagnostic demandé par le client')
   const [users, setUsers] = useState<AssistanceUser[]>([])
@@ -79,24 +81,35 @@ export function AdminAssistancePanel({ user, adminAccessToken }: { user: UserDat
 
   const open = async () => {
     if (!selected) return
-    setBusy('open')
-    setMessage('')
+    const child = window.open('/assistance/?tab=cloud', '_blank', 'popup,width=1320,height=900')
+    if (!child) { setMessage('Autorisez cette fenêtre pour ouvrir l’espace utilisateur.'); return }
+    controlWindow.current = child
+    let childReady = false
+    let credentials: Record<string,unknown> | null = null
+    const send = () => { if (childReady && credentials) child.postMessage({ type: 'ava-assistance-start', credentials }, window.location.origin) }
+    const ready = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.source !== child || event.data?.type !== 'ava-assistance-ready') return
+      childReady = true; send()
+    }
+    window.addEventListener('message', ready)
+    setBusy('open'); setMessage('')
     try {
       const opened = await call({ action: 'open', target_user_id: selected.id, reason })
       const token = String(opened.assistance_token ?? '')
-      setAssistanceToken(token)
-      setExpiresAt(String(opened.expires_at ?? ''))
-      const data = await call({ action: 'snapshot', assistance_token: token })
-      setSnapshot((data.snapshot ?? null) as AssistanceSnapshot | null)
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Mode Assistance indisponible.')
-    } finally {
-      setBusy('')
-    }
+      handedOff.current = true
+      setAssistanceToken(token); setExpiresAt(String(opened.expires_at ?? ''))
+      credentials = { user_id: user.id, web_session_token: user.web_session_token, admin_access_token: adminAccessToken, assistance_token: token }
+      send()
+      void call({ action: 'snapshot', assistance_token: token }).then(data => setSnapshot(data.snapshot as AssistanceSnapshot)).catch(() => undefined)
+      setMessage('Espace utilisateur ouvert dans la fenêtre Assistance. Le client voit votre présence pendant le contrôle.')
+    } catch (error) { child.close(); setMessage(error instanceof Error ? error.message : 'Mode Assistance indisponible.') }
+    finally { setBusy(''); window.setTimeout(() => window.removeEventListener('message', ready), 30000) }
   }
 
   const close = async () => {
     if (assistanceToken) await call({ action: 'close', assistance_token: assistanceToken }).catch(() => undefined)
+    controlWindow.current?.close()
+    handedOff.current = false
     setAssistanceToken('')
     setExpiresAt('')
     setSnapshot(null)
@@ -104,7 +117,7 @@ export function AdminAssistancePanel({ user, adminAccessToken }: { user: UserDat
   }
 
   useEffect(() => () => {
-    if (!assistanceToken) return
+    if (!assistanceToken || handedOff.current) return
     void fetch(`${SUPABASE_URL}/functions/v1/admin-assistance`, {
       method: 'POST', headers: SUPABASE_HEADERS, keepalive: true,
       body: JSON.stringify({
@@ -122,14 +135,14 @@ export function AdminAssistancePanel({ user, adminAccessToken }: { user: UserDat
         </div>
         <div>
           <p className="text-[10px] font-black uppercase tracking-[0.18em] text-violet-200">Mode Assistance</p>
-          <h2 className="mt-1 text-lg font-black text-white">Consulter un dossier sans usurper le compte</h2>
+          <h2 className="mt-1 text-lg font-black text-white">Intervenir dans l’espace utilisateur</h2>
           <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
-            Accès en lecture seule, limité à 15 minutes et journalisé. Aucun code OTP client, aucun jeton, mot de passe ou contrôle du compte n’est exposé.
+            Ouvrez son espace Web et sa configuration Ava Cloud dans une fenêtre dédiée. Votre curseur est visible et l’interface client est réservée à l’intervention. Accès limité à 15 minutes, vérifié et journalisé.
           </p>
         </div>
       </div>
 
-      {!snapshot ? (
+      {!assistanceToken ? (
         <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_auto]">
           <div className="grid gap-3 sm:grid-cols-2">
             <input value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && void search()} placeholder="Email ou nom utilisateur" className="rounded-xl border border-white/10 bg-slate-950/60 px-3 py-3 text-sm font-bold text-white outline-none placeholder:text-slate-600" />
@@ -147,7 +160,7 @@ export function AdminAssistancePanel({ user, adminAccessToken }: { user: UserDat
                 </button>
               ))}
               <button type="button" onClick={() => void open()} disabled={!selected || reason.trim().length < 10 || busy === 'open'} className="inline-flex items-center gap-2 rounded-xl border border-violet-300/25 bg-violet-300/15 px-4 py-3 text-sm font-black text-violet-100 disabled:opacity-50">
-                {busy === 'open' ? <Loader2 size={16} className="animate-spin" /> : <Eye size={16} />} Ouvrir en lecture seule
+                {busy === 'open' ? <Loader2 size={16} className="animate-spin" /> : <Eye size={16} />} Ouvrir l’espace utilisateur
               </button>
             </div>
           )}
@@ -155,13 +168,13 @@ export function AdminAssistancePanel({ user, adminAccessToken }: { user: UserDat
       ) : (
         <div className="mt-5 space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-300/20 bg-emerald-300/[0.06] px-4 py-3">
-            <div className="flex items-center gap-2 text-sm font-bold text-emerald-100"><Clock3 size={16} /> Lecture seule · expire dans {expiresInMinutes} min</div>
+            <div className="flex items-center gap-2 text-sm font-bold text-emerald-100"><Clock3 size={16} /> Assistance active · expire dans {expiresInMinutes} min</div>
             <button type="button" onClick={() => void close()} className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs font-bold text-slate-300"><Square size={13} /> Fermer</button>
           </div>
           <div className="grid gap-3 xl:grid-cols-[0.85fr_1.4fr_1fr]">
-            <SnapshotCard title="Compte" rows={Object.entries(snapshot.user ?? {}).slice(0, 12)} />
-            <RuntimeSessionsCard sessions={(snapshot.runtime_sessions ?? []).slice(0, 8)} />
-            <PresetEventsCard events={(snapshot.preset_events ?? []).slice(0, 10)} />
+            <SnapshotCard title="Compte" rows={Object.entries(snapshot?.user ?? {}).slice(0, 12)} />
+            <RuntimeSessionsCard sessions={(snapshot?.runtime_sessions ?? []).slice(0, 8)} />
+            <PresetEventsCard events={(snapshot?.preset_events ?? []).slice(0, 10)} />
           </div>
         </div>
       )}

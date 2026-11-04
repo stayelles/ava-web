@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Crown, Check, Zap, Globe, Monitor, ImageIcon, Brain, Bell, 
-  Layers, Key, Smartphone, Mic, MessageSquare, Star, Cpu, Lock,
-  CreditCard, ExternalLink, HelpCircle, ShieldCheck, AlertCircle, ArrowRight, X, Ticket,
+import {
+  Crown, Zap, Globe, Monitor, ImageIcon, Brain, Bell,
+  Layers, Smartphone, Mic, MessageSquare, Star, Cpu,
+  CreditCard, ExternalLink, ShieldCheck, AlertCircle, ArrowRight, X,
   ChevronDown, ChevronUp, Coins
 } from 'lucide-react'
 import {
@@ -24,6 +24,9 @@ import {
 } from '../constants'
 import { isPro, isCustomPlan, voiceMinutesUsed, voiceMinutesRemaining, voiceQuotaMinutes } from '../types'
 import type { UserData } from '../types'
+import { TradingAccessPanel, type MonthlyAccessPlan } from '../TradingAccessPanel'
+import { BillingDialog, PLAN_STYLE, type DisplayPlanKey } from '../SubscriptionDesign'
+import style from '../SubscriptionDesign.module.css'
 
 type AirwallexPaymentMethod = 'apple_pay' | 'google_pay'
 type WhopPaymentMethod = 'card'
@@ -54,6 +57,7 @@ declare global {
 interface Props {
   user: UserData
   onRefresh?: () => void
+  language?: string
 }
 
 // ── Plans definition ──
@@ -311,12 +315,6 @@ function customPlanRank(plan: string | null) {
   return plan ? CUSTOM_PLAN_ORDER.indexOf(plan) : -1
 }
 
-function nextCustomPlan(plan: string | null) {
-  const rank = customPlanRank(plan)
-  if (rank < 0 || rank >= CUSTOM_PLAN_ORDER.length - 1) return null
-  return ALL_PLANS.find(item => item.key === CUSTOM_PLAN_ORDER[rank + 1]) ?? null
-}
-
 function isValidUpgradeTarget(currentPlan: string | null, targetPlan: string | null) {
   const currentRank = customPlanRank(currentPlan)
   const targetRank = customPlanRank(targetPlan)
@@ -473,6 +471,8 @@ function paymentMethodFromEvent(raw: unknown): PaymentMethod | null {
 }
 
 function subscriptionPaymentLabel(user: UserData) {
+  if (user.subscription_source === 'manual') return 'Accès accordé par Ava'
+  if (user.subscription_source === 'nowpayments') return 'Crypto'
   if (user.subscription_source === 'paypal') return 'PayPal'
   if (user.subscription_source === 'whop') return 'Carte bancaire'
   if (user.subscription_source === 'airwallex') {
@@ -564,20 +564,20 @@ function VoiceQuotaBar({ user, pro }: { user: UserData; pro: boolean }) {
             {remaining <= 0 ? 'Quota atteint' : `${fmtMin(remaining)} restantes`}
           </span>
         </div>
-        
+
         <div className="h-2.5 rounded-full bg-white/5 overflow-hidden relative">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
             className="h-full rounded-full"
-            style={{ 
-              background: barColor, 
-              boxShadow: `0 0 10px ${barColor}50` 
+            style={{
+              background: barColor,
+              boxShadow: `0 0 10px ${barColor}50`
             }}
           />
         </div>
-        
+
         {resetAt && (
           <div className="flex items-center gap-1.5 pt-1">
             <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />
@@ -591,7 +591,7 @@ function VoiceQuotaBar({ user, pro }: { user: UserData; pro: boolean }) {
   )
 }
 
-export function SubscriptionTab({ user, onRefresh }: Props) {
+export function SubscriptionTab({ user, onRefresh, language='fr' }: Props) {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [targetPlan, setTargetPlan] = useState<typeof ALL_PLANS[number] | null>(null)
   const [billingLoading, setBillingLoading] = useState(false)
@@ -645,6 +645,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
 
   const hasMobileSubscription = !!user.subscription_tier &&
     user.subscription_tier !== 'free' &&
+    user.subscription_source !== 'manual' &&
     user.subscription_source !== 'gumroad' &&
     user.subscription_source !== 'paddle' &&
     user.subscription_source !== 'paypal' &&
@@ -659,31 +660,17 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
   const lastPlanKey = normalizePlanKey(user.subscription_plan, false)
   const paidAccessPlanKey = (pro || custom) ? normalizePlanKey(user.subscription_plan, custom) : null
   const activePlanKey = paidAccessPlanKey ?? referralPlanKey
-  const displayPlanKey = activePlanKey ?? lastPlanKey
   const activePlanLabel = activePlanKey ? planLabels[activePlanKey] ?? null : null
   const lastPlanLabel = lastPlanKey ? planLabels[lastPlanKey] ?? null : null
   const expiryDate = user.custom_plan_expires_at ?? user.subscription_expires_at
   const subscriptionExpired = !isSubscribed && !!lastPlanKey && isPastDate(expiryDate)
   const hasCustomLikeAccess = custom || !!activeReferralEntitlement
-  // Define accent colors for current plan
-  const planAccent = displayPlanKey === 'custom_pro'
-    ? '#e11d48'
-    : displayPlanKey === 'custom_ultra'
-      ? '#e11d48'
-      : displayPlanKey === 'custom_max'
-        ? '#f43f5e'
-    : displayPlanKey === 'custom_simple'
-      ? '#6366f1'
-      : '#f43f5e'
-
-  const nextPlan = nextCustomPlan(activePlanKey)
   const paddleRenewalStopped = user.subscription_source === 'paddle' && !!user.paddle_renewal_cancelled_at
   const paddleAccessEndsAt = user.paddle_scheduled_cancel_at ?? user.subscription_expires_at
   const countries = countryOptions()
   const suggestedCountryCode = !cleanCountryCode(user.billing_country_code) ? suggestedBillingCountry() : ''
   const legacyRenewalSource = isLegacyRenewalSource(user.subscription_source) && isSubscribed
   const legacyRenewalDaysLeft = daysUntil(user.custom_plan_expires_at ?? user.subscription_expires_at)
-  const legacyRenewalUrgent = legacyRenewalDaysLeft !== null && legacyRenewalDaysLeft <= 7
   const legacyRenewalPlanKeyValue = legacyRenewalPlanKey(user, activePlanKey ?? lastPlanKey)
   const legacyRenewalTargetKey = legacyRenewalPlanKeyValue === 'custom_simple' ? 'custom_pro' : legacyRenewalPlanKeyValue
   const legacyRenewalPlan = ALL_PLANS.find(plan => plan.key === legacyRenewalTargetKey) ?? ALL_PLANS.find(plan => plan.key === 'custom_pro')!
@@ -741,122 +728,25 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
     return CUSTOM_PLAN_CTA[plan.key] ?? 'S’abonner'
   }
 
-  const renderPlanCard = (plan: typeof ALL_PLANS[number], index: number) => {
-    const isActive = plan.key === activePlanKey
-    const isExpiredPreviousPlan = subscriptionExpired && plan.key === lastPlanKey
-    const isSelected = plan.key === selectedPlanKey
-    const isRecommended = plan.key === 'custom_pro'
-    const isSpecial = plan.key === 'custom_max_2'
-    const features = Array.from(new Set(plan.features)).slice(0, 5)
-    const extraFeatures = Math.max(0, Array.from(new Set(plan.features)).length - features.length)
-    const cardBorder = isActive
-      ? 'border-emerald-400/35'
-      : isSelected
-        ? 'border-rose-300/55'
-      : isRecommended
-        ? 'border-rose-400/45'
-        : 'border-white/10'
-
-    return (
-      <motion.div
-        key={plan.key}
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.06 * (index + 1), duration: 0.35 }}
-        className={`relative flex min-h-[410px] flex-col rounded-2xl border ${cardBorder} bg-white/[0.035] p-5 shadow-2xl shadow-black/20 backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-rose-400/35`}
-      >
-        {(plan.badge || isActive || isExpiredPreviousPlan || isRecommended) && (
-          <div className="absolute -top-3 left-1/2 flex -translate-x-1/2 gap-2">
-            {isActive ? (
-              <span className="rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3 py-1 text-[10px] font-bold uppercase text-emerald-300">
-                Actif
-              </span>
-            ) : isExpiredPreviousPlan ? (
-              <span className="rounded-full border border-amber-400/30 bg-amber-500/15 px-3 py-1 text-[10px] font-bold uppercase text-amber-200">
-                Expiré
-              </span>
-            ) : (
-              <span className="rounded-full border border-rose-400/30 bg-rose-500 px-3 py-1 text-[10px] font-bold uppercase text-white shadow-lg shadow-rose-500/25">
-                {isRecommended ? 'Populaire' : plan.badge}
-              </span>
-            )}
-          </div>
-        )}
-
-        <div className="flex flex-1 flex-col">
-          <div className="space-y-3">
-            <div className="text-center">
-              <h3 className="text-lg font-black text-white">{plan.label.replace(/^Custom\s+/i, '')}</h3>
-              <p className="mt-1 text-xs font-medium text-slate-500">{plan.description}</p>
-            </div>
-
-            <div className="flex items-end justify-center gap-1 pt-2">
-              <span className="text-4xl font-black text-white">{plan.price}</span>
-              <span className="pb-1 text-xs font-semibold text-slate-500">{plan.per}</span>
-            </div>
-
-            <div className="flex min-h-[58px] flex-col items-center justify-center gap-2">
-              {plan.capital && (
-                <span className="rounded-full border border-white/10 bg-slate-950/50 px-3 py-1 text-center text-[10px] font-bold uppercase text-slate-400">
-                  {plan.capital.replace('Plage recommandée : ', '')}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="my-5 h-px w-full bg-white/[0.08]" />
-
-          <div className="flex-1 space-y-3">
-            {features.map((feat) => (
-              <div key={feat} className="flex items-start gap-3">
-                <Check size={15} className="mt-0.5 shrink-0 text-rose-400" />
-                <span className="text-sm font-medium leading-snug text-slate-300">{feat}</span>
-              </div>
-            ))}
-            {extraFeatures > 0 && (
-              <p className="pl-7 text-xs font-semibold text-slate-500">+{extraFeatures} autres avantages</p>
-            )}
-          </div>
-
-          <div className="mt-6">
-            {isActive ? (
-              <div className="w-full rounded-xl border border-white/10 bg-white/[0.04] py-3 text-center text-sm font-bold text-slate-400">
-                Votre formule active
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  if (isSpecial) {
-                    setBillingMessage('Présentez votre demande à Ava Support pour étudier l’accès au plan Spécial.')
-                    window.dispatchEvent(new CustomEvent('ava-open-support'))
-                    return
-                  }
-                  startCheckout(plan)
-                }}
-                disabled={(!isSpecial && !isPlanCheckoutReady(plan)) || billingLoading}
-                className={`w-full rounded-xl py-3 text-sm font-black transition-all duration-300 hover:scale-[1.01] active:scale-[0.98] disabled:opacity-45 disabled:hover:scale-100 ${
-                  isRecommended || plan.key === 'custom_ultra' || plan.key === 'custom_max' || isSpecial
-                    ? 'bg-rose-500 text-white shadow-xl shadow-rose-500/25 hover:bg-rose-400'
-                    : 'border border-white/10 bg-slate-950/60 text-white hover:border-rose-400/35 hover:bg-white/[0.06]'
-                }`}
-              >
-                {billingLoading ? 'Activation...' : checkoutLabel(plan)}
-              </button>
-            )}
-          </div>
-        </div>
-      </motion.div>
-    )
-  }
+  const monthlyPlanOptions: MonthlyAccessPlan[] = ALL_PLANS.filter(isCheckoutVisiblePlan).map(plan=>{
+    const isSpecial=plan.key==='custom_max_2',english=language==='en'
+    return {key:plan.key as DisplayPlanKey,
+      price:isSpecial?(english?'On request':'Sur demande'):new Intl.NumberFormat(english?'en-IE':'fr-FR',{style:'currency',currency:'EUR'}).format(Number(plan.price.replace(/[^0-9.]/g,''))),
+      period:isSpecial?'':english?'/ month':'/ mois',
+      label:billingLoading?(english?'Opening…':'Ouverture…'):isSpecial?(english?'Contact Ava':'Contacter Ava'):checkoutLabel(plan),
+      active:plan.key===activePlanKey,selected:plan.key===selectedPlanKey,disabled:(!isSpecial&&!isPlanCheckoutReady(plan))||billingLoading,
+      onChoose:()=>{if(isSpecial){setBillingMessage('Présentez votre demande à Ava Support pour étudier l’accès au plan Spécial.');window.dispatchEvent(new CustomEvent('ava-open-support'));return}startCheckout(plan)}
+    }
+  })
 
   const renderPlanComparison = (includeCapital: boolean) => (
     <div className="mx-auto w-full max-w-6xl space-y-5">
       <button
         type="button"
         onClick={() => setShowPlanComparison(value => !value)}
-        className="mx-auto flex items-center gap-2 rounded-2xl border border-rose-400/35 bg-slate-950/70 px-5 py-3 text-sm font-black text-white shadow-lg shadow-black/20 transition-colors hover:border-rose-300/60 hover:bg-rose-500/10"
+        aria-expanded={showPlanComparison} className={style.quietButton}
       >
-        Voir le comparatif complet
+        {language==='en'?'Compare all features':'Comparer toutes les fonctionnalités'}
         {showPlanComparison ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
       </button>
 
@@ -867,7 +757,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.22 }}
-            className="overflow-hidden rounded-3xl border border-white/10 bg-slate-950/70 shadow-2xl shadow-black/30 backdrop-blur-xl"
+            className="overflow-hidden rounded-3xl border border-white/10 bg-[#1a1c1f]"
           >
             <div className="overflow-x-auto">
               <div className="min-w-[820px]">
@@ -876,7 +766,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
                   {['Pro', 'Ultra', 'Max'].map(plan => (
                     <div
                       key={plan}
-                      className={`px-5 py-4 text-center font-black text-white ${plan === 'Pro' ? 'bg-rose-500/10' : ''}`}
+                      className={`px-5 py-4 text-center font-black text-white ${plan === 'Pro' ? 'bg-lime-300/5' : ''}`}
                     >
                       {plan}
                     </div>
@@ -892,7 +782,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
                       .map(row => (
                         <div key={row.label} className="grid grid-cols-[1.35fr_repeat(3,1fr)] border-t border-white/[0.06] text-sm">
                           <div className="px-5 py-4 font-semibold text-slate-400">{row.label}</div>
-                          <div className="bg-rose-500/[0.045] px-5 py-4 text-center font-bold text-slate-200">{row.pro}</div>
+                          <div className="bg-lime-300/[0.035] px-5 py-4 text-center font-bold text-slate-200">{row.pro}</div>
                           <div className="px-5 py-4 text-center font-bold text-slate-200">{row.ultra}</div>
                           <div className="px-5 py-4 text-center font-bold text-rose-100">{row.max}</div>
                         </div>
@@ -1300,350 +1190,45 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto px-6 py-10 md:py-14 max-w-6xl mx-auto w-full space-y-10">
-      
-      {/* Page Title Bar */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-black text-white tracking-tight flex items-center gap-2.5">
-          Facturation & Abonnement
-          {isSubscribed && <ShieldCheck size={26} style={{ color: planAccent }} />}
-        </h1>
-        <p className="text-sm text-slate-400 max-w-xl leading-relaxed">
-          {isSubscribed 
-            ? 'Suivez vos quotas de consommation, configurez vos clés API et gérez votre facturation sécurisée.' 
-            : 'Sélectionnez la formule adaptée à votre profil pour débloquer la voix, le chat et les automatisations avancées.'
-          }
-        </p>
+    <div className={style.page}>
+      <div className={style.container}>
+        <header className={style.header}><div className={style.eyebrow}><span>AVA</span> / {language==='en'?'PLANS & BILLING':'FORMULES & ABONNEMENT'}</div><span className={style.secure}><ShieldCheck size={13}/>{language==='en'?'Secure payment':'Paiement sécurisé'}</span></header>
+        <section className={style.hero}>
+          <span className={style.heroLabel}><Zap size={13}/>{language==='en'?'More ways to enjoy Ava':'Plus de façons de profiter d’Ava'}</span>
+          <h1>{language==='en'?'Your Ava. ':'Votre Ava. '}<span>{language==='en'?'Your pace.':'Votre rythme.'}</span></h1>
+          <p>{language==='en'?'Choose your power. Monthly, weekly or in several payments — find the plan that fits.':'Choisissez votre puissance. Au mois, à la semaine ou en plusieurs paiements : trouvez votre formule.'}</p>
+          <div className={style.heroDecor} aria-hidden="true"><span>2×</span><span>3×</span><span>4×</span></div>
+        </section>
+
+        {isSubscribed&&<div className={style.accountBar}>
+          <span className={style.accountIcon}><Crown size={17}/></span>
+          <div><div className={style.accountName}>{activePlanLabel??'Ava Custom'}<span className={style.statusDot}/></div>
+            <p className={style.accountMeta}>{activeReferralEntitlement?'Accès Affiliation':subscriptionPaymentLabel(user)}{(activeReferralEntitlement?.expires_at??expiryDate)&&<> · {language==='en'?'Until':'Jusqu’au'} {new Date((activeReferralEntitlement?.expires_at??(paddleRenewalStopped?paddleAccessEndsAt:expiryDate))??expiryDate!).toLocaleDateString(language==='en'?'en-GB':'fr-FR',{day:'numeric',month:'short',year:'numeric'})}</>}</p></div>
+          <div className={style.accountActions}>
+            {['paddle','paypal','airwallex','whop'].includes(String(user.subscription_source??''))&&<button type="button" disabled={billingLoading} onClick={handleManageSubscription} className={style.quietButton}><CreditCard size={13}/>{user.subscription_source==='paddle'?(paddleRenewalStopped?'Anciennes factures':'Arrêter le renouvellement'):(language==='en'?'Manage subscription':'Gérer l’abonnement')}<ExternalLink size={12}/></button>}
+            <button type="button" className={style.quietButton} onClick={()=>{const details=document.getElementById('ava-billing-account') as HTMLDetailsElement|null;if(details){details.open=!details.open;if(details.open)details.scrollIntoView({behavior:'smooth',block:'start'})}}}>{language==='en'?'My access & usage':'Mes accès & ma consommation'}<ChevronDown size={13}/></button>
+          </div>
+        </div>}
+        {subscriptionExpired&&<div className={style.notice}><AlertCircle size={16}/><p><strong>{language==='en'?'Your access has expired.':'Votre accès a expiré.'}</strong> {lastPlanLabel}. {language==='en'?'Choose a plan to reactivate your access.':'Choisissez une formule pour réactiver vos accès.'}</p></div>}
+        {hasMobileSubscription&&<div className={style.notice}><Smartphone size={16}/><p><strong>Abonnement mobile</strong> · Facturation gérée depuis l’App Store ou Google Play. Vos quotas sont synchronisés avec Ava Web et Desktop.</p></div>}
+        {legacyRenewalSource&&<div className={style.notice}><AlertCircle size={16}/><div><p><strong>Renouvellement à préparer</strong> · Votre accès {legacyRenewalSourceLabel} reste actif jusqu’à son échéance.{legacyRenewalDaysLeft!==null&&legacyRenewalDaysLeft>=0?` ${legacyRenewalDaysLeft} jours restants.`:''}</p><button type="button" onClick={handleLegacyRenewal} disabled={billingLoading} className={style.quietButton}>{user.subscription_source==='paddle'?'Renouveler avec les moyens actuels':'Contacter le support'}<ArrowRight size={13}/></button></div></div>}
+
+        <TradingAccessPanel user={user} language={language} onRefresh={onRefresh} monthlyPlans={monthlyPlanOptions}/>
+        <div className="flex justify-center py-5">{renderPlanComparison(true)}</div>
+
+        {isSubscribed&&<details id="ava-billing-account" className={style.details}>
+          <summary><span>{language==='en'?'My access, usage & billing':'Mes accès, ma consommation & ma facturation'}</span><ChevronDown size={15}/></summary>
+          <div className={style.detailsBody}>
+            <div><h3 className="mb-4 font-semibold text-white">{activePlanLabel??'Ava Custom'}</h3>
+              {(hasCustomLikeAccess?CUSTOM_FEATURES:PRO_FEATURES).map(({icon:Icon,text,val})=><div key={text} className="flex items-center justify-between gap-4 border-b border-white/5 py-3"><span className="flex items-center gap-2"><Icon size={14}/>{text}</span><strong className="text-white">{val}</strong></div>)}
+            </div>
+            <div><VoiceQuotaBar user={user} pro={pro}/><p className="mt-4">{activeReferralEntitlement?`Cet accès vient d’un coupon d’affiliation et donne les droits Trading du plan ${referralPlanLabel??activePlanLabel}, sans renouvellement automatique.`:subscriptionManagementLabel(user)}</p>
+              {user.subscription_source==='paddle'&&<p>{paddleRenewalStopped?'Ancien renouvellement arrêté. Votre accès reste valable jusqu’à la date indiquée.':'Vous pouvez choisir les moyens de paiement actuels. Arrêtez l’ancien renouvellement pour éviter un double prélèvement.'}</p>}
+              <a href="https://call-ava.com/support" target="_blank" rel="noopener noreferrer" className={style.quietButton}>{language==='en'?'Billing support':'Aide à la facturation'}<ArrowRight size={13}/></a>
+            </div>
+          </div>
+        </details>}
       </div>
-
-      {/* Mobile subscriber note */}
-      {hasMobileSubscription && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl px-4 py-3.5 flex items-start gap-3 border border-indigo-500/15 bg-indigo-500/5 backdrop-blur-md"
-        >
-          <Smartphone size={16} className="text-indigo-400 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-sm font-bold text-indigo-300">Abonnement mobile détecté</p>
-            <p className="text-xs mt-0.5 leading-relaxed text-slate-400">
-              Votre facturation est gérée sur l&apos;App Store ou Google Play Store. Vos quotas vocaux sont synchronisés en temps réel sur le Web et le Desktop.
-            </p>
-          </div>
-        </motion.div>
-      )}
-
-      {legacyRenewalSource && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`rounded-2xl px-5 py-4 flex flex-col gap-4 border backdrop-blur-md md:flex-row md:items-center md:justify-between ${
-            legacyRenewalUrgent
-              ? 'border-amber-400/25 bg-amber-500/10'
-              : 'border-orange-400/15 bg-orange-500/5'
-          }`}
-        >
-          <div className="flex items-start gap-3">
-            <AlertCircle size={17} className={legacyRenewalUrgent ? 'text-amber-300 mt-0.5 flex-shrink-0' : 'text-orange-300 mt-0.5 flex-shrink-0'} />
-            <div>
-              <p className={`text-sm font-black ${legacyRenewalUrgent ? 'text-amber-200' : 'text-orange-200'}`}>
-                Renouvellement à préparer
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-slate-400">
-                Votre accès {legacyRenewalSourceLabel} reste actif jusqu’à sa date actuelle. Pour éviter une coupure, renouvelez sur {legacyRenewalPlan.label}; le paiement direct sera utilisé.
-                {legacyRenewalDaysLeft !== null && legacyRenewalDaysLeft >= 0 ? ` Il reste environ ${legacyRenewalDaysLeft} jour${legacyRenewalDaysLeft > 1 ? 's' : ''}.` : ''}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={handleLegacyRenewal}
-            disabled={billingLoading}
-            className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-rose-500 px-5 text-sm font-black text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-400 disabled:opacity-60"
-          >
-            {user.subscription_source === 'paddle' ? 'Renouveler avec les moyens actuels' : 'Contacter le support'}
-          </button>
-        </motion.div>
-      )}
-
-      {isSubscribed ? (
-        // Subscribed Active Dashboard View (Gorgeous 2 Column Layout with high-end cards)
-        <div className="space-y-10">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-            
-            {/* Main Dashboard Details (Left Side, 2 Columns) */}
-            <div className="lg:col-span-2 space-y-8">
-              
-              {/* Active Plan Hero Card */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="relative overflow-hidden rounded-3xl p-6 md:p-8 border bg-gradient-to-br from-slate-900/60 via-slate-950/80 to-slate-900/60 backdrop-blur-xl"
-                style={{
-                  borderColor: `${planAccent}30`,
-                  boxShadow: `0 10px 40px -10px ${planAccent}15`
-                }}
-              >
-                {/* Decorative background glow */}
-                <div 
-                  className="absolute -right-20 -bottom-20 w-64 h-64 rounded-full blur-3xl opacity-15 pointer-events-none"
-                  style={{ background: planAccent }}
-                />
-
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        {activeReferralEntitlement ? 'Accès Affiliation actif' : 'Abonnement Actif'}
-                      </span>
-                      <span className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider bg-white/5 border border-white/10 text-slate-400">
-                        {activeReferralEntitlement ? 'Coupon parrainage' : subscriptionPaymentLabel(user)}
-                      </span>
-                    </div>
-
-                    <div>
-                      <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-2">
-                        {activePlanLabel ?? 'Abonnement Custom'}
-                        <Crown size={22} style={{ color: planAccent }} />
-                      </h2>
-                      {activeReferralEntitlement ? (
-                        <p className="text-sm text-slate-400 mt-2">
-                          Accès offert jusqu’au{' '}
-                          <span className="text-white font-bold">
-                            {new Date(activeReferralEntitlement.expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                          </span>
-                        </p>
-                      ) : user.subscription_expires_at && (
-                        <p className="text-sm text-slate-400 mt-2">
-                          {paddleRenewalStopped
-                            ? 'Accès Paddle actif jusqu’au '
-                            : 'Prochain renouvellement automatique le '}
-                          <span className="text-white font-bold">
-                            {new Date(paddleAccessEndsAt ?? user.subscription_expires_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                          </span>
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {['paddle', 'paypal', 'airwallex', 'whop'].includes(String(user.subscription_source ?? '')) && (
-                    <div className="flex flex-col sm:flex-row flex-shrink-0 gap-3">
-                      {nextPlan && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            startCheckout(nextPlan)
-                          }}
-                          disabled={billingLoading}
-                          className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-rose-500/20 bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-400 hover:to-rose-500 disabled:opacity-60"
-                        >
-                          Passer à {nextPlan.label}
-                          <ArrowRight size={15} />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleManageSubscription}
-                        disabled={billingLoading}
-                        className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl font-bold text-sm text-white transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 shadow-xl"
-                      >
-                        {paddleRenewalStopped ? <CreditCard size={14} /> : user.subscription_source === 'paddle' ? <AlertCircle size={14} /> : <CreditCard size={14} />}
-                        {billingLoading
-                          ? 'Traitement...'
-                          : user.subscription_source === 'paddle'
-                            ? paddleRenewalStopped
-                              ? 'Voir les anciennes factures'
-                              : 'Arrêter le renouvellement'
-                            : 'Gérer l’abonnement'}
-                        {user.subscription_source !== 'airwallex' && <ExternalLink size={12} className="opacity-60" />}
-                      </button>
-                    </div>
-                  )}
-                </div>
-                {activeReferralEntitlement && (
-                  <div
-                    className="relative z-10 mt-5 flex items-start gap-3 rounded-2xl px-4 py-3"
-                    style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.18)' }}
-                  >
-                    <Ticket size={16} className="mt-0.5 flex-shrink-0" style={{ color: '#fbbf24' }} />
-                    <p className="text-xs leading-relaxed text-slate-300">
-                      Cet accès vient d’un coupon d’affiliation. Il donne les droits Ava Trading / Ava Volatility du plan {referralPlanLabel ?? activePlanLabel}, sans renouvellement automatique. Vous pouvez passer à un abonnement payant ou upgrader à tout moment depuis les formules ci-dessous.
-                    </p>
-                  </div>
-                )}
-                {user.subscription_source === 'paddle' && (
-                  <p className="relative z-10 mt-5 text-[11px] leading-relaxed text-slate-400">
-                    {paddleRenewalStopped
-                      ? 'Renouvellement Paddle arrêté. Votre accès reste actif jusqu’à la date indiquée et vous pouvez dès maintenant renouveler avec les moyens de paiement actuels.'
-                      : 'Paddle est conservé seulement dans l’historique de cet ancien abonnement. Vous pouvez choisir immédiatement les moyens de paiement actuels; arrêter l’ancien renouvellement reste recommandé pour éviter un double prélèvement.'}
-                  </p>
-                )}
-              </motion.div>
-
-              {(billingError || billingMessage) && (
-                <div className={`rounded-2xl border px-4 py-3 text-xs font-semibold ${
-                  billingError
-                    ? 'border-rose-500/20 bg-rose-500/10 text-rose-200'
-                    : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-200'
-                }`}>
-                  {billingError || billingMessage}
-                </div>
-              )}
-
-              {/* Unlocked Features Table */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="rounded-3xl border border-white/5 bg-slate-950/40 backdrop-blur-md overflow-hidden"
-              >
-                <div className="px-6 py-5 border-b border-white/5 flex items-center justify-between">
-                  <h3 className="font-bold text-white text-base">Fonctionnalités & capacités incluses</h3>
-                  <span 
-                    className="text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border"
-                    style={{
-                      borderColor: `${planAccent}30`,
-                      color: planAccent,
-                      background: `${planAccent}10`
-                    }}
-                  >
-                    {activePlanLabel ?? 'Actif'}
-                  </span>
-                </div>
-                
-                <div className="divide-y divide-white/5">
-                  {(hasCustomLikeAccess ? CUSTOM_FEATURES : PRO_FEATURES).map(({ icon: Icon, text, val }) => (
-                    <div key={text} className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-white/[0.01]">
-                      <div className="flex items-center gap-3.5 min-w-0 pr-4">
-                        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                          style={{ background: hasCustomLikeAccess ? 'rgba(99,102,241,0.06)' : 'rgba(244,63,94,0.06)' }}>
-                          <Icon size={14} style={{ color: hasCustomLikeAccess ? '#818cf8' : '#f43f5e' }} />
-                        </div>
-                        <span className="text-xs font-semibold text-slate-200 truncate">{text}</span>
-                      </div>
-                      <span 
-                        className="text-xs font-black flex-shrink-0 uppercase tracking-wider"
-                        style={{ color: hasCustomLikeAccess ? '#818cf8' : '#f43f5e' }}
-                      >
-                        {val}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Sidebar Widgets (Right Side, 1 Column) */}
-            <div className="space-y-8">
-              
-              {/* Quota Usage Meter */}
-              <VoiceQuotaBar user={user} pro={pro} />
-
-              {/* Billing Detail / Info Panel */}
-              <motion.div
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-                className="rounded-3xl p-6 border border-white/5 bg-slate-950/40 backdrop-blur-md space-y-4"
-              >
-                <div className="flex items-center gap-2 text-slate-400">
-                  <HelpCircle size={15} />
-                  <h4 className="text-xs font-bold uppercase tracking-wider">Aide & Facturation</h4>
-                </div>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Les nouveaux paiements passent temporairement par crypto via NOWPayments. Ava active automatiquement l&apos;abonnement après confirmation blockchain, et les anciens abonnements restent reconnus jusqu&apos;à leur date actuelle.
-                  {subscriptionManagementLabel(user) ? ` ${subscriptionManagementLabel(user)}` : ''}
-                </p>
-                <div className="pt-2">
-                  <a 
-                    href="https://call-ava.com/support" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-xs font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors"
-                  >
-                    Contacter le support d&apos;aide
-                    <ArrowRight size={10} />
-                  </a>
-                </div>
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="w-full h-px bg-white/5 my-12" />
-
-          {/* Pricing Plans Grid for Subscribed Users */}
-          <div className="space-y-8">
-            <div className="mx-auto max-w-2xl space-y-2 text-center">
-              <h3 className="text-2xl font-black text-white">Toutes les formules disponibles</h3>
-              <p className="text-sm text-slate-400">
-                Choisissez une formule Custom, puis payez par banque/carte ou crypto-monnaie.
-              </p>
-            </div>
-            
-            <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-              {ALL_PLANS.filter(isCheckoutVisiblePlan).map((plan, index) => renderPlanCard(plan, index))}
-            </div>
-
-            {renderPlanComparison(true)}
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-10">
-          {subscriptionExpired && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mx-auto flex max-w-3xl flex-col gap-4 rounded-2xl border border-amber-400/20 bg-amber-500/10 px-5 py-4 backdrop-blur-md md:flex-row md:items-center md:justify-between"
-            >
-              <div className="flex items-start gap-3">
-                <AlertCircle size={17} className="mt-0.5 flex-shrink-0 text-amber-300" />
-                <div>
-                  <p className="text-sm font-black text-amber-200">
-                    Abonnement expiré
-                  </p>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-300">
-                    Votre ancien accès {lastPlanLabel ?? 'Ava Custom'} n’est plus actif. Vous pouvez relancer le paiement maintenant pour réactiver les avantages Pro.
-                  </p>
-                </div>
-              </div>
-              {lastPlanKey && CHECKOUT_PLAN_KEYS.includes(lastPlanKey) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const plan = ALL_PLANS.find(item => item.key === lastPlanKey)
-                    if (plan) startCheckout(plan)
-                  }}
-                  disabled={billingLoading}
-                  className="flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-amber-300 px-5 text-sm font-black text-slate-950 transition-all hover:bg-amber-200 disabled:opacity-60"
-                >
-                  Renouveler {lastPlanLabel?.replace(/^Custom\s+/i, '') ?? 'Pro'}
-                  <ArrowRight size={14} />
-                </button>
-              )}
-            </motion.div>
-          )}
-
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-xs font-bold uppercase text-rose-400">Plans Ava Custom</p>
-            <h3 className="mt-3 text-3xl font-black text-white">Tarifs simples et transparents</h3>
-            <p className="mt-3 text-sm text-slate-400">
-              Choisissez le niveau adapté à votre capital et à votre rythme d&apos;utilisation.
-            </p>
-          </div>
-
-          <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {ALL_PLANS.filter(isCheckoutVisiblePlan).map((plan, index) => renderPlanCard(plan, index))}
-          </div>
-
-          {renderPlanComparison(true)}
-
-          <p className="text-center text-[10px] text-slate-500 max-w-sm mx-auto leading-relaxed mt-4">
-            Pour les plans Custom, vous pourrez configurer votre propre clé IA compatible Ava directement dans vos paramètres après souscription.
-          </p>
-        </div>
-      )}
 
       {/* Billing country modal */}
       <AnimatePresence>
@@ -1719,98 +1304,16 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
         )}
       </AnimatePresence>
 
-      {/* Payment method modal */}
-      <AnimatePresence>
-        {paymentChoicePlan && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/10 bg-[#070b16] p-5 shadow-2xl shadow-black/40"
-            >
-              <button
-                type="button"
-                onClick={() => setPaymentChoicePlan(null)}
-                className="absolute right-5 top-5 inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-slate-400 transition-colors hover:text-white"
-                aria-label="Fermer"
-              >
-                <X size={16} />
-              </button>
-
-              <div className="pr-10">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-rose-300">Paiement</p>
-                <h3 className="mt-1 text-lg font-black text-white">{paymentChoicePlan.label}</h3>
-                <p className="mt-1 text-xs font-semibold text-slate-500">
-                  {paymentChoicePlan.price} {paymentChoicePlan.per}
-                </p>
-              </div>
-
-              {(billingError || billingMessage) && (
-                <div className={`mt-5 rounded-2xl border px-4 py-3 text-xs font-semibold ${
-                  billingError
-                    ? 'border-rose-500/20 bg-rose-500/10 text-rose-200'
-                    : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-200'
-                }`}>
-                  {billingError || billingMessage}
-                </div>
-              )}
-
-              <div className="mt-5 space-y-3">
-                <button
-                  type="button"
-                  onClick={() => startWhopCheckout('card')}
-                  disabled={billingLoading}
-                  className="group flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-left transition-colors hover:border-rose-400/35 hover:bg-white/[0.06] disabled:opacity-60"
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-rose-300">
-                    <CreditCard size={18} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-white">Banque et carte</p>
-                    <p className="mt-0.5 truncate text-xs font-semibold text-slate-500">
-                      Carte, PayPal, banque et renouvellement mensuel sécurisé.
-                    </p>
-                  </div>
-                  {billingLoading ? (
-                    <span className="h-4 w-4 shrink-0 rounded-full border-2 border-slate-500 border-t-white animate-spin" />
-                  ) : (
-                    <ExternalLink size={15} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => startNowPaymentsCheckout()}
-                  disabled={billingLoading || !isNowPaymentsPlan(paymentChoicePlan)}
-                  className="group flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3 text-left transition-colors hover:border-rose-400/35 hover:bg-white/[0.06] disabled:opacity-60"
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] text-rose-300">
-                    <Coins size={18} />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-black text-white">Crypto-monnaie</span>
-                    <span className="block truncate text-xs font-semibold text-slate-500">
-                      Paiement direct NOWPayments, activation après confirmation blockchain.
-                    </span>
-                  </span>
-                  {billingLoading ? (
-                    <span className="h-4 w-4 shrink-0 rounded-full border-2 border-slate-500 border-t-white animate-spin" />
-                  ) : (
-                    <ExternalLink size={15} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-white" />
-                  )}
-                </button>
-
-                <div className="flex items-center gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.025] px-4 py-3 text-[11px] font-semibold leading-relaxed text-slate-500">
-                  <ShieldCheck size={14} className="shrink-0 text-rose-300" />
-                  Banque et carte passe par Whop. Crypto-monnaie passe par NOWPayments.
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Monthly checkout keeps the existing card and crypto handlers. */}
+      {paymentChoicePlan&&<BillingDialog title={paymentChoicePlan.label} subtitle={language==='en'?'Monthly subscription':'Abonnement mensuel'} tone={PLAN_STYLE[paymentChoicePlan.key as DisplayPlanKey]?.tone} busy={billingLoading} onClose={()=>setPaymentChoicePlan(null)}>
+        <div className={style.orderSummary}><div><strong>{new Intl.NumberFormat(language==='en'?'en-IE':'fr-FR',{style:'currency',currency:'EUR'}).format(Number(paymentChoicePlan.price.replace(/[^0-9.]/g,'')))}</strong><span>{language==='en'?'per month':'par mois'}</span></div><p>{language==='en'?'Select your payment method to continue.':'Choisissez votre moyen de paiement pour continuer.'}</p></div>
+        {(billingError||billingMessage)&&<div role={billingError?'alert':'status'} className={billingError?style.error:style.notice}>{billingError||billingMessage}</div>}
+        <div className={style.paymentMethods}>
+          <button type="button" onClick={()=>startWhopCheckout('card')} disabled={billingLoading}><CreditCard size={22}/><strong>{language==='en'?'Bank card':'Carte bancaire'}</strong><small>{language==='en'?'Automatic monthly renewal':'Renouvellement mensuel automatique'}</small><ArrowRight size={15}/></button>
+          <button type="button" onClick={()=>startNowPaymentsCheckout()} disabled={billingLoading||!isNowPaymentsPlan(paymentChoicePlan)}><Coins size={22}/><strong>{language==='en'?'Cryptocurrency':'Crypto-monnaie'}</strong><small>{language==='en'?'Manual payment, blockchain confirmation':'Paiement manuel, confirmation blockchain'}</small><ArrowRight size={15}/></button>
+        </div>
+        <p className={style.dialogHint}><ShieldCheck size={13} className="mr-1 inline"/>{billingLoading?(language==='en'?'Opening checkout…':'Ouverture du paiement…'):(language==='en'?'You will review your order on the secure checkout page before paying.':'Vous vérifierez votre commande sur la page sécurisée avant de payer.')}</p>
+      </BillingDialog>}
 
       <AnimatePresence>
         {!paymentChoicePlan && !paypalPlan && !countryPromptPlan && (billingError || billingMessage) && (
@@ -1894,7 +1397,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
               }}
             >
               {/* Top accent glow line */}
-              <div 
+              <div
                 className="absolute top-0 left-0 right-0 h-[3px]"
                 style={{ background: `linear-gradient(90deg, transparent, ${targetPlan.accentColor}, transparent)` }}
               />
@@ -1908,7 +1411,7 @@ export function SubscriptionTab({ user, onRefresh }: Props) {
               </button>
 
               <div className="flex items-start gap-4 pr-10">
-                <div 
+                <div
                   className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
                   style={{ background: `${targetPlan.accentColor}15` }}
                 >

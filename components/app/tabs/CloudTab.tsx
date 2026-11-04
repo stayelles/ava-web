@@ -4559,6 +4559,10 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
                         </div>
                       </>
                     ) : null}
+                    <div className="mt-3 rounded-xl border border-rose-400/20 bg-rose-400/5 p-3 text-xs text-slate-300">
+                      <strong className="text-rose-300">{tr('Protection des nouvelles copies', 'New copy protection')}</strong>
+                      <p className="mt-1">{tr('Perte flottante ≥ 35 % du solde : aucune nouvelle entrée. BUY au prix maître ou en dessous ; SELL au prix maître ou au-dessus. Les positions existantes restent ouvertes.', 'Floating loss ≥ 35% of balance: no new entries. BUY at or below the master price; SELL at or above it. Existing positions remain open.')}</p>
+                    </div>
                     {copyMasterConfig.lot_policy === 'proportional' ? (
                       <label className="mt-3 block rounded-lg border border-white/10 px-2 py-2">
                         <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">{tr('Equity de base du maître', 'Master base equity')}</span>
@@ -4884,7 +4888,7 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
                   onChange={event => updateConfig({ market: event.target.value })}
                   className="mt-2 w-full bg-transparent text-sm font-bold text-white outline-none"
                 >
-                  {MARKET_OPTIONS.map(item => <option key={item} value={item} className="bg-slate-950">{item}</option>)}
+                  {MARKET_OPTIONS.filter(market => user.is_admin === true || !['custom_pro', 'custom_ultra'].includes(String(user.subscription_plan)) || ['Boom 1000 Index', 'Crash 1000 Index'].includes(market)).map(item => <option key={item} value={item} className="bg-slate-950">{item}</option>)}
                 </select>
               </label>
               <label className="block rounded-2xl border border-white/10 bg-slate-950/45 p-3">

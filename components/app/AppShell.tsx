@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { AvaUniverses } from '@/components/AvaUniverses'
+import { AssistancePresence } from './admin/AssistancePresence'
 import { Sidebar } from './Sidebar'
 import { BottomTabs } from './BottomTabs'
 import { VoiceTab } from './tabs/VoiceTab'
@@ -24,6 +25,8 @@ interface Props {
   onLogout: () => void
   onUpdatePin: (currentPin: string, newPin: string) => Promise<{ ok: boolean; error?: string }>
   onRefresh: () => void
+  assistance?: boolean
+  onViewChange?: (tab: AppTab) => void
 }
 
 const SUPPORTED_LANGUAGES: AppSettings['language'][] = ['fr', 'en', 'tr', 'de', 'es']
@@ -31,7 +34,7 @@ const LANG_STORAGE_KEY = 'ava_language'
 
 const DEFAULT_SETTINGS: AppSettings = { language: 'en', webSearch: false }
 
-export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }: Props) {
+export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh, assistance = false, onViewChange }: Props) {
   const shouldStartOnSubscription = !isPro(user) && !isCustomPlan(user)
   const [activeTab, setActiveTab] = useState<AppTab>(shouldStartOnSubscription ? 'subscription' : 'voice')
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
@@ -61,6 +64,8 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }
     window.setTimeout(() => setSettings(s => ({ ...s, language: detected })), 0)
   }, [])
 
+  useEffect(() => { onViewChange?.(activeTab) }, [activeTab, onViewChange])
+
   const handleSettingsChange = useCallback((s: AppSettings) => {
     setSettings(s)
     localStorage.setItem(LANG_STORAGE_KEY, s.language)
@@ -75,7 +80,10 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }
   }, [])
 
   return (
+    <>
+    {!assistance && <AssistancePresence user={user} onNavigate={setActiveTab} />}
     <div
+      id="ava-workspace"
       className="flex h-screen w-screen overflow-hidden"
       style={{ background: '#020617' }}
     >
@@ -135,7 +143,7 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }
             <ProfileTab user={user} onUpdatePin={onUpdatePin} />
           )}
           {activeTab === 'subscription' && (
-            <SubscriptionTab user={user} onRefresh={onRefresh} />
+            <SubscriptionTab user={user} onRefresh={onRefresh} language={settings.language} />
           )}
           {activeTab === 'referral' && (
             <ReferralTab user={user} />
@@ -157,5 +165,6 @@ export function AppShell({ user, permissions, onLogout, onUpdatePin, onRefresh }
       <BottomTabs activeTab={activeTab} onTabChange={setActiveTab} language={settings.language} />
       <SupportDock user={user} />
     </div>
+    </>
   )
 }

@@ -39,7 +39,7 @@ function asString(value: unknown): string | null {
   return value == null || value === '' ? null : String(value)
 }
 
-function bootstrapToUser(bootstrap: Bootstrap, avaSessionToken: string): UserData {
+export function bootstrapToUser(bootstrap: Bootstrap, avaSessionToken: string): UserData {
   const subscription = bootstrap.subscription ?? {}
   const wallet = bootstrap.wallet ?? {}
   const quotas = bootstrap.quotas ?? {}
