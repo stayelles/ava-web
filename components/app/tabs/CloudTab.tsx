@@ -114,6 +114,9 @@ type CloudStatus = {
 }
 
 type CloudConfig = {
+  boomSellBatchSize?: number
+  boomReboundBatchSize?: number
+  symbolConfigs?: Record<string, Record<string, number>>
   market?: string
   execution?: string
   lot?: number
@@ -951,6 +954,8 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
   const [dualEntryZoneErrors, setDualEntryZoneErrors] = useState<Record<string, string>>({})
   const [stopCycleErrors, setStopCycleErrors] = useState<Record<string, string>>({})
   const [instantSignal, setInstantSignal] = useState({
+    orderCount: 1,
+    referencePrice: '',
     marketKey: 'BOOM1000',
     direction: 'BUY' as 'BUY' | 'SELL',
     minNetEquityUsd: 5000,
@@ -1204,6 +1209,8 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
       const result = await callAdminSignal({
         action: 'simulate',
         event_type: 'open',
+        order_count: instantSignal.orderCount,
+        master_price: Number(instantSignal.referencePrice) > 0 ? Number(instantSignal.referencePrice) : null,
         market_key: instantSignal.marketKey,
         direction: instantSignal.direction,
         min_net_equity_usd: instantSignal.minNetEquityUsd,
@@ -1785,10 +1792,15 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
     })
   }, [])
   const dispatchInstantSignal = useCallback(async () => {
+    const reference = Number(instantSignal.referencePrice)
+    if (instantSignal.orderCount > 1 && !(Number.isFinite(reference) && reference > 0)) {
+      setInstantSignalMessage(tr('Envoi impossible : indiquez le prix de référence du lot.', 'Unable to send: enter the batch reference price.'))
+      return
+    }
     const confirmation = window.confirm(
       tr(
-        `Envoyer maintenant un signal ${instantSignal.direction} ${instantSignal.marketKey} aux moteurs éligibles pendant ${instantSignal.ttlSeconds} secondes ?`,
-        `Send a ${instantSignal.direction} ${instantSignal.marketKey} signal to eligible engines for ${instantSignal.ttlSeconds} seconds?`,
+        `Demander jusqu’à ${instantSignal.orderCount} position(s) ${instantSignal.direction} ${instantSignal.marketKey} aux moteurs éligibles pendant ${instantSignal.ttlSeconds} secondes ?`,
+        `Request up to ${instantSignal.orderCount} ${instantSignal.direction} ${instantSignal.marketKey} signal to eligible engines for ${instantSignal.ttlSeconds} seconds?`,
       ),
     )
     if (!confirmation) return
@@ -1802,6 +1814,8 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
       const result = await callAdminSignal({
         action: 'dispatch',
         event_type: 'open',
+        order_count: instantSignal.orderCount,
+        master_price: Number(instantSignal.referencePrice) > 0 ? Number(instantSignal.referencePrice) : null,
         market_key: instantSignal.marketKey,
         direction: instantSignal.direction,
         min_net_equity_usd: instantSignal.minNetEquityUsd,
@@ -1847,7 +1861,7 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
           const reason = String(terminalResult.error ?? terminalResult.reason ?? '').trim()
           setInstantSignalMessage(
             terminalStatus === 'done'
-              ? tr(`Position ${instantSignal.direction} ${instantSignal.marketKey} confirmée par Desktop et MT5.`, `${instantSignal.direction} ${instantSignal.marketKey} position confirmed by Desktop and MT5.`)
+              ? tr(`Compte ${String(terminal.user_id ?? '').slice(0, 8)} : ${Number(terminalResult.confirmed_count ?? 1)}/${Number(terminalResult.requested_count ?? 1)} position(s) ${instantSignal.direction} ${instantSignal.marketKey} confirmée(s) par MT5${terminalResult.partial ? ' — exécution partielle, aucun renvoi automatique' : ''}.`, `Account ${String(terminal.user_id ?? '').slice(0, 8)}: ${Number(terminalResult.confirmed_count ?? 1)}/${Number(terminalResult.requested_count ?? 1)} ${instantSignal.direction} ${instantSignal.marketKey} position(s) confirmed by MT5${terminalResult.partial ? ' — partial execution, no automatic retry' : ''}.`)
               : tr(`Signal non exécuté (${terminalStatus})${reason ? ` : ${reason}` : '.'}`, `Signal not executed (${terminalStatus})${reason ? `: ${reason}` : '.'}`),
           )
           break
@@ -4624,11 +4638,26 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
                   </p>
                   <p className="mt-1 text-xs leading-5 text-slate-400">
                     {tr(
-                      'Un clic demande une seule position par moteur connecté et éligible. Le lot utilisateur et toutes les protections restent appliqués.',
-                      'One click requests one position per connected, eligible engine. The user lot and every safeguard remain enforced.',
+                      'Un envoi demande jusqu’au nombre de positions choisi par moteur éligible. La capacité disponible, le volume et les protections de chaque compte restent prioritaires.',
+                      'One dispatch requests up to the chosen number of positions per eligible engine. Each account’s available capacity, lot size and safeguards take priority.',
                     )}
                   </p>
                 </div>
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <label className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                  <span className="text-xs text-slate-400">{tr('Positions par envoi', 'Positions per dispatch')}</span>
+                  <input type="number" min="1" max="500" step="1" value={instantSignal.orderCount}
+                    onChange={event => setInstantSignal(current => ({ ...current, orderCount: Math.max(1, Math.min(500, Math.floor(Number(event.target.value) || 1))) }))}
+                    className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none" />
+                </label>
+                <label className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                  <span className="text-xs text-slate-400">{tr('Prix de référence', 'Reference price')} · {instantSignal.direction === 'SELL' ? 'SELL ≥' : 'BUY ≤'}</span>
+                  <input type="number" min="0" step="any" value={instantSignal.referencePrice}
+                    placeholder={instantSignal.orderCount > 1 ? tr('Requis pour un lot', 'Required for a batch') : tr('Optionnel', 'Optional')}
+                    onChange={event => setInstantSignal(current => ({ ...current, referencePrice: event.target.value }))}
+                    className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none" />
+                </label>
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 <label className="block rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
@@ -5008,6 +5037,18 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
                     />
                   </label>
                 ))}
+              </div>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {(['BOOM1000', 'CRASH1000'] as const).flatMap(symbol => (['boomSellBatchSize', 'boomReboundBatchSize'] as const).map(key => {
+                  const direction = (symbol === 'BOOM1000') === (key === 'boomSellBatchSize') ? 'SELL' : 'BUY'
+                  return <label key={`${symbol}:${key}`} className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
+                    <span className="text-xs text-slate-400">{symbol === 'BOOM1000' ? 'Boom' : 'Crash'} · {direction} · {tr('positions par cadence', 'positions per cadence')}</span>
+                    <input type="number" min="1" max="500" step="1"
+                      value={cloudConfig.symbolConfigs?.[symbol]?.[key] ?? cloudConfig[key] ?? 1}
+                      onChange={event => updateConfig({ symbolConfigs: { ...cloudConfig.symbolConfigs, [symbol]: { ...cloudConfig.symbolConfigs?.[symbol], [key]: Math.max(1, Math.min(500, Math.floor(Number(event.target.value) || 1))) } } })}
+                      className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none" />
+                  </label>
+                }))}
               </div>
               <p className="mt-4 text-xs leading-5 text-slate-500">
                 Limites serveur: {planLimits?.label ?? 'plan'} · lot max {planLimits?.lotMax ?? '—'} · positions max {planLimits?.maxOpenPositions ?? '—'}.
