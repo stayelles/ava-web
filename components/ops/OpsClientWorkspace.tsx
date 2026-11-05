@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle, Monitor, RefreshCw, Search, ShieldCheck, Users } from 'lucide-react'
+import { cloudAvailability } from './cloud-availability'
 
 export type ClientAccess = { permissions: string[]; all_clients: boolean; target_user_ids: string[]; revision?: number }
 type Call = (payload: Record<string, unknown>) => Promise<Record<string, unknown>>
@@ -64,10 +65,17 @@ export function OpsClientWorkspace({ call, manager, access, userId }: { call: Ca
   const [client, setClient] = useState<Client | null>(null), [reason, setReason] = useState('')
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null), [busy, setBusy] = useState(''), [notice, setNotice] = useState('')
   const [link, setLink] = useState('')
+  const [nowMs, setNowMs] = useState(() => Date.now())
   const pendingCommands = useRef<Record<string, string>>({})
   const generation = useRef(0)
   const pendingPopup = useRef<Window | null>(null)
   useEffect(() => () => { generation.current++; pendingPopup.current?.close(); pendingPopup.current = null }, [])
+  useEffect(() => {
+    const refreshTime = () => setNowMs(Date.now())
+    const timer = window.setInterval(refreshTime, 30000)
+    document.addEventListener('visibilitychange', refreshTime)
+    return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', refreshTime) }
+  }, [])
   const permissions = snapshot?.permissions ?? access.permissions
   useEffect(() => { if (!link) return; const timer = window.setTimeout(() => setLink(''), 300000); return () => clearTimeout(timer) }, [link])
   const inspect = async () => {
@@ -93,7 +101,14 @@ export function OpsClientWorkspace({ call, manager, access, userId }: { call: Ca
       else { const url = new URL(String(result.url)); if (url.protocol !== 'https:') throw new Error('Lien de bureau invalide'); if (generation.current !== current) { popup?.close(); return } if (popup && !popup.closed) popup.location.replace(url.href); else setLink(url.href); setNotice('Accès au bureau autorisé. Fermez le bureau à la fin de l’intervention.') }
     } catch (e) { popup?.close(); if (generation.current === current) { setNotice(message(e)); setSnapshot(null) } } finally { pendingPopup.current = null; setBusy('') }
   }
-  const ready = !!snapshot?.cloud && ['ready','running'].includes(snapshot.cloud.state) && snapshot.cloud_entitlement?.status === 'active' && Date.parse(snapshot.cloud_entitlement.expires_at) > Date.now()
+  const availability = cloudAvailability(snapshot?.cloud?.state, snapshot?.cloud_entitlement, nowMs)
+  const ready = availability.ready
+  const cloudStatusLabel = availability.status === 'expired' ? 'Expiré' : availability.status === 'unverified' ? 'À vérifier' : stateLabel(availability.status)
+  const cloudBlockReason = availability.blockedBy === 'expired'
+    ? `Accès Cloud expiré depuis le ${date(snapshot?.cloud_entitlement?.expires_at)}. Le bureau et les commandes restent indisponibles jusqu’au renouvellement de l’accès Cloud.`
+    : availability.blockedBy === 'inactive' ? 'L’abonnement Ava Cloud de ce client est inactif. Le bureau et les commandes ne sont pas disponibles.'
+    : availability.blockedBy === 'unknown_expiry' ? 'L’échéance de l’accès Cloud est indisponible. Cliquez sur « Consulter / actualiser » pour vérifier les droits.'
+    : 'La machine n’est pas encore prête. Cliquez sur « Consulter / actualiser » pour suivre son état.'
   return <section className="mt-5 space-y-5">
     <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-xl font-black">Clients & Cloud</h2><p className="mt-1 max-w-3xl text-sm text-slate-400">Intervenez avec votre propre compte. Chaque consultation et chaque action sont journalisées avec votre motif.</p></div>{manager && <button className={button} onClick={() => { generation.current++; setMode(mode === 'access' ? 'clients' : 'access'); setSnapshot(null); setLink('') }}><Users size={17} />{mode === 'access' ? 'Voir les clients' : 'Droits des employés'}</button>}</div>
     {mode === 'access' && manager ? <ClientPermissions call={call} userId={userId} /> : <div className="grid items-start gap-5 lg:grid-cols-[320px_1fr]">
@@ -109,8 +124,8 @@ export function OpsClientWorkspace({ call, manager, access, userId }: { call: Ca
           {snapshot.subscription && <div className={box}><h3 className="font-bold">Abonnement · lecture seule</h3><p className="mt-3">{String(snapshot.subscription.subscription_plan || 'Gratuit')}</p><p className="mt-2 text-sm text-slate-400">Échéance : {date(snapshot.subscription.subscription_expires_at)}<br />Accès Custom : {date(snapshot.subscription.custom_plan_expires_at)}</p></div>}
           {snapshot.desktop && <div className={box}><h3 className="font-bold">Historique Ava Desktop</h3><RecordList title="Sessions moteur" rows={snapshot.desktop.runtime_sessions} /><RecordList title="Presets utilisés" rows={snapshot.desktop.preset_events} /></div>}
           {permissions.includes('cloud.read') && <div className={`${box} space-y-4`}><h3 className="flex items-center gap-2 font-bold"><Monitor size={20} className="text-sky-300" />Ava Cloud</h3>
-            {!snapshot.cloud ? <p className="text-slate-400">Aucune machine créée pour ce client.</p> : <><div className="grid gap-3 text-sm sm:grid-cols-2"><p>État : <strong>{stateLabel(snapshot.cloud.state)}</strong><br /><span className="text-slate-400">Région : {snapshot.cloud.region || '—'}</span></p><p>Dernier signal : {date(snapshot.cloud.last_heartbeat_at)}<br /><span className="text-slate-400">Abonnement Cloud : {stateLabel(snapshot.cloud_entitlement?.status || 'inactive')} · {date(snapshot.cloud_entitlement?.expires_at)}</span></p><p>Ava {snapshot.cloud.ava_version || '—'} · Bridge {snapshot.cloud.bridge_version || '—'} · Agent {snapshot.cloud.agent_version || '—'}</p><p>Ava : {snapshot.cloud.ava_running ? 'démarré' : 'arrêté'} · MT5 : {snapshot.cloud.mt5_connected ? 'connecté' : 'déconnecté'}</p></div>
-            {!ready && <p className="flex gap-2 rounded-xl bg-amber-400/10 p-3 text-sm text-amber-200"><AlertTriangle size={18} className="shrink-0" />Le bureau sera accessible quand la machine sera prête et l’abonnement Cloud actif.</p>}
+            {!snapshot.cloud ? <p className="text-slate-400">Aucune machine créée pour ce client.</p> : <><div className="grid gap-3 text-sm sm:grid-cols-2"><p>État : <strong>{stateLabel(snapshot.cloud.state)}</strong><br /><span className="text-slate-400">Région : {snapshot.cloud.region || '—'}</span></p><p>Dernier signal : {date(snapshot.cloud.last_heartbeat_at)}<br /><span className="text-slate-400">Accès Cloud : <strong className={availability.status === 'expired' ? 'text-amber-200' : undefined}>{cloudStatusLabel}</strong><br />Échéance : {date(snapshot.cloud_entitlement?.expires_at)}</span></p><p>Ava {snapshot.cloud.ava_version || '—'} · Bridge {snapshot.cloud.bridge_version || '—'} · Agent {snapshot.cloud.agent_version || '—'}</p><p>{snapshot.cloud.last_heartbeat_at ? <>Ava : {snapshot.cloud.ava_running ? 'démarré' : 'arrêté'} · MT5 : {snapshot.cloud.mt5_connected ? 'connecté' : 'déconnecté'}</> : 'État Ava / MT5 non reçu'}</p></div>
+            {!ready && <p className="flex gap-2 rounded-xl bg-amber-400/10 p-3 text-sm text-amber-200"><AlertTriangle size={18} className="shrink-0" />{cloudBlockReason}</p>}
             {permissions.includes('cloud.desktop') && <div><button disabled={!ready || !!busy || reason.trim().length < 10} className={`${button} bg-rose-600/30 text-rose-100`} onClick={() => void act()}><Monitor size={17} />{busy === 'desktop' ? 'Ouverture…' : 'Ouvrir le bureau Windows'}</button><p className="mt-2 text-xs text-slate-500">Contrôle complet de la machine. Fermez l’onglet après votre intervention.</p></div>}
             <div className="flex flex-wrap gap-2">{commands.filter(command => permissions.includes(command[2])).map(command => <button key={command[0]} className={button} disabled={!ready || !!busy || reason.trim().length < 10} onClick={() => void act(command[0])}>{busy === command[0] ? 'Envoi…' : command[1]}</button>)}</div>
             {permissions.some(p => ['cloud.restart','cloud.update'].includes(p)) && <p className="text-xs text-amber-200/80">Un redémarrage ou une mise à jour peut interrompre Ava ou MT5. Coordonnez l’intervention avec le client.</p>}
