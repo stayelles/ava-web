@@ -290,3 +290,9 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 - Publier et vérifier tous les binaires avant les flux. Garder la version minimale Desktop à 1.5.74 pour ne pas interrompre cette version sur les comptes exposés; 1.5.76 est proposée, pas imposée en plein trading.
 
 - Les déploiements Hostinger sont sérialisés. Initialiser uniquement un état FTP de release confirmé absent; préserver les états existants et reprendre une fois après erreur de transport.
+
+### Ava Web 0.5.99 — préparation Bridge sans clôturer les positions
+
+- Distribution Desktop 1.5.78, Bridge 1.79 inchangé, Cloud Agent 0.3.7. Le nouveau Bridge est préparé à côté de l’ancien : la copie ne remplace pas l’EA attaché aux graphiques.
+- Garder les liens Ava/Bridge racine vides pour les anciens agents; seuls `safe_updates` et le lien d’agent vérifié sont diffusés. Le remplacement complet de Desktop conserve sa garde d’exposition.
+- Publier les flux et la politique après les installateurs vérifiés, sans modifier la version minimale 1.5.74 ni les VM clientes.
