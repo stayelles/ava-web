@@ -1,0 +1,51 @@
+name: Publish FTP files with bounded retry
+description: Reconnect once after a transport failure; preserve existing releases.
+inputs:
+  server:
+    required: true
+  username:
+    required: true
+  password:
+    required: true
+  local-dir:
+    required: true
+  server-dir:
+    required: true
+  state-name:
+    default: .ftp-deploy-sync-state.json
+  exclude:
+    default: |
+      **/.git*
+      **/.git*/**
+      **/node_modules/**
+runs:
+  using: composite
+  steps:
+    - id: first
+      continue-on-error: true
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ inputs.server }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+        local-dir: ${{ inputs.local-dir }}
+        server-dir: ${{ inputs.server-dir }}
+        state-name: ${{ inputs.state-name }}
+        exclude: ${{ inputs.exclude }}
+        dangerous-clean-slate: false
+        timeout: 900000
+    - if: steps.first.outcome == 'failure'
+      shell: bash
+      run: sleep 8
+    - if: steps.first.outcome == 'failure'
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      with:
+        server: ${{ inputs.server }}
+        username: ${{ inputs.username }}
+        password: ${{ inputs.password }}
+        local-dir: ${{ inputs.local-dir }}
+        server-dir: ${{ inputs.server-dir }}
+        state-name: ${{ inputs.state-name }}
+        exclude: ${{ inputs.exclude }}
+        dangerous-clean-slate: false
+        timeout: 900000
