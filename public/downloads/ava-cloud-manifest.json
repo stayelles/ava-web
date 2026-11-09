@@ -1,18 +1,28 @@
 {
   "ava": {
-    "version": "1.5.74",
-    "windows_url": "https://call-ava.com/downloads/AvaSetup-1.5.74.exe",
-    "silent_args": "/S",
-    "sha256": "b879144bbb60435bf2e12d3519cb8afe3156494a453ab9a2d28ef8181819dbc5"
+    "version": "1.5.76",
+    "windows_url": ""
   },
   "bridge": {
-    "version": "1.77",
-    "url": "https://call-ava.com/downloads/AvaBridgeEA-1.77.ex5",
-    "sha256": "9d5adc02feb44dbd5df0ffdaf878c03f3d74fbbeb4d449ed1db1539cc7b32d18"
+    "version": "1.79",
+    "url": ""
   },
   "agent": {
-    "version": "0.3.4",
-    "url": "https://call-ava.com/downloads/AvaCloudAgent-0.3.4.zip",
-    "sha256": "114725d13b033e18939c4357710510702c42ad0f83dc788d1eac49c04717f0f3"
+    "version": "0.3.6",
+    "url": "https://call-ava.com/downloads/AvaCloudAgent-0.3.6.zip",
+    "sha256": "e108323df94ae787986b98841337751794452f35221e910b246d773a843b8730"
+  },
+  "safe_updates": {
+    "ava": {
+      "version": "1.5.76",
+      "windows_url": "https://call-ava.com/downloads/AvaSetup-1.5.76.exe",
+      "silent_args": "/S",
+      "sha256": "6b3b1d1c7ee6b682dca161d30d0e0395820c71bf7263d9df0c8a93ce1990bcfa"
+    },
+    "bridge": {
+      "version": "1.79",
+      "url": "https://call-ava.com/downloads/AvaBridgeEA-1.79.ex5",
+      "sha256": "04a105939f7c2da831a2dbbb328f3dec24416b7d5a885a603c70837d9d3f30c8"
+    }
   }
 }

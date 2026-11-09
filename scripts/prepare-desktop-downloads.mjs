@@ -36,7 +36,12 @@ for (const arch of ['arm64', 'x64']) {
 download(release.agentRelease, `AvaCloudAgent-${release.agentVersion}.zip`)
 download('v1.2.5', 'AvaBridgeEA-1.34.ex5')
 const cloud = JSON.parse(await fs.readFile('public/downloads/ava-cloud-manifest.json', 'utf8'))
-if (cloud.ava.version !== release.version || cloud.bridge.version !== release.bridgeVersion || cloud.ava.sha256 !== checksums[`AvaSetup-${release.version}.exe`] || cloud.bridge.sha256 !== checksums[`AvaBridgeEA-${release.bridgeVersion}.ex5`]) throw new Error('Cloud manifest does not match release binaries')
+if (!cloud.safe_updates || cloud.ava?.windows_url || cloud.bridge?.url) throw new Error('Unsafe legacy Cloud rollout')
+const safeCloud = cloud.safe_updates
+const agentFile = `AvaCloudAgent-${release.agentVersion}.zip`
+if (cloud.agent?.version !== release.agentVersion || cloud.agent?.sha256 !== checksums[agentFile]) throw new Error('Cloud agent manifest mismatch')
+if (createHash('sha256').update(await fs.readFile(path.join(root, agentFile))).digest('hex') !== checksums[agentFile]) throw new Error('Cloud agent checksum mismatch')
+if (safeCloud.ava.version !== release.version || safeCloud.bridge.version !== release.bridgeVersion || safeCloud.ava.sha256 !== checksums[`AvaSetup-${release.version}.exe`] || safeCloud.bridge.sha256 !== checksums[`AvaBridgeEA-${release.bridgeVersion}.ex5`]) throw new Error('Cloud manifest does not match release binaries')
 // Publish discovery metadata only after every binary and the website have reached Hostinger.
 const feeds = ['latest.yml', 'latest-mac.yml', 'latest-mac-arm64.yml', 'latest-mac-x64.yml', 'mac-arm64/latest-mac.yml', 'mac-x64/latest-mac.yml', 'ava-cloud-manifest.json']
 for (const file of feeds) {

@@ -282,3 +282,9 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 - Les quantités de cadence supérieures à un sont réservées à Custom Max et Spécial actifs, avec contrôles serveur et moteur.
 - Les presets Cloud préservent les paliers Boom/Crash indépendants et leur quantité par envoi.
 - Les téléchargements et manifestes ciblent Desktop 1.5.74 ; AvaBridgeEA 1.77 est inchangé. Publier les flux de mise à jour après les binaires vérifiés, puis activer la version minimale.
+
+### Ava Web 0.5.97 — protection des mises à jour Cloud
+
+- Desktop 1.5.76, Bridge 1.79, Cloud Agent 0.3.6. Les anciens agents ne reçoivent aucun lien Ava/Bridge actif à la racine du manifeste; les nouveaux binaires sont dans `safe_updates`.
+- L’installation attend des états MT5 récents sans positions ni ordres et un moteur arrêté. Les anciens paramètres de forçage ne contournent plus ces contrôles.
+- Publier et vérifier tous les binaires avant les flux. Garder la version minimale Desktop à 1.5.74 pour ne pas interrompre cette version sur les comptes exposés; 1.5.76 est proposée, pas imposée en plein trading.

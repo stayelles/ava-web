@@ -34,6 +34,10 @@ for (const name of ['latest.yml', 'latest-mac.yml', 'mac-arm64/latest-mac.yml', 
   }
 }
 const manifest = await (await get('ava-cloud-manifest.json')).json()
-if (manifest.ava.version !== release.version || manifest.bridge.version !== release.bridgeVersion || manifest.ava.sha256 !== checksums[`AvaSetup-${release.version}.exe`] || manifest.bridge.sha256 !== checksums[`AvaBridgeEA-${release.bridgeVersion}.ex5`]) throw new Error('Stale published Cloud manifest')
+if (!manifest.safe_updates || manifest.ava?.windows_url || manifest.bridge?.url) throw new Error('Unsafe legacy Cloud rollout')
+const safeCloud = manifest.safe_updates
+const agentFile = `AvaCloudAgent-${release.agentVersion}.zip`
+if (manifest.agent?.version !== release.agentVersion || manifest.agent?.sha256 !== checksums[agentFile]) throw new Error('Cloud agent manifest mismatch')
+if (safeCloud.ava.version !== release.version || safeCloud.bridge.version !== release.bridgeVersion || safeCloud.ava.sha256 !== checksums[`AvaSetup-${release.version}.exe`] || safeCloud.bridge.sha256 !== checksums[`AvaBridgeEA-${release.bridgeVersion}.ex5`]) throw new Error('Stale published Cloud manifest')
 await fs.writeFile('release-verification.json', JSON.stringify({ verifiedAt: new Date().toISOString(), version: release.version, verified }, null, 2))
 console.log('All public downloads, update feeds and Cloud manifest verified.')
