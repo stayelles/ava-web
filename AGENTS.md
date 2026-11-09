@@ -276,3 +276,9 @@ To ensure macOS desktop builds are not blocked by Gatekeeper upon installation:
 - Une personne ne peut jamais approuver sa propre demande à risque élevé ou critique. Les prolongations, réactivations, investigations et déploiements passent par l'approbation; seul le diagnostic d'accès utilisateur est exécuté immédiatement en lecture seule.
 - La saisie libre d'un opérateur ne doit jamais devenir une commande terminal. Toute exécution future doit utiliser une action serveur prédéfinie, validée et idempotente.
 - Le frontend appelle uniquement `ava-ops`; les tables `ava_ops_*` sont privées aux clients et accessibles au service role après vérification simultanée de Supabase Auth AAL2 et de la session Ava Web signée.
+
+### Ava Web 0.5.95 — paliers et lots Desktop 1.5.74
+
+- Les quantités de cadence supérieures à un sont réservées à Custom Max et Spécial actifs, avec contrôles serveur et moteur.
+- Les presets Cloud préservent les paliers Boom/Crash indépendants et leur quantité par envoi.
+- Les téléchargements et manifestes ciblent Desktop 1.5.74 ; AvaBridgeEA 1.77 est inchangé. Publier les flux de mise à jour après les binaires vérifiés, puis activer la version minimale.

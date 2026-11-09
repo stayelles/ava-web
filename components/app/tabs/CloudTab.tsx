@@ -116,7 +116,14 @@ type CloudStatus = {
 type CloudConfig = {
   boomSellBatchSize?: number
   boomReboundBatchSize?: number
-  symbolConfigs?: Record<string, Record<string, number>>
+  symbolConfigs?: Record<string, {
+    boomSellBatchSize?: number
+    boomReboundBatchSize?: number
+    boomSellEverySeconds?: number
+    boomReboundEveryCandles?: number
+    boomReboundLevelsEnabled?: boolean
+    boomReboundLevels?: Array<{ afterBuys: number; everyMinutes: number }>
+  }>
   market?: string
   execution?: string
   lot?: number
@@ -2073,6 +2080,7 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
     }
   }, [adminCriteriaPayload, adminNotificationBody, adminNotificationTitle, adminTargets, callAdminConsole])
   const planLimits = data?.plan_limits
+  const cadenceBatchMax = ['owner', 'custom_max', 'custom_max_2'].includes(planLimits?.key ?? '') ? 500 : 1
   const presets = data?.cloud_presets ?? []
 
   useEffect(() => {
@@ -4647,8 +4655,8 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
                   <span className="text-xs text-slate-400">{tr('Positions par envoi', 'Positions per dispatch')}</span>
-                  <input type="number" min="1" max="500" step="1" value={instantSignal.orderCount}
-                    onChange={event => setInstantSignal(current => ({ ...current, orderCount: Math.max(1, Math.min(500, Math.floor(Number(event.target.value) || 1))) }))}
+                  <input type="number" min="1" max={cadenceBatchMax} step="1" disabled={cadenceBatchMax <= 1} value={instantSignal.orderCount}
+                    onChange={event => setInstantSignal(current => ({ ...current, orderCount: Math.max(1, Math.min(cadenceBatchMax, Math.floor(Number(event.target.value) || 1))) }))}
                     className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none" />
                 </label>
                 <label className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
@@ -5043,14 +5051,15 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
                   const direction = (symbol === 'BOOM1000') === (key === 'boomSellBatchSize') ? 'SELL' : 'BUY'
                   return <label key={`${symbol}:${key}`} className="rounded-xl border border-white/10 bg-slate-950/45 px-3 py-2">
                     <span className="text-xs text-slate-400">{symbol === 'BOOM1000' ? 'Boom' : 'Crash'} · {direction} · {tr('positions par cadence', 'positions per cadence')}</span>
-                    <input type="number" min="1" max="500" step="1"
-                      value={cloudConfig.symbolConfigs?.[symbol]?.[key] ?? cloudConfig[key] ?? 1}
-                      onChange={event => updateConfig({ symbolConfigs: { ...cloudConfig.symbolConfigs, [symbol]: { ...cloudConfig.symbolConfigs?.[symbol], [key]: Math.max(1, Math.min(500, Math.floor(Number(event.target.value) || 1))) } } })}
+                    <input type="number" min="1" max={cadenceBatchMax} step="1" disabled={cadenceBatchMax <= 1}
+                      value={Math.min(cadenceBatchMax, cloudConfig.symbolConfigs?.[symbol]?.[key] ?? cloudConfig[key] ?? 1)}
+                      onChange={event => updateConfig({ symbolConfigs: { ...cloudConfig.symbolConfigs, [symbol]: { ...cloudConfig.symbolConfigs?.[symbol], [key]: Math.max(1, Math.min(cadenceBatchMax, Math.floor(Number(event.target.value) || 1))) } } })}
                       className="mt-1 w-full bg-transparent text-sm font-bold text-white outline-none" />
                   </label>
                 }))}
               </div>
               <p className="mt-4 text-xs leading-5 text-slate-500">
+                {tr('Plusieurs positions par envoi : Custom Max ou Spécial actif. Cette quantité s’applique aussi aux paliers.', 'Multiple positions per batch: active Custom Max or Special. This quantity also applies to tiers.')}<br />
                 Limites serveur: {planLimits?.label ?? 'plan'} · lot max {planLimits?.lotMax ?? '—'} · positions max {planLimits?.maxOpenPositions ?? '—'}.
               </p>
             </div>
