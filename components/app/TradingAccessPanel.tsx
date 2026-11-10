@@ -15,7 +15,7 @@ export type PrepaidOffer = {
 type Contract = {
   id: string; plan_key: string; offer_key: string; provider: 'whop' | 'nowpayments'
   amount_minor: number; paid_count: number; payment_count: number | null
-  checkout_url?:string|null; paid_until: string | null; next_due_at: string | null; status: string; active: boolean
+  checkout_url?:string|null; paid_until: string | null; next_due_at: string | null; status: string; active: boolean; can_resume?: boolean
 }
 const money=(amount:number,english:boolean)=>new Intl.NumberFormat(english?'en-IE':'fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(amount/100)
 
@@ -124,6 +124,13 @@ export function TradingAccessPanel({user,language='fr',onRefresh,monthlyPlans}:{
     catch(e){setError(e instanceof Error?e.message:'Annulation indisponible.')}
     finally{setBusy(false)}
   }
+  const resume=async()=>{
+    if(!contract)return
+    setBusy(true);setError('')
+    try{const d=await request({action:'resume',contract_id:contract.id});setContract(d.contract);onRefresh?.()}
+    catch(e){setError(e instanceof Error?e.message:tr('Reprise indisponible.','Unable to resume.'))}
+    finally{setBusy(false)}
+  }
   const open=contract&&['checkout_pending','active','cancel_requested','review'].includes(contract.status)
   // Advisory UI guard only: the server rechecks and locks the current account at checkout.
   // Existing prepaid contracts can still pay their next crypto period before expiry.
@@ -138,6 +145,10 @@ export function TradingAccessPanel({user,language='fr',onRefresh,monthlyPlans}:{
         <p>{contract.paid_until?tr('Accès payé jusqu’au ','Access paid until ')+date(contract.paid_until):tr('En attente du premier paiement confirmé.','Awaiting the first confirmed payment.')}</p>
         {contract.next_due_at&&<p>{tr('Prochaine échéance : ','Next due date: ')}{date(contract.next_due_at)}</p>}
         {contract.status==='cancelled'&&<p>{tr('Renouvellement arrêté. La période déjà payée reste disponible.','Renewal stopped. Your already-paid period remains available.')}</p>}
+        {contract.can_resume&&<div>
+          <p>{tr('Reprenez au prochain paiement, en conservant les tranches déjà réglées. Aucun paiement ne sera lancé automatiquement.','Continue with the next payment and keep your confirmed installments. No payment will be initiated automatically.')}</p>
+          <button type="button" disabled={busy} onClick={()=>void resume()} className="min-h-11 rounded-xl bg-rose-500 px-4 font-bold text-white disabled:opacity-40">{busy?tr('Reprise…','Resuming…'):tr('Reprendre mon échéancier','Resume my payment schedule')}</button>
+        </div>}
         {contract.status==='completed'&&<p>{tr('Échéancier terminé : aucun nouveau prélèvement prévu.','Schedule complete: no further automatic payment.')}</p>}
         {open&&contract.provider==='nowpayments'&&contract.status!=='review'&&<button type="button" disabled={busy} onClick={()=>{
           const offer=offers.find(o=>o.plan_key===contract.plan_key&&o.offer_key===contract.offer_key)
