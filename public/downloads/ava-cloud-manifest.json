@@ -1,10 +1,10 @@
 {
   "ava": {
-    "version": "1.5.78",
+    "version": "1.5.79",
     "windows_url": ""
   },
   "bridge": {
-    "version": "1.79",
+    "version": "1.80",
     "url": ""
   },
   "agent": {
@@ -14,15 +14,15 @@
   },
   "safe_updates": {
     "ava": {
-      "version": "1.5.78",
-      "windows_url": "https://call-ava.com/downloads/AvaSetup-1.5.78.exe",
+      "version": "1.5.79",
+      "windows_url": "https://call-ava.com/downloads/AvaSetup-1.5.79.exe",
       "silent_args": "/S",
-      "sha256": "5661cca774e8937ac3dbb1c39191fa95c14cd0a7e1b2a26d3853f937c44294c3"
+      "sha256": "81bd97df450a39c6e8e62461a2bd85e5f48cc50b29c8fc92636647b7c1394bf9"
     },
     "bridge": {
-      "version": "1.79",
-      "url": "https://call-ava.com/downloads/AvaBridgeEA-1.79.ex5",
-      "sha256": "04a105939f7c2da831a2dbbb328f3dec24416b7d5a885a603c70837d9d3f30c8"
+      "version": "1.80",
+      "url": "https://call-ava.com/downloads/AvaBridgeEA-1.80.ex5",
+      "sha256": "add5b49ae5608d5a86a36f60e8cf1b20b55d01af1c9306ad7ecaf464691482c3"
     }
   }
 }
