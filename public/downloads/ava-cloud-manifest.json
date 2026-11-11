@@ -1,6 +1,6 @@
 {
   "ava": {
-    "version": "1.5.80",
+    "version": "1.5.81",
     "windows_url": ""
   },
   "bridge": {
@@ -8,16 +8,16 @@
     "url": ""
   },
   "agent": {
-    "version": "0.3.7",
-    "url": "https://call-ava.com/downloads/AvaCloudAgent-0.3.7.zip",
-    "sha256": "694d64b0de19d4c60aa8409f7bc7711648be84b85fded2fd8d26395d3f6a9519"
+    "version": "0.3.8",
+    "url": "https://call-ava.com/downloads/AvaCloudAgent-0.3.8.zip",
+    "sha256": "8591f195509f11ad90a78a32e6584baa76858314a7ccb8f8edcebddb8f384b03"
   },
   "safe_updates": {
     "ava": {
-      "version": "1.5.80",
-      "windows_url": "https://call-ava.com/downloads/AvaSetup-1.5.80.exe",
+      "version": "1.5.81",
+      "windows_url": "https://call-ava.com/downloads/AvaSetup-1.5.81.exe",
       "silent_args": "/S",
-      "sha256": "6d67244d650a14e11f506ace0ebf2461c1dfbcab46b9d4c136c45eace8725ae0"
+      "sha256": "927be0742a13faf2ea43a311360650040936c32be74874c5b98378e75f5872e8"
     },
     "bridge": {
       "version": "1.80",
