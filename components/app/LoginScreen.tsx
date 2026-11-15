@@ -29,6 +29,8 @@ type Step = 'email' | 'otp' | 'mfa'
 export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVerify, language='fr', translations={} }: Props) {
   const t=(fr:string,en:string)=>translations[en]||(language==='en'?en:fr)
   const authErrors:Record<string,string>={"Impossible d’envoyer le code pour le moment.": "Unable to send the code right now.", "Code incorrect ou expiré.": "Incorrect or expired code.", "Ce compte nécessite une vérification manuelle du support.": "This account requires a manual support review.", "Connexion sécurisée indisponible. Réessayez.": "Secure sign-in unavailable. Please retry.", "Code d’authentification incorrect ou expiré.": "Incorrect or expired authentication code."}
+  authErrors['Le serveur met trop de temps à répondre. Vérifiez vos e-mails avant de réessayer.'] = 'The server is taking too long. Check your email before retrying.'
+  authErrors['Trop de demandes. Patientez une minute avant de réessayer.'] = 'Too many requests. Wait a minute before retrying.'
   const errorText=(value:string)=>translations[authErrors[value]||value]||(language==='en'?(authErrors[value]||value):value)
   const [step, setStep] = useState<Step>('email')
   const [email, setEmail] = useState('')
@@ -63,7 +65,11 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [captcha])
 
+  const submittingRef = useRef(false)
   const submit = async () => {
+    if (loading || submittingRef.current) return
+    submittingRef.current = true
+    try {
     setLocalError('')
     if (step === 'email') {
       if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setLocalError(t("Entrez une adresse e-mail valide.","Enter a valid email address."))
@@ -79,7 +85,15 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
         setTurnstileToken('')
         setCaptcha({ siteKey: result.captchaSiteKey, action: result.captchaAction ?? 'ava_web_otp' })
         setLocalError(t("Confirmez que vous n’êtes pas un robot, puis continuez.","Confirm you are not a robot, then continue."))
-      } else setLocalError(result.error ?? '')
+      } else {
+        if (captcha) {
+          if (widgetIdRef.current && window.turnstile) window.turnstile.remove(widgetIdRef.current)
+          widgetIdRef.current = null
+          setTurnstileToken('')
+          setCaptcha({ ...captcha })
+        }
+        setLocalError(result.error ?? '')
+      }
       return
     }
     if (!/^\d{6}$/.test(code)) return setLocalError(t("Le code doit contenir 6 chiffres.","The code must contain 6 digits."))
@@ -94,6 +108,7 @@ export function LoginScreen({ loading, error, onOtpRequest, onOtpVerify, onMfaVe
     }
     const result = await onMfaVerify(code)
     if (!result.ok) setLocalError(result.error ?? '')
+    } finally { submittingRef.current = false }
   }
 
   const title = step === 'email' ? t("Connexion ou création de compte","Sign in or create an account") : step === 'otp' ? t("Vérifiez votre e-mail","Check your email") : t("Protection administrateur","Administrator protection")

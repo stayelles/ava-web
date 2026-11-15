@@ -1,4 +1,6 @@
 const rows=[
+['The server is taking too long. Check your email before retrying.','El servidor tarda demasiado. Revisa tu correo antes de reintentarlo.','Der Server antwortet zu langsam. Prüfe vor einem erneuten Versuch deine E-Mails.'],
+['Too many requests. Wait a minute before retrying.','Demasiadas solicitudes. Espera un minuto antes de reintentarlo.','Zu viele Anfragen. Warte vor einem erneuten Versuch eine Minute.'],
 ['Anti-bot verification unavailable. Please retry.','Verificación antirrobot no disponible. Inténtalo de nuevo.','Bot-Prüfung nicht verfügbar. Bitte erneut versuchen.'],
 ['Enter a valid email address.','Introduce un correo electrónico válido.','Gib eine gültige E-Mail-Adresse ein.'],
 ['Complete the anti-bot verification.','Completa la verificación antirrobot.','Schließe die Bot-Prüfung ab.'],

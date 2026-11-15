@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { SUPABASE_ANON_KEY, SUPABASE_URL } from '../constants'
 import { supabaseAuth } from '../services/supabaseAuth'
+import { AuthResponseError, AuthRequestTimeout, fetchAuthResponse, isRejectedAuthSession } from '../services/authRequest'
 import type { AvaPermissions, UserData } from '../types'
 import { resolvePermissions } from '../types'
 
@@ -78,7 +79,7 @@ export function bootstrapToUser(bootstrap: Bootstrap, avaSessionToken: string): 
 }
 
 async function edgeRequest(path: string, body: Record<string, unknown>, accessToken?: string) {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/${path}`, {
+  const response = await fetchAuthResponse(`${SUPABASE_URL}/functions/v1/${path}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -126,16 +127,31 @@ export function useUserData() {
     const { response, data } = await edgeRequest(
       'ava-session-bootstrap', { surface: 'web' }, session.access_token,
     )
-    if (!response.ok) throw new Error(String(data.error ?? 'SESSION_BOOTSTRAP_FAILED'))
+    if (!response.ok) throw new AuthResponseError(response.status, String(data.error ?? 'SESSION_BOOTSTRAP_FAILED'))
     await commitBootstrap(data)
   }, [commitBootstrap])
 
   useEffect(() => {
     let active = true
-    supabaseAuth.auth.getSession().then(async ({ data }) => {
-      if (!active || !data.session) return
-      try { await bootstrapSession(data.session) } catch { await supabaseAuth.auth.signOut() }
-    })
+    let retryTimer: ReturnType<typeof setTimeout> | undefined
+    const restoreSession = async (attempt = 0) => {
+      try {
+        const { data } = await supabaseAuth.auth.getSession()
+        if (!active || !data.session) return
+        await bootstrapSession(data.session)
+      } catch (error) {
+        if (!active) return
+        if (isRejectedAuthSession(error)) {
+          await supabaseAuth.auth.signOut({ scope: 'local' })
+        } else {
+          // A service outage must not revoke a valid login on every device.
+          // Access still requires a successful fresh bootstrap; never use the cache.
+          setLoginError('Connexion sécurisée indisponible. Réessayez.')
+          if (attempt < 3) retryTimer = setTimeout(() => void restoreSession(attempt + 1), 30_000)
+        }
+      }
+    }
+    void restoreSession()
     const { data: listener } = supabaseAuth.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_OUT' || !session) {
         setUser(null)
@@ -145,6 +161,7 @@ export function useUserData() {
     })
     return () => {
       active = false
+      clearTimeout(retryTimer)
       listener.subscription.unsubscribe()
     }
   }, [bootstrapSession])
@@ -165,10 +182,14 @@ export function useUserData() {
           captchaAction: String(data.captcha_action ?? 'ava_web_otp'),
         }
       }
-      if (!response.ok) throw new Error(String(data.error ?? 'OTP_REQUEST_FAILED'))
+      if (!response.ok) throw new AuthResponseError(response.status, String(data.error ?? 'OTP_REQUEST_FAILED'))
       return { ok: true }
-    } catch {
-      const message = 'Impossible d’envoyer le code pour le moment.'
+    } catch (error) {
+      const message = error instanceof AuthRequestTimeout
+        ? 'Le serveur met trop de temps à répondre. Vérifiez vos e-mails avant de réessayer.'
+        : error instanceof AuthResponseError && error.status === 429
+          ? 'Trop de demandes. Patientez une minute avant de réessayer.'
+          : 'Impossible d’envoyer le code pour le moment.'
       setLoginError(message)
       return { ok: false, error: message }
     } finally {
