@@ -210,6 +210,7 @@ type TradingGlobalControl = {
   max_boom_sell_open_positions?: number | null
   max_crash_buy_open_positions?: number | null
   max_crash_sell_open_positions?: number | null
+  continuous_dual_cycle_policy?: { version: number; crash_enabled: boolean; boom_enabled: boolean } | null
   capital_position_limit_rules?: TradingCapitalPositionLimitRule[] | null
   volatility_recommendation_rules?: TradingVolatilityRecommendationRule[] | null
   bypass_min_net_equity_usd?: number | null
@@ -235,6 +236,8 @@ type TradingCapitalPositionLimitRule = {
   max_equity_usd: number
   max_total_open_positions: number
   max_stop_cycle_open_positions: number
+  max_buy_open_positions?: number
+  max_sell_open_positions?: number
 }
 
 type TradingVolatilityRecommendationRule = {
@@ -627,8 +630,10 @@ function newCapitalPositionLimitRule(): TradingCapitalPositionLimitRule {
     id,
     enabled: true,
     max_equity_usd: 1000,
-    max_total_open_positions: 14,
-    max_stop_cycle_open_positions: 20,
+    max_total_open_positions: 0,
+    max_stop_cycle_open_positions: 0,
+    max_buy_open_positions: 0,
+    max_sell_open_positions: 0,
   }
 }
 
@@ -3057,6 +3062,7 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
                       max_crash_buy_open_positions: toPositionLimit(adminControl?.max_crash_buy_open_positions),
                       max_crash_sell_open_positions: toPositionLimit(adminControl?.max_crash_sell_open_positions),
                       capital_position_limit_rules: capitalRules,
+                      ...(adminControl?.continuous_dual_cycle_policy ? { continuous_dual_cycle_policy: adminControl.continuous_dual_cycle_policy } : {}),
                       volatility_recommendation_rules: recommendationRules,
                       bypass_min_net_equity_usd: Number(adminControl?.bypass_min_net_equity_usd ?? 1000),
                       bypass_boom_buy_entries: adminControl?.bypass_boom_buy_entries === true,
@@ -3231,6 +3237,27 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
                 />
               </label>
             </div>
+            <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/55 p-4">
+              <h3 className="text-sm font-black text-white">{tr('Cycles BUY + SELL continus', 'Continuous BUY + SELL cycles')}</h3>
+              <p className="mt-1 text-xs leading-5 text-slate-400">{tr(
+                'Custom Max et Spécial. Autorise le mode dans les réglages et presets ; chaque utilisateur choisit de l’activer. Un lot entièrement fermé au profit net prévu déclenche un nouveau BUY + SELL dans les places disponibles. Les positions restantes et leurs TP sont conservés.',
+                'Custom Max and Special. Allows the mode in settings and presets; each user chooses whether to enable it. A batch fully closed at its required net profit triggers a new BUY + SELL within available capacity. Remaining positions and their TPs are preserved.',
+              )}</p>
+              <div className="mt-3 flex flex-wrap gap-3">
+                {(['crash', 'boom'] as const).map(market => (
+                  <label key={market} className="flex min-h-11 items-center gap-3 rounded-xl border border-white/10 px-3 text-sm font-bold text-white">
+                    <input type="checkbox" className="h-4 w-4 accent-rose-300"
+                      checked={adminControl?.continuous_dual_cycle_policy?.[`${market}_enabled`] === true}
+                      disabled={!adminLoaded || !adminControl?.continuous_dual_cycle_policy}
+                      onChange={event => setAdminControl(current => current?.continuous_dual_cycle_policy ? ({ ...current,
+                        continuous_dual_cycle_policy: { ...current.continuous_dual_cycle_policy, [`${market}_enabled`]: event.target.checked },
+                      }) : current)} />
+                    {tr('Autoriser sur', 'Allow on')} {market === 'crash' ? 'Crash' : 'Boom'}
+                  </label>
+                ))}
+              </div>
+              {!adminControl?.continuous_dual_cycle_policy && <p className="mt-2 text-xs text-amber-200">{tr('Disponible après la mise à jour serveur.', 'Available after the server update.')}</p>}
+            </div>
             <div className="mt-4 rounded-2xl border border-rose-400/20 bg-rose-400/[0.06] p-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
@@ -3272,7 +3299,7 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
                     <HelpHint text={GLOBAL_CONTROL_HELP.capitalLimits} />
                   </p>
                   <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
-                    Ava bloque uniquement les nouvelles entrées quand un plafond est atteint. Aucune position déjà ouverte n’est fermée.
+                    {tr('Ava bloque uniquement les nouvelles entrées quand un plafond est atteint. Les plafonds BUY/SELL nécessitent Desktop 1.6.0 et Bridge 1.81 ; les anciennes versions doivent être mises à jour avant de nouvelles entrées. Les positions déjà ouvertes ne sont pas fermées.', 'Ava only blocks new entries when a limit is reached. BUY/SELL caps require Desktop 1.6.0 and Bridge 1.81; older versions must update before new entries. Existing positions are not closed.')}
                   </p>
                 </div>
                 <button
@@ -3357,6 +3384,16 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
                         />
                         <span className="text-[10px] text-slate-500">0 = aucun plafond cycle</span>
                       </label>
+                      {(['buy', 'sell'] as const).map(side => (
+                        <label key={side} className="block flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+                          <span className="text-[10px] font-black uppercase text-slate-500">{tr('Max compte', 'Account max')} {side.toUpperCase()}</span>
+                          <input type="number" min="0" max="1000" step="1"
+                            value={Number(rule[`max_${side}_open_positions`] ?? 0)}
+                            onChange={event => updateCapitalPositionLimitRule(rule.id, { [`max_${side}_open_positions`]: toPositionLimit(event.target.value) })}
+                            className="mt-1 w-full bg-transparent text-sm font-black text-white outline-none" />
+                          <span className="text-[10px] text-slate-500">{tr('0 = aucun plafond supplémentaire', '0 = no additional cap')}</span>
+                        </label>
+                      ))}
                       <button
                         type="button"
                         onClick={() => removeCapitalPositionLimitRule(rule.id)}
