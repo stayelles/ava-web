@@ -3299,7 +3299,7 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
                     <HelpHint text={GLOBAL_CONTROL_HELP.capitalLimits} />
                   </p>
                   <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-400">
-                    {tr('Ava bloque uniquement les nouvelles entrées quand un plafond est atteint. Les plafonds BUY/SELL nécessitent Desktop 1.6.0 et Bridge 1.81 ; les anciennes versions doivent être mises à jour avant de nouvelles entrées. Les positions déjà ouvertes ne sont pas fermées.', 'Ava only blocks new entries when a limit is reached. BUY/SELL caps require Desktop 1.6.0 and Bridge 1.81; older versions must update before new entries. Existing positions are not closed.')}
+                    {tr('Ava bloque uniquement les nouvelles entrées quand un plafond est atteint. Les plafonds BUY/SELL nécessitent Desktop 1.6.1 et Bridge 1.81 ; les anciennes versions doivent être mises à jour avant de nouvelles entrées. Les positions déjà ouvertes ne sont pas fermées.', 'Ava only blocks new entries when a limit is reached. BUY/SELL caps require Desktop 1.6.1 and Bridge 1.81; older versions must update before new entries. Existing positions are not closed.')}
                   </p>
                 </div>
                 <button
