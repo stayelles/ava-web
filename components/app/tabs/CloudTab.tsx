@@ -210,7 +210,7 @@ type TradingGlobalControl = {
   max_boom_sell_open_positions?: number | null
   max_crash_buy_open_positions?: number | null
   max_crash_sell_open_positions?: number | null
-  continuous_dual_cycle_policy?: { version: number; crash_enabled: boolean; boom_enabled: boolean } | null
+  continuous_dual_cycle_policy?: { version: number; crash_enabled: boolean; boom_enabled: boolean; classic_entries_blocked?: boolean } | null
   capital_position_limit_rules?: TradingCapitalPositionLimitRule[] | null
   volatility_recommendation_rules?: TradingVolatilityRecommendationRule[] | null
   bypass_min_net_equity_usd?: number | null
@@ -3240,8 +3240,8 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
             <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/55 p-4">
               <h3 className="text-sm font-black text-white">{tr('Cycles BUY + SELL continus', 'Continuous BUY + SELL cycles')}</h3>
               <p className="mt-1 text-xs leading-5 text-slate-400">{tr(
-                'Custom Max et Spécial. Autorise le mode dans les réglages et presets ; chaque utilisateur choisit de l’activer. Un lot entièrement fermé au profit net prévu déclenche un nouveau BUY + SELL dans les places disponibles. Les positions restantes et leurs TP sont conservés.',
-                'Custom Max and Special. Allows the mode in settings and presets; each user chooses whether to enable it. A batch fully closed at its required net profit triggers a new BUY + SELL within available capacity. Remaining positions and their TPs are preserved.',
+                'Custom Max et Spécial. Chaque démarrage déclenche un BUY + SELL, puis chaque panier entièrement fermé au profit net positif permet une relance. Distance, capacité et protections administrateur restent prioritaires. Les positions restantes et leurs TP sont conservés.',
+                'Custom Max and Special. Each start triggers BUY + SELL, then each basket fully closed at its positive net profit allows another cycle. Spacing, capacity and administrator protections remain in force. Remaining positions and their TPs are preserved.',
               )}</p>
               <div className="mt-3 flex flex-wrap gap-3">
                 {(['crash', 'boom'] as const).map(market => (
@@ -3256,6 +3256,20 @@ export function CloudTab({ user, language = 'fr', onGoToSubscription, onSessionE
                   </label>
                 ))}
               </div>
+              <label className="mt-3 flex min-h-11 items-start gap-3 rounded-xl border border-rose-300/20 bg-rose-300/5 p-3 text-sm font-bold text-white">
+                <input type="checkbox" className="mt-0.5 h-4 w-4 accent-rose-300"
+                  checked={adminControl?.continuous_dual_cycle_policy?.classic_entries_blocked !== false}
+                  disabled={!adminLoaded || !adminControl?.continuous_dual_cycle_policy}
+                  onChange={event => setAdminControl(current => current?.continuous_dual_cycle_policy ? ({ ...current,
+                    continuous_dual_cycle_policy: { ...current.continuous_dual_cycle_policy, version: 2, classic_entries_blocked: event.target.checked },
+                  }) : current)} />
+                <span>{tr('Bloquer Burst, Rebond et cadences sur Max / Spécial', 'Block Burst, Rebound and cadence entries on Max / Special')}
+                  <span className="mt-1 block text-xs font-normal leading-5 text-slate-400">{tr(
+                    'Activé par défaut, y compris pour l’owner. Aucun repli vers ces entrées lorsque le cycle BUY + SELL attend ou est désactivé. Décocher autorise leur sélection ; un cycle actif conserve la priorité. Ava Desktop 1.6.5 requis.',
+                    'Enabled by default, including for the owner. No fallback to these entries when BUY + SELL is waiting or disabled. Unchecking allows users to select them; an active cycle keeps priority. Requires Ava Desktop 1.6.5.',
+                  )}</span>
+                </span>
+              </label>
               {!adminControl?.continuous_dual_cycle_policy && <p className="mt-2 text-xs text-amber-200">{tr('Disponible après la mise à jour serveur.', 'Available after the server update.')}</p>}
             </div>
             <div className="mt-4 rounded-2xl border border-rose-400/20 bg-rose-400/[0.06] p-4">
