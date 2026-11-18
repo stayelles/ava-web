@@ -1,5 +1,5 @@
-export const AVA_DESKTOP_VERSION = '1.6.7'
-export const AVA_BRIDGE_EA_VERSION = '1.84'
+export const AVA_DESKTOP_VERSION = '1.6.8'
+export const AVA_BRIDGE_EA_VERSION = '1.85'
 export const DOWNLOAD_BASE_URL = 'https://call-ava.com/downloads'
 
 export const DESKTOP_DOWNLOAD_URLS = {
