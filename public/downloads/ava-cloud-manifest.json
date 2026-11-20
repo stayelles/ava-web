@@ -1,6 +1,6 @@
 {
   "ava": {
-    "version": "1.6.11",
+    "version": "1.6.14",
     "windows_url": ""
   },
   "bridge": {
@@ -14,10 +14,10 @@
   },
   "safe_updates": {
     "ava": {
-      "version": "1.6.11",
-      "windows_url": "https://call-ava.com/downloads/AvaSetup-1.6.11.exe",
+      "version": "1.6.14",
+      "windows_url": "https://call-ava.com/downloads/AvaSetup-1.6.14.exe",
       "silent_args": "/S",
-      "sha256": "fda525d1aefabb25c641bbd113cc2d1f55f406bb75899ed46b30c336b7dec1bc"
+      "sha256": "c7c46a9a6666d1574ae1e08ddb86b320b9ecd1e136be947205bbec99068b7b71"
     },
     "bridge": {
       "version": "1.85",
